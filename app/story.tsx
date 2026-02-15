@@ -241,11 +241,73 @@ export default function StoryScreen() {
   const [sceneLoading, setSceneLoading] = useState(false);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(0);
+  const [musicMuted, setMusicMuted] = useState(false);
+  const [musicLoading, setMusicLoading] = useState(false);
+  const [musicPlaying, setMusicPlaying] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingMsgRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
+  const bgMusicRef = useRef<Audio.Sound | null>(null);
+
+  const MUSIC_VOLUME = storyMode === "sleep" ? 0.12 : 0.15;
+
+  const stopBgMusic = useCallback(async () => {
+    if (bgMusicRef.current) {
+      try {
+        await bgMusicRef.current.stopAsync();
+        await bgMusicRef.current.unloadAsync();
+      } catch {}
+      bgMusicRef.current = null;
+    }
+    setMusicPlaying(false);
+  }, []);
+
+  const startBgMusic = useCallback(async () => {
+    setMusicLoading(true);
+    try {
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/generate-music", baseUrl);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mode: storyMode }),
+      });
+      if (!res.ok) throw new Error("Music generation failed");
+      const data = await res.json();
+      if (!data.audioUrl) throw new Error("No audio URL");
+
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+      });
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: data.audioUrl },
+        { shouldPlay: true, volume: MUSIC_VOLUME, isLooping: true }
+      );
+      bgMusicRef.current = sound;
+      setMusicPlaying(true);
+      setMusicLoading(false);
+    } catch (err) {
+      console.log("Background music failed:", err);
+      setMusicLoading(false);
+    }
+  }, [storyMode, MUSIC_VOLUME]);
+
+  const toggleBgMusic = useCallback(async () => {
+    if (!bgMusicRef.current) return;
+    try {
+      if (musicMuted) {
+        await bgMusicRef.current.setVolumeAsync(MUSIC_VOLUME);
+        setMusicMuted(false);
+      } else {
+        await bgMusicRef.current.setVolumeAsync(0);
+        setMusicMuted(true);
+      }
+    } catch {}
+  }, [musicMuted, MUSIC_VOLUME]);
 
   const stopAudio = useCallback(async () => {
     if (soundRef.current) {
@@ -282,6 +344,7 @@ export default function StoryScreen() {
       if (remaining <= 0) {
         if (timerRef.current) clearInterval(timerRef.current);
         stopAudio();
+        stopBgMusic();
         setTimerRemaining(null);
       }
     }, 1000);
@@ -356,8 +419,10 @@ export default function StoryScreen() {
 
   useEffect(() => {
     generateStory();
+    startBgMusic();
     return () => {
       stopAudio();
+      stopBgMusic();
       if (timerRef.current) clearInterval(timerRef.current);
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
@@ -465,6 +530,7 @@ export default function StoryScreen() {
   const handleStoryComplete = () => {
     if (!hero || !storyData) return;
     stopAudio();
+    stopBgMusic();
     if (timerRef.current) clearInterval(timerRef.current);
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     router.push({
@@ -479,6 +545,7 @@ export default function StoryScreen() {
 
   const handleClose = () => {
     stopAudio();
+    stopBgMusic();
     if (timerRef.current) clearInterval(timerRef.current);
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     router.dismissAll();
@@ -520,6 +587,18 @@ export default function StoryScreen() {
       <View style={[styles.topBar, { paddingTop: topInset + 8 }]}>
         <Pressable onPress={handleClose} hitSlop={12} style={styles.iconBtn}>
           <Ionicons name="close" size={24} color="rgba(255,255,255,0.8)" />
+        </Pressable>
+
+        <Pressable onPress={toggleBgMusic} hitSlop={12} style={styles.iconBtn} disabled={musicLoading}>
+          {musicLoading ? (
+            <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+          ) : (
+            <Ionicons
+              name={!musicPlaying ? "musical-notes-outline" : musicMuted ? "musical-note-outline" : "musical-notes"}
+              size={20}
+              color={musicPlaying && !musicMuted ? theme.accent : "rgba(255,255,255,0.4)"}
+            />
+          )}
         </Pressable>
 
         <View style={styles.topBarCenter}>

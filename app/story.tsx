@@ -589,17 +589,19 @@ export default function StoryScreen() {
           <Ionicons name="close" size={24} color="rgba(255,255,255,0.8)" />
         </Pressable>
 
-        <Pressable onPress={toggleBgMusic} hitSlop={12} style={styles.iconBtn} disabled={musicLoading}>
-          {musicLoading ? (
-            <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
-          ) : (
-            <Ionicons
-              name={!musicPlaying ? "musical-notes-outline" : musicMuted ? "musical-note-outline" : "musical-notes"}
-              size={20}
-              color={musicPlaying && !musicMuted ? theme.accent : "rgba(255,255,255,0.4)"}
-            />
-          )}
-        </Pressable>
+        {(musicPlaying || musicLoading) && (
+          <Pressable onPress={toggleBgMusic} hitSlop={12} style={styles.iconBtn} disabled={musicLoading}>
+            {musicLoading ? (
+              <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+            ) : (
+              <Ionicons
+                name={musicMuted ? "musical-note-outline" : "musical-notes"}
+                size={20}
+                color={musicMuted ? "rgba(255,255,255,0.4)" : theme.accent}
+              />
+            )}
+          </Pressable>
+        )}
 
         <View style={styles.topBarCenter}>
           {storyState === "ready" && storyData && (

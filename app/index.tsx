@@ -27,6 +27,7 @@ import Colors from "@/constants/colors";
 import { HEROES, Hero } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 import { MemoryJar } from "@/components/MemoryJar";
+import { SettingsModal } from "@/components/SettingsModal";
 
 const MODE_THEMES = {
   classic: {
@@ -262,6 +263,7 @@ export default function HomeScreen() {
   const [duration, setDuration] = useState("medium");
   const [voice, setVoice] = useState("kore");
   const [jarVisible, setJarVisible] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const hero = HEROES[heroIndex];
   const theme = MODE_THEMES[mode];
@@ -314,7 +316,16 @@ export default function HomeScreen() {
         bounces={false}
       >
         <View style={[s.topBar, { paddingTop: topInset + 8 }]}>
-          <View style={{ width: 40 }} />
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setSettingsVisible(true);
+            }}
+            style={s.jarButton}
+            testID="settings-button"
+          >
+            <Ionicons name="settings-outline" size={20} color="rgba(255,255,255,0.5)" />
+          </Pressable>
           <View style={{ flex: 1 }} />
           <Pressable
             onPress={() => {
@@ -472,6 +483,7 @@ export default function HomeScreen() {
       </View>
 
       <MemoryJar visible={jarVisible} onClose={() => setJarVisible(false)} />
+      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
     </View>
   );
 }

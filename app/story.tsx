@@ -24,6 +24,7 @@ import Animated, {
   withRepeat,
   withTiming,
   withSequence,
+  withDelay,
   Easing,
 } from "react-native-reanimated";
 import Colors from "@/constants/colors";
@@ -35,24 +36,83 @@ import { StoryFull } from "@/constants/types";
 
 type StoryState = "generating" | "ready" | "error";
 
+const LOADING_MESSAGES = {
+  classic: [
+    "Charting the stars...",
+    "Summoning your hero...",
+    "Weaving the tale...",
+    "Adding a sprinkle of magic...",
+    "Almost ready for adventure...",
+  ],
+  madlibs: [
+    "Mixing your silly words...",
+    "Adding extra giggles...",
+    "Stirring the funny pot...",
+    "Sprinkling absurdity...",
+    "Cooking up laughs...",
+  ],
+  sleep: [
+    "Dimming the stars...",
+    "Fluffing the clouds...",
+    "Warming the moonbeams...",
+    "Sprinkling sleepy dust...",
+    "Preparing your dreamscape...",
+  ],
+};
 
-function PulsingOrb() {
+const MODE_THEME = {
+  classic: {
+    accent: "#3B82F6",
+    accentLight: "#60A5FA",
+    gradient: ["#0B1A40", "#0E1528", "#080D1E"] as [string, string, string],
+    orbColor: "rgba(59, 130, 246, 0.08)",
+    choiceColors: [
+      ["#3B82F6", "#2563EB"] as [string, string],
+      ["#8B5CF6", "#7C3AED"] as [string, string],
+      ["#F59E0B", "#D97706"] as [string, string],
+    ],
+  },
+  madlibs: {
+    accent: "#F97316",
+    accentLight: "#FB923C",
+    gradient: ["#1A0A00", "#0E1528", "#080D1E"] as [string, string, string],
+    orbColor: "rgba(249, 115, 22, 0.08)",
+    choiceColors: [
+      ["#F97316", "#EA580C"] as [string, string],
+      ["#EF4444", "#DC2626"] as [string, string],
+      ["#F59E0B", "#D97706"] as [string, string],
+    ],
+  },
+  sleep: {
+    accent: "#A855F7",
+    accentLight: "#C084FC",
+    gradient: ["#1A0533", "#0B0D1E", "#060810"] as [string, string, string],
+    orbColor: "rgba(168, 85, 247, 0.08)",
+    choiceColors: [
+      ["#A855F7", "#7C3AED"] as [string, string],
+      ["#8B5CF6", "#6D28D9"] as [string, string],
+      ["#C084FC", "#9333EA"] as [string, string],
+    ],
+  },
+};
+
+function LoadingOrb({ color }: { color: string }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.3);
 
   useEffect(() => {
     scale.value = withRepeat(
       withSequence(
-        withTiming(1.3, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1200, easing: Easing.inOut(Easing.ease) })
+        withTiming(1.4, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       false
     );
     opacity.value = withRepeat(
       withSequence(
-        withTiming(0.7, { duration: 1200, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.3, { duration: 1200, easing: Easing.inOut(Easing.ease) })
+        withTiming(0.6, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
+        withTiming(0.15, { duration: 1500, easing: Easing.inOut(Easing.ease) })
       ),
       -1,
       false
@@ -65,18 +125,66 @@ function PulsingOrb() {
   }));
 
   return (
-    <Animated.View style={[styles.pulsingOrb, animStyle]}>
-      <View style={styles.orbInner} />
-    </Animated.View>
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          width: 180,
+          height: 180,
+          borderRadius: 90,
+          backgroundColor: color,
+        },
+        animStyle,
+      ]}
+    />
   );
 }
 
-function ChoiceButton({ label, index, onPress }: { label: string; index: number; onPress: () => void }) {
-  const colors: [string, string][] = [
-    ["#3B82F6", "#2563EB"],
-    ["#8B5CF6", "#7C3AED"],
-    ["#F59E0B", "#D97706"],
-  ];
+function LoadingDot({ delay, color }: { delay: number; color: string }) {
+  const opacity = useSharedValue(0.2);
+
+  useEffect(() => {
+    opacity.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(1, { duration: 600, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0.2, { duration: 600, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
+      )
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({ opacity: opacity.value }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          width: 8,
+          height: 8,
+          borderRadius: 4,
+          backgroundColor: color,
+        },
+        animStyle,
+      ]}
+    />
+  );
+}
+
+function ChoiceButton({
+  label,
+  index,
+  onPress,
+  colors,
+}: {
+  label: string;
+  index: number;
+  onPress: () => void;
+  colors: [string, string][];
+}) {
   const pair = colors[index % colors.length];
 
   return (
@@ -95,8 +203,11 @@ function ChoiceButton({ label, index, onPress }: { label: string; index: number;
           end={{ x: 1, y: 0 }}
           style={styles.choiceGradient}
         >
+          <View style={styles.choiceIndex}>
+            <Text style={styles.choiceIndexText}>{String.fromCharCode(65 + index)}</Text>
+          </View>
           <Text style={styles.choiceText}>{label}</Text>
-          <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.7)" />
+          <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.6)" />
         </LinearGradient>
       </Pressable>
     </Animated.View>
@@ -118,7 +229,9 @@ export default function StoryScreen() {
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const storyMode = mode || "classic";
+  const storyMode = (mode || "classic") as keyof typeof MODE_THEME;
+  const theme = MODE_THEME[storyMode] || MODE_THEME.classic;
+
   const [storyData, setStoryData] = useState<StoryFull | null>(null);
   const [storyState, setStoryState] = useState<StoryState>("generating");
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
@@ -126,11 +239,23 @@ export default function StoryScreen() {
   const [sceneImage, setSceneImage] = useState<string | null>(null);
   const [sceneLoading, setSceneLoading] = useState(false);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
+  const [loadingMsg, setLoadingMsg] = useState(0);
   const scrollRef = useRef<ScrollView>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const loadingMsgRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const hero = HEROES.find((h) => h.id === heroId);
+
+  useEffect(() => {
+    const messages = LOADING_MESSAGES[storyMode] || LOADING_MESSAGES.classic;
+    loadingMsgRef.current = setInterval(() => {
+      setLoadingMsg((prev) => (prev + 1) % messages.length);
+    }, 2500);
+    return () => {
+      if (loadingMsgRef.current) clearInterval(loadingMsgRef.current);
+    };
+  }, [storyMode]);
 
   const startSleepTimer = useCallback(() => {
     if (!sleepTimer || sleepTimer === "none") return;
@@ -308,8 +433,8 @@ export default function StoryScreen() {
 
   const formatTimer = (seconds: number) => {
     const m = Math.floor(seconds / 60);
-    const s = seconds % 60;
-    return `${m}:${s.toString().padStart(2, "0")}`;
+    const sec = seconds % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
   };
 
   if (!hero) {
@@ -324,17 +449,19 @@ export default function StoryScreen() {
   }
 
   const isSleep = storyMode === "sleep";
-  const gradientColors: [string, string, string] = isSleep
-    ? ["#1A0533", "#0B0D1E", "#060810"]
-    : [hero.gradient[0], Colors.primary, "#080D1E"];
+  const messages = LOADING_MESSAGES[storyMode] || LOADING_MESSAGES.classic;
 
   const paragraphs = currentPart
     ? currentPart.text.split(/\n\n+/).map((p) => p.trim()).filter((p) => p.length > 0)
     : [];
 
+  const progressPct = storyData
+    ? ((currentPartIndex + 1) / storyData.parts.length) * 100
+    : 0;
+
   return (
     <View style={styles.container}>
-      <LinearGradient colors={gradientColors} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={theme.gradient} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
       <StarField />
 
       <View style={[styles.topBar, { paddingTop: topInset + 8 }]}>
@@ -344,16 +471,15 @@ export default function StoryScreen() {
 
         <View style={styles.topBarCenter}>
           {storyState === "ready" && storyData && (
-            <Animated.View entering={FadeIn.duration(400)} style={styles.progressBadge}>
-              <Text style={styles.progressText}>
-                {currentPartIndex + 1} / {storyData.parts.length}
+            <Animated.View entering={FadeIn.duration(400)} style={styles.progressArea}>
+              <Text style={[styles.progressLabel, { color: theme.accent }]}>
+                Part {currentPartIndex + 1} of {storyData.parts.length}
               </Text>
               <View style={styles.progressBarBg}>
                 <View
                   style={[
                     styles.progressBarFill,
-                    { width: `${((currentPartIndex + 1) / storyData.parts.length) * 100}%` },
-                    isSleep && { backgroundColor: "#CE93D8" },
+                    { width: `${progressPct}%`, backgroundColor: theme.accent },
                   ]}
                 />
               </View>
@@ -366,7 +492,7 @@ export default function StoryScreen() {
             <Ionicons
               name={isSpeaking ? "volume-high" : "volume-medium-outline"}
               size={22}
-              color={isSpeaking ? Colors.accent : "rgba(255,255,255,0.7)"}
+              color={isSpeaking ? theme.accent : "rgba(255,255,255,0.7)"}
             />
           </Pressable>
         )}
@@ -375,31 +501,37 @@ export default function StoryScreen() {
 
       {timerRemaining !== null && timerRemaining > 0 && (
         <Animated.View entering={FadeIn.duration(400)} style={styles.timerBar}>
-          <Ionicons name="timer-outline" size={14} color="#CE93D8" />
-          <Text style={styles.timerText}>{formatTimer(timerRemaining)}</Text>
+          <Ionicons name="timer-outline" size={14} color={theme.accent} />
+          <Text style={[styles.timerText, { color: theme.accent }]}>{formatTimer(timerRemaining)}</Text>
         </Animated.View>
       )}
 
       {storyState === "generating" ? (
         <Animated.View entering={FadeIn.duration(600)} style={styles.loadingContainer}>
-          <PulsingOrb />
-          <View style={styles.loadingIconWrap}>
-            <Ionicons name={hero.iconName as any} size={40} color={hero.color} />
+          <LoadingOrb color={theme.orbColor} />
+          <View style={[styles.loadingIconWrap, { borderColor: `${theme.accent}30` }]}>
+            <Ionicons name={hero.iconName as any} size={44} color={hero.color} />
           </View>
+
           <Text style={styles.loadingTitle}>
-            {isSleep ? "Preparing your dreamscape..." : storyMode === "madlibs" ? "Mixing your silly words..." : "Crafting your adventure..."}
+            {messages[loadingMsg]}
           </Text>
           <Text style={styles.loadingSubtitle}>
             {hero.name} is preparing tonight's story
           </Text>
-          <ActivityIndicator size="small" color={isSleep ? "#CE93D8" : Colors.accent} style={{ marginTop: 20 }} />
+
+          <View style={styles.loadingDotsRow}>
+            <LoadingDot delay={0} color={theme.accent} />
+            <LoadingDot delay={200} color={theme.accent} />
+            <LoadingDot delay={400} color={theme.accent} />
+          </View>
         </Animated.View>
       ) : storyState === "error" ? (
         <Animated.View entering={FadeIn.duration(600)} style={styles.loadingContainer}>
           <Ionicons name="cloud-offline-outline" size={56} color={Colors.textMuted} />
           <Text style={styles.loadingTitle}>Something went wrong</Text>
           <Text style={styles.loadingSubtitle}>Could not generate the story. Please try again.</Text>
-          <Pressable onPress={generateStory} style={styles.retryButton}>
+          <Pressable onPress={generateStory} style={[styles.retryButton, { backgroundColor: theme.accent }]}>
             <Ionicons name="refresh" size={18} color="#FFF" />
             <Text style={styles.retryText}>Try Again</Text>
           </Pressable>
@@ -412,14 +544,15 @@ export default function StoryScreen() {
             showsVerticalScrollIndicator={false}
           >
             {storyData && (
-              <Animated.Text entering={FadeInDown.duration(600)} style={styles.storyTitleText}>
-                {storyData.title}
-              </Animated.Text>
+              <Animated.View entering={FadeInDown.duration(600)} style={styles.titleWrap}>
+                <Text style={styles.storyTitleText}>{storyData.title}</Text>
+                <View style={[styles.titleUnderline, { backgroundColor: theme.accent }]} />
+              </Animated.View>
             )}
 
             {sceneLoading && (
               <Animated.View entering={FadeIn.duration(300)} style={styles.sceneLoadingWrap}>
-                <ActivityIndicator size="small" color={Colors.accent} />
+                <ActivityIndicator size="small" color={theme.accent} />
                 <Text style={styles.sceneLoadingText}>Painting the scene...</Text>
               </Animated.View>
             )}
@@ -427,6 +560,10 @@ export default function StoryScreen() {
             {sceneImage && !sceneLoading && (
               <Animated.View entering={FadeIn.duration(600)} style={styles.sceneImageWrap}>
                 <Image source={{ uri: sceneImage }} style={styles.sceneImage} resizeMode="cover" />
+                <LinearGradient
+                  colors={["transparent", "rgba(0,0,0,0.4)"]}
+                  style={styles.sceneImageOverlay}
+                />
               </Animated.View>
             )}
 
@@ -442,13 +579,16 @@ export default function StoryScreen() {
 
             {hasChoices && (
               <View style={styles.choicesSection}>
-                <Text style={styles.choicesLabel}>What should {hero.name} do next?</Text>
+                <Text style={[styles.choicesLabel, { color: theme.accent }]}>
+                  What should {hero.name} do next?
+                </Text>
                 {currentPart!.choices!.map((choice, i) => (
                   <ChoiceButton
                     key={`${currentPartIndex}-choice-${i}`}
                     label={choice}
                     index={i}
                     onPress={() => handleChoiceSelect(i)}
+                    colors={theme.choiceColors}
                   />
                 ))}
               </View>
@@ -456,7 +596,11 @@ export default function StoryScreen() {
           </ScrollView>
 
           <LinearGradient
-            colors={isSleep ? ["transparent", "rgba(10, 5, 20, 0.95)", "#060810"] : ["transparent", "rgba(11, 16, 38, 0.95)", Colors.primary]}
+            colors={
+              isSleep
+                ? ["transparent", "rgba(10, 5, 20, 0.95)", "#060810"]
+                : ["transparent", "rgba(11, 16, 38, 0.95)", Colors.primary]
+            }
             style={[styles.bottomGradient, { paddingBottom: bottomInset + 20 }]}
             pointerEvents="box-none"
           >
@@ -471,12 +615,12 @@ export default function StoryScreen() {
                   testID="finish-story-button"
                 >
                   <LinearGradient
-                    colors={isSleep ? ["#CE93D8", "#7B1FA2"] : [Colors.accent, "#2563EB"]}
+                    colors={[theme.accent, theme.choiceColors[0][1]]}
                     style={styles.finishButtonGradient}
                   >
                     <Ionicons name="sparkles" size={20} color="#FFF" />
                     <Text style={styles.finishButtonText}>
-                      {isSleep ? "Sweet Dreams" : "Complete Story"}
+                      {isSleep ? "Sweet Dreams" : storyMode === "madlibs" ? "That Was Hilarious!" : "Complete Story"}
                     </Text>
                   </LinearGradient>
                 </Pressable>
@@ -493,89 +637,238 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.primary },
   centered: { justifyContent: "center", alignItems: "center" },
   topBar: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingBottom: 8, zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 16,
+    paddingBottom: 8,
+    zIndex: 10,
   },
   iconBtn: {
-    width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.25)",
-    alignItems: "center", justifyContent: "center",
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   topBarCenter: { flex: 1, alignItems: "center" },
-  progressBadge: { alignItems: "center", gap: 6 },
-  progressText: { fontFamily: "Nunito_600SemiBold", fontSize: 12, color: "rgba(255,255,255,0.6)" },
+  progressArea: { alignItems: "center", gap: 6 },
+  progressLabel: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
   progressBarBg: {
-    width: 100, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.15)",
+    width: 120,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   progressBarFill: {
-    height: 4, borderRadius: 2, backgroundColor: Colors.accent,
+    height: 4,
+    borderRadius: 2,
   },
   timerBar: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 6,
   },
-  timerText: { fontFamily: "Nunito_600SemiBold", fontSize: 13, color: "#CE93D8" },
+  timerText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 13,
+  },
   loadingContainer: {
-    flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40, gap: 12,
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingHorizontal: 40,
+    gap: 12,
   },
-  pulsingOrb: {
-    position: "absolute", width: 160, height: 160, borderRadius: 80,
-    backgroundColor: "rgba(245, 197, 66, 0.06)", alignItems: "center", justifyContent: "center",
-  },
-  orbInner: { width: 100, height: 100, borderRadius: 50, backgroundColor: "rgba(245, 197, 66, 0.08)" },
   loadingIconWrap: {
-    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.08)",
-    alignItems: "center", justifyContent: "center", marginBottom: 8,
+    width: 88,
+    height: 88,
+    borderRadius: 44,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 8,
+    borderWidth: 2,
   },
-  loadingTitle: { fontFamily: "Nunito_700Bold", fontSize: 22, color: Colors.textPrimary, textAlign: "center" },
-  loadingSubtitle: { fontFamily: "Nunito_400Regular", fontSize: 14, color: Colors.textSecondary, textAlign: "center" },
+  loadingTitle: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 20,
+    color: Colors.textPrimary,
+    textAlign: "center",
+  },
+  loadingSubtitle: {
+    fontFamily: "Nunito_400Regular",
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
+  loadingDotsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginTop: 16,
+  },
   storyContent: { paddingHorizontal: 24, paddingTop: 8 },
+  titleWrap: {
+    alignItems: "center",
+    marginBottom: 24,
+  },
   storyTitleText: {
-    fontFamily: "Nunito_800ExtraBold", fontSize: 26, color: Colors.textPrimary,
-    textAlign: "center", marginBottom: 24, lineHeight: 34,
+    fontFamily: "Nunito_800ExtraBold",
+    fontSize: 26,
+    color: Colors.textPrimary,
+    textAlign: "center",
+    lineHeight: 34,
+    marginBottom: 10,
+  },
+  titleUnderline: {
+    width: 40,
+    height: 3,
+    borderRadius: 2,
   },
   sceneLoadingWrap: {
-    alignItems: "center", justifyContent: "center", gap: 8,
-    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 16,
-    paddingVertical: 30, marginBottom: 20,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 20,
+    paddingVertical: 30,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
   },
-  sceneLoadingText: { fontFamily: "Nunito_400Regular", fontSize: 12, color: Colors.textMuted },
+  sceneLoadingText: {
+    fontFamily: "Nunito_400Regular",
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
   sceneImageWrap: {
-    borderRadius: 16, overflow: "hidden", marginBottom: 20,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    borderRadius: 20,
+    overflow: "hidden",
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
-  sceneImage: { width: "100%", height: 200, borderRadius: 16 },
+  sceneImage: { width: "100%", height: 220, borderRadius: 20 },
+  sceneImageOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+  },
   paragraphText: {
-    fontFamily: "Nunito_400Regular", fontSize: 18, color: "rgba(255,255,255,0.88)",
-    lineHeight: 32, marginBottom: 22, textAlign: "left",
+    fontFamily: "Nunito_400Regular",
+    fontSize: 18,
+    color: "rgba(255,255,255,0.88)",
+    lineHeight: 32,
+    marginBottom: 22,
+    textAlign: "left",
   },
-  paragraphSleep: { fontSize: 20, lineHeight: 36, color: "rgba(220, 210, 240, 0.85)" },
+  paragraphSleep: {
+    fontSize: 20,
+    lineHeight: 38,
+    color: "rgba(220, 210, 240, 0.85)",
+  },
   choicesSection: { marginTop: 12, gap: 12 },
   choicesLabel: {
-    fontFamily: "Nunito_700Bold", fontSize: 16, color: Colors.accent,
-    textAlign: "center", marginBottom: 4,
+    fontFamily: "Nunito_700Bold",
+    fontSize: 16,
+    textAlign: "center",
+    marginBottom: 4,
   },
   choiceButton: { borderRadius: 16, overflow: "hidden" },
   choiceGradient: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingVertical: 16, paddingHorizontal: 20,
+    flexDirection: "row",
+    alignItems: "center",
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    gap: 12,
+  },
+  choiceIndex: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  choiceIndexText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 13,
+    color: "#FFF",
   },
   choiceText: {
-    fontFamily: "Nunito_700Bold", fontSize: 15, color: "#FFF", flex: 1, marginRight: 8,
+    fontFamily: "Nunito_700Bold",
+    fontSize: 15,
+    color: "#FFF",
+    flex: 1,
   },
   bottomGradient: {
-    position: "absolute", bottom: 0, left: 0, right: 0,
-    paddingTop: 40, paddingHorizontal: 20,
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingTop: 40,
+    paddingHorizontal: 20,
   },
-  controlsRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 12 },
-  finishButton: { flex: 1, borderRadius: 28, overflow: "hidden", elevation: 6, shadowColor: Colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10 },
+  controlsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
+  finishButton: {
+    flex: 1,
+    borderRadius: 28,
+    overflow: "hidden",
+    elevation: 6,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+  },
   finishButtonGradient: {
-    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 18,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 10,
+    paddingVertical: 18,
   },
-  finishButtonText: { fontFamily: "Nunito_700Bold", fontSize: 18, color: "#FFF" },
+  finishButtonText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 18,
+    color: "#FFF",
+  },
   retryButton: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    backgroundColor: Colors.accent, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 24, marginTop: 12,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 24,
+    marginTop: 12,
   },
-  retryText: { fontFamily: "Nunito_700Bold", fontSize: 16, color: "#FFF" },
-  errorText: { fontFamily: "Nunito_600SemiBold", fontSize: 18, color: Colors.textMuted },
-  errorLink: { fontFamily: "Nunito_700Bold", fontSize: 16, color: Colors.accent, marginTop: 16 },
+  retryText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 16,
+    color: "#FFF",
+  },
+  errorText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 18,
+    color: Colors.textMuted,
+  },
+  errorLink: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 16,
+    color: Colors.accent,
+    marginTop: 16,
+  },
 });

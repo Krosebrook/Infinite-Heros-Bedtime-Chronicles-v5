@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { HEROES, Hero } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
+import { MemoryJar } from "@/components/MemoryJar";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -139,6 +140,7 @@ export default function HomeScreen() {
   const [mode, setMode] = useState("classic");
   const [duration, setDuration] = useState("medium");
   const [voice, setVoice] = useState("kore");
+  const [jarVisible, setJarVisible] = useState(false);
 
   const hero = HEROES[heroIndex];
 
@@ -186,9 +188,23 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: bottomInset + 20 }}
         bounces={false}
       >
+        <View style={[s.topActions, { paddingTop: topInset + 12 }]}>
+          <View style={{ width: 40 }} />
+          <View style={{ flex: 1 }} />
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setJarVisible(true);
+            }}
+            style={s.jarButton}
+            testID="memory-jar-button"
+          >
+            <Ionicons name="archive" size={20} color={Colors.accent} />
+          </Pressable>
+        </View>
         <Animated.View
           entering={FadeIn.duration(800)}
-          style={[s.headerArea, { paddingTop: topInset + 24 }]}
+          style={s.headerArea}
         >
           <Text style={s.titleLine1}>INFINITY</Text>
           <Text style={s.titleLine2}>HEROES</Text>
@@ -366,6 +382,7 @@ export default function HomeScreen() {
           </Pressable>
         </Animated.View>
       </ScrollView>
+      <MemoryJar visible={jarVisible} onClose={() => setJarVisible(false)} />
     </View>
   );
 }
@@ -374,6 +391,19 @@ const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.primary,
+  },
+  topActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: 16,
+  },
+  jarButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(59, 130, 246, 0.12)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   headerArea: {
     alignItems: "center",

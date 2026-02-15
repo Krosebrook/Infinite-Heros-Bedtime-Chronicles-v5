@@ -15,7 +15,6 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
-import { Audio } from "expo-av";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -36,13 +35,6 @@ import { StoryFull } from "@/constants/types";
 
 type StoryState = "generating" | "ready" | "error";
 
-const AMBIENT_SOUNDS: Record<string, any> = {
-  rain: require("@/assets/sounds/rain.wav"),
-  ocean: require("@/assets/sounds/ocean.wav"),
-  crickets: require("@/assets/sounds/crickets.wav"),
-  wind: require("@/assets/sounds/wind.wav"),
-  fire: require("@/assets/sounds/fire.wav"),
-};
 
 function PulsingOrb() {
   const scale = useSharedValue(1);
@@ -135,35 +127,10 @@ export default function StoryScreen() {
   const [sceneLoading, setSceneLoading] = useState(false);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const scrollRef = useRef<ScrollView>(null);
-  const soundRef = useRef<Audio.Sound | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hero = HEROES.find((h) => h.id === heroId);
-
-  const startAmbientSound = useCallback(async () => {
-    if (!soundscape || soundscape === "none") return;
-    const soundFile = AMBIENT_SOUNDS[soundscape];
-    if (!soundFile) return;
-    try {
-      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true });
-      const { sound } = await Audio.Sound.createAsync(soundFile, { isLooping: true, volume: 0.3 });
-      soundRef.current = sound;
-      await sound.playAsync();
-    } catch (e) {
-      console.log("Could not play ambient sound:", e);
-    }
-  }, [soundscape]);
-
-  const stopAmbientSound = useCallback(async () => {
-    if (soundRef.current) {
-      try {
-        await soundRef.current.stopAsync();
-        await soundRef.current.unloadAsync();
-      } catch {}
-      soundRef.current = null;
-    }
-  }, []);
 
   const startSleepTimer = useCallback(() => {
     if (!sleepTimer || sleepTimer === "none") return;
@@ -177,12 +144,11 @@ export default function StoryScreen() {
       if (remaining <= 0) {
         if (timerRef.current) clearInterval(timerRef.current);
         Speech.stop();
-        stopAmbientSound();
         setIsSpeaking(false);
         setTimerRemaining(null);
       }
     }, 1000);
-  }, [sleepTimer, stopAmbientSound]);
+  }, [sleepTimer]);
 
   const generateStory = useCallback(async () => {
     if (!hero) return;
@@ -253,12 +219,8 @@ export default function StoryScreen() {
 
   useEffect(() => {
     generateStory();
-    if (storyMode === "sleep" && soundscape && soundscape !== "none") {
-      startAmbientSound();
-    }
     return () => {
       Speech.stop();
-      stopAmbientSound();
       if (timerRef.current) clearInterval(timerRef.current);
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
@@ -324,7 +286,6 @@ export default function StoryScreen() {
 
   const handleStoryComplete = () => {
     if (!hero || !storyData) return;
-    stopAmbientSound();
     Speech.stop();
     if (timerRef.current) clearInterval(timerRef.current);
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
@@ -340,7 +301,6 @@ export default function StoryScreen() {
 
   const handleClose = () => {
     Speech.stop();
-    stopAmbientSound();
     if (timerRef.current) clearInterval(timerRef.current);
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     router.dismissAll();

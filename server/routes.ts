@@ -20,114 +20,108 @@ CRITICAL SAFETY RULES (non-negotiable):
 - Focus on themes of courage, kindness, friendship, wonder, imagination, and comfort
 - All conflicts should be gentle (e.g., solving puzzles, helping friends, finding lost items) and resolve peacefully`;
 
-function getSystemPrompt(mode: string): string {
-  if (mode === "madlibs") {
-    return `You are a hilarious and imaginative bedtime storyteller for children ages 5-9. Create wildly funny, silly bedtime stories that incorporate specific words provided by the child. 
-
-${CHILD_SAFETY_RULES}
-
-Additional Mad Libs rules:
-- Use ALL the provided Mad Libs words naturally in the story
-- Make the story absurdly funny — kids should giggle
-- Include silly situations, unexpected twists, and playful humor
-- Despite being funny, the story should still wind down to a peaceful, sleepy ending
-- Use the hero's powers in creative, silly ways
-- Keep vocabulary age-appropriate but don't be afraid of big silly words
-- End with the character tired from laughing and ready for sleep`;
+function getPartCount(duration: string): number {
+  switch (duration) {
+    case "short": return 3;
+    case "medium-short": return 4;
+    case "medium": return 5;
+    case "long": return 6;
+    case "epic": return 7;
+    default: return 5;
   }
-
-  if (mode === "sleep") {
-    return `You are a gentle, hypnotic bedtime narrator creating the most soothing, sleep-inducing story possible for children ages 3-8.
-
-${CHILD_SAFETY_RULES}
-
-Additional Sleep Mode rules:
-- Write in an extremely slow, calming, almost meditative voice
-- Use heavy repetition of soothing phrases and rhythmic language
-- Include extensive sensory details: warm blankets, soft pillows, gentle breathing, floating clouds
-- Use progressive relaxation cues woven into the story (heavy eyelids, warm toes, slow breathing)
-- Include sensory "anchors" — describe textures, gentle scents, and soft sounds
-- The story should feel like a guided meditation disguised as a story
-- Include descriptions of gentle sounds: distant rain, soft wind, quiet humming
-- Use shorter sentences that get progressively slower and sleepier
-- The hero should demonstrate settling down, getting cozy, breathing slowly
-- Use zero-conflict narratives — absolutely no tension, problems, or obstacles
-- End with complete calm, warmth, and the deepest peace
-- This is designed to help children fall asleep — pace accordingly`;
-  }
-
-  return `You are a master bedtime storyteller for children ages 3-8. Create magical, soothing bedtime stories that help children feel safe, loved, and ready for sleep. 
-
-${CHILD_SAFETY_RULES}
-
-Additional Classic Mode rules:
-- Write in a gentle, calming narrative voice
-- Include sensory details (soft sounds, warm lights, gentle breezes)
-- The story should gradually become more peaceful and sleepy toward the end
-- End with the character settling down to rest or sleep
-- Use simple vocabulary appropriate for young children
-- Include themes of courage, kindness, friendship, or wonder
-- The story should feel complete and satisfying`;
 }
 
 function getWordCount(duration: string): string {
   switch (duration) {
-    case "short":
-      return "200-300";
-    case "medium-short":
-      return "350-450";
-    case "medium":
-      return "500-650";
-    case "long":
-      return "750-950";
-    case "epic":
-      return "1000-1300";
-    default:
-      return "500-650";
+    case "short": return "200-300";
+    case "medium-short": return "350-450";
+    case "medium": return "500-650";
+    case "long": return "750-950";
+    case "epic": return "1000-1300";
+    default: return "500-650";
   }
 }
 
-function getUserPrompt(mode: string, heroName: string, heroTitle: string, heroPower: string, heroDescription: string, wordCount: string, madlibWords?: Record<string, string>): string {
+function getStorySystemPrompt(mode: string, partCount: number): string {
+  const modeRules = mode === "madlibs"
+    ? `You are a hilarious bedtime storyteller. Create wildly funny, silly bedtime stories.
+Additional Mad Libs rules:
+- Use ALL provided Mad Libs words naturally, making them integral to the plot
+- Make the story absurdly funny — kids should giggle
+- Include silly situations, unexpected twists, and playful humor
+- Despite being funny, wind down to a peaceful, sleepy ending
+- Use the hero's powers in creative, silly ways`
+    : mode === "sleep"
+    ? `You are a gentle, hypnotic bedtime narrator creating the most soothing story possible.
+Additional Sleep Mode rules:
+- Write in an extremely slow, calming, almost meditative voice
+- Use heavy repetition of soothing phrases and rhythmic language
+- Include progressive relaxation cues woven into the story
+- Use zero-conflict narratives — absolutely no tension or obstacles
+- The story should feel like a guided meditation disguised as a story
+- Use shorter sentences that get progressively slower and sleepier`
+    : `You are a master bedtime storyteller. Create magical, soothing bedtime stories.
+Additional Classic Mode rules:
+- Write in a gentle, calming narrative voice
+- Include sensory details (soft sounds, warm lights, gentle breezes)
+- The story should gradually become more peaceful toward the end
+- Include themes of courage, kindness, friendship, or wonder`;
+
+  const choiceInstructions = mode === "sleep"
+    ? `Since this is Sleep Mode, do NOT include choices. Each part should flow naturally into the next with calming transitions.`
+    : `For each part EXCEPT the last one, include exactly 3 choices the child can make. Choices should be fun, creative, and age-appropriate. Every choice leads to a positive outcome. The last part is the conclusion with no choices.`;
+
+  return `${modeRules}
+
+${CHILD_SAFETY_RULES}
+
+You MUST respond with valid JSON matching this exact structure:
+{
+  "title": "A short magical title (3-6 words)",
+  "parts": [
+    {
+      "text": "The story text for this part (2-4 paragraphs)",
+      "choices": ["Choice A", "Choice B", "Choice C"],
+      "partIndex": 0
+    }
+  ],
+  "vocabWord": { "word": "A fun vocabulary word from the story", "definition": "Simple child-friendly definition" },
+  "joke": "A short, age-appropriate joke related to the story theme",
+  "lesson": "A gentle life lesson from the story (1-2 sentences)",
+  "tomorrowHook": "A teaser for what adventure could happen next time (1 sentence)",
+  "rewardBadge": { "emoji": "A single emoji representing the achievement", "title": "Badge Name (2-3 words)", "description": "What the child earned (1 sentence)" }
+}
+
+The story MUST have exactly ${partCount} parts. ${choiceInstructions}
+Parts should have partIndex starting from 0.`;
+}
+
+function getStoryUserPrompt(
+  mode: string,
+  heroName: string,
+  heroTitle: string,
+  heroPower: string,
+  heroDescription: string,
+  wordCount: string,
+  partCount: number,
+  madlibWords?: Record<string, string>
+): string {
+  let prompt = `Create a bedtime story featuring the hero "${heroName}" who is the "${heroTitle}" with the power of "${heroPower}".
+Hero background: ${heroDescription}
+Total story length: approximately ${wordCount} words spread across ${partCount} parts.`;
+
   if (mode === "madlibs" && madlibWords) {
     const wordsList = Object.entries(madlibWords)
       .map(([key, value]) => `${key}: "${value}"`)
-      .join("\n");
-
-    return `Create a hilarious bedtime story featuring the hero "${heroName}" who is the "${heroTitle}" with the power of "${heroPower}".
-
-Hero background: ${heroDescription}
-
-The child has filled in these Mad Libs words that MUST appear in the story:
-${wordsList}
-
-Write a story approximately ${wordCount} words long. Make it funny and silly while incorporating every single Mad Libs word naturally. The story should be broken into paragraphs. End with something peaceful despite all the silliness.
-
-Format: Write as flowing paragraphs separated by blank lines. Bold or emphasize the Mad Libs words by wrapping them in *asterisks* when they first appear.`;
+      .join(", ");
+    prompt += `\n\nThe child provided these Mad Libs words that MUST appear naturally in the story: ${wordsList}`;
   }
 
   if (mode === "sleep") {
-    return `Create the most soothing, sleep-inducing bedtime story featuring the hero "${heroName}" who is the "${heroTitle}" with the power of "${heroPower}".
-
-Hero background: ${heroDescription}
-
-Write a deeply calming story approximately ${wordCount} words long. This story is specifically designed to help a child fall asleep. Use:
-- Progressive relaxation (mention body parts becoming warm and heavy)
-- Rhythmic, repetitive language
-- Descriptions of cozy, safe places
-- Gentle breathing cues woven into the narrative
-- Countdown-style elements (five soft clouds... four gentle stars... three warm blankets...)
-- The hero using their power to create the most peaceful, safe space imaginable
-
-Format: Write as flowing paragraphs separated by blank lines. Use ellipsis (...) for dramatic pauses. Keep sentences short and dreamy toward the end.`;
+    prompt += `\n\nThis is a Sleep Mode story. Make it extremely calming with progressive relaxation cues. No choices needed — parts flow naturally.`;
   }
 
-  return `Create a unique bedtime story featuring the hero "${heroName}" who is the "${heroTitle}" with the power of "${heroPower}". 
-
-Hero background: ${heroDescription}
-
-Write a story that is approximately ${wordCount} words long. The story should be broken into paragraphs for easy reading aloud.
-
-Format: Write the story as flowing paragraphs separated by blank lines. Start with a captivating opening line. End with a peaceful, sleepy conclusion.`;
+  return prompt;
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -141,71 +135,111 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       const storyMode = mode || "classic";
       const wordCount = getWordCount(duration || "medium");
+      const partCount = getPartCount(duration || "medium");
 
-      const systemPrompt = getSystemPrompt(storyMode);
-      const userPrompt = getUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, madlibWords);
+      const systemPrompt = getStorySystemPrompt(storyMode, partCount);
+      const userPrompt = getStoryUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, partCount, madlibWords);
 
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache");
-      res.setHeader("Connection", "keep-alive");
-
-      const stream = await openai.chat.completions.create({
+      const response = await openai.chat.completions.create({
         model: "gpt-4o-mini",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
         ],
-        stream: true,
-        max_tokens: 2048,
+        response_format: { type: "json_object" },
+        max_tokens: 4096,
         temperature: storyMode === "sleep" ? 0.7 : 0.9,
       });
 
-      for await (const chunk of stream) {
-        const content = chunk.choices[0]?.delta?.content || "";
-        if (content) {
-          res.write(`data: ${JSON.stringify({ content })}\n\n`);
-        }
+      const content = response.choices[0]?.message?.content;
+      if (!content) {
+        return res.status(500).json({ error: "No response from AI" });
       }
 
-      res.write(`data: ${JSON.stringify({ done: true })}\n\n`);
-      res.end();
+      const story = JSON.parse(content);
+
+      if (!story.parts || !Array.isArray(story.parts)) {
+        return res.status(500).json({ error: "Invalid story structure" });
+      }
+
+      story.parts = story.parts.map((part: any, i: number) => ({
+        text: part.text || "",
+        choices: storyMode === "sleep" ? undefined : (part.choices || undefined),
+        partIndex: i,
+      }));
+
+      if (story.parts.length > 0 && storyMode !== "sleep") {
+        delete story.parts[story.parts.length - 1].choices;
+      }
+
+      res.json(story);
     } catch (error) {
       console.error("Error generating story:", error);
-      if (res.headersSent) {
-        res.write(`data: ${JSON.stringify({ error: "Failed to generate story" })}\n\n`);
-        res.end();
-      } else {
-        res.status(500).json({ error: "Failed to generate story" });
-      }
+      res.status(500).json({ error: "Failed to generate story" });
     }
   });
 
-  app.post("/api/generate-title", async (req, res) => {
+  app.post("/api/generate-avatar", async (req, res) => {
     try {
-      const { heroName, storyText, mode } = req.body;
-      const modeHint = mode === "madlibs" ? " Make the title funny and silly." : mode === "sleep" ? " Make the title dreamy and peaceful." : "";
+      const { heroName, heroTitle, heroPower, heroDescription } = req.body;
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          {
-            role: "system",
-            content: `Generate a short, magical story title (3-6 words). Return ONLY the title, nothing else.${modeHint}`,
-          },
-          {
-            role: "user",
-            content: `Generate a bedtime story title for a story about the hero "${heroName}". First paragraph: ${storyText.substring(0, 200)}`,
-          },
-        ],
-        max_tokens: 30,
-        temperature: 0.8,
+      if (!heroName) {
+        return res.status(400).json({ error: "Hero name is required" });
+      }
+
+      const prompt = `Create a cute, friendly, child-safe cartoon avatar of a superhero character named "${heroName}" who is "${heroTitle}" with the power of "${heroPower}". ${heroDescription}. 
+Style: Adorable Pixar/Disney-inspired character design, round friendly features, big expressive eyes, vibrant colors, cosmic/starry background, suitable for ages 3-9. No scary elements, no weapons. Circular portrait composition.`;
+
+      const response = await openai.images.generate({
+        model: "gpt-image-1",
+        prompt,
+        n: 1,
+        size: "1024x1024",
+        quality: "low",
       });
 
-      const title = response.choices[0]?.message?.content?.trim() || `${heroName}'s Bedtime Adventure`;
-      res.json({ title });
+      const imageData = response.data?.[0]?.b64_json;
+      if (!imageData) {
+        return res.status(500).json({ error: "No image generated" });
+      }
+
+      res.json({ image: `data:image/png;base64,${imageData}` });
     } catch (error) {
-      console.error("Error generating title:", error);
-      res.json({ title: `${req.body.heroName}'s Bedtime Adventure` });
+      console.error("Error generating avatar:", error);
+      res.status(500).json({ error: "Failed to generate avatar" });
+    }
+  });
+
+  app.post("/api/generate-scene", async (req, res) => {
+    try {
+      const { heroName, sceneText, heroDescription } = req.body;
+
+      if (!sceneText) {
+        return res.status(400).json({ error: "Scene text is required" });
+      }
+
+      const summary = sceneText.substring(0, 300);
+      const prompt = `Create a magical, child-friendly illustration for a bedtime story scene. The hero is "${heroName}": ${heroDescription?.substring(0, 100) || ""}.
+Scene: ${summary}
+Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magical atmosphere, suitable for ages 3-9. No scary elements. Warm, cozy, wonder-filled. Landscape composition with soft edges.`;
+
+      const response = await openai.images.generate({
+        model: "gpt-image-1",
+        prompt,
+        n: 1,
+        size: "1536x1024",
+        quality: "low",
+      });
+
+      const imageData = response.data?.[0]?.b64_json;
+      if (!imageData) {
+        return res.status(500).json({ error: "No image generated" });
+      }
+
+      res.json({ image: `data:image/png;base64,${imageData}` });
+    } catch (error) {
+      console.error("Error generating scene:", error);
+      res.status(500).json({ error: "Failed to generate scene" });
     }
   });
 

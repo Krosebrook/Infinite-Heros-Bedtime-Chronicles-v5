@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Image,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -18,6 +19,7 @@ import { Audio } from "expo-av";
 import Animated, {
   FadeIn,
   FadeInDown,
+  FadeInUp,
   useSharedValue,
   useAnimatedStyle,
   withRepeat,
@@ -30,6 +32,7 @@ import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
+import { StoryFull } from "@/constants/types";
 
 type StoryState = "generating" | "ready" | "error";
 
@@ -76,6 +79,38 @@ function PulsingOrb() {
   );
 }
 
+function ChoiceButton({ label, index, onPress }: { label: string; index: number; onPress: () => void }) {
+  const colors = [
+    ["#3B82F6", "#2563EB"],
+    ["#8B5CF6", "#7C3AED"],
+    ["#F59E0B", "#D97706"],
+  ];
+  const pair = colors[index % colors.length];
+
+  return (
+    <Animated.View entering={FadeInUp.duration(400).delay(index * 120)}>
+      <Pressable
+        onPress={onPress}
+        style={({ pressed }) => [
+          styles.choiceButton,
+          { transform: [{ scale: pressed ? 0.96 : 1 }] },
+        ]}
+        testID={`choice-${index}`}
+      >
+        <LinearGradient
+          colors={pair}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 0 }}
+          style={styles.choiceGradient}
+        >
+          <Text style={styles.choiceText}>{label}</Text>
+          <Ionicons name="arrow-forward" size={16} color="rgba(255,255,255,0.7)" />
+        </LinearGradient>
+      </Pressable>
+    </Animated.View>
+  );
+}
+
 export default function StoryScreen() {
   const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer } =
     useLocalSearchParams<{
@@ -92,16 +127,17 @@ export default function StoryScreen() {
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
   const storyMode = mode || "classic";
-  const [storyText, setStoryText] = useState("");
-  const [storyTitle, setStoryTitle] = useState("");
+  const [storyData, setStoryData] = useState<StoryFull | null>(null);
   const [storyState, setStoryState] = useState<StoryState>("generating");
+  const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
-  const [currentParagraph, setCurrentParagraph] = useState(-1);
+  const [sceneImage, setSceneImage] = useState<string | null>(null);
+  const [sceneLoading, setSceneLoading] = useState(false);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
-  const storyRef = useRef("");
   const scrollRef = useRef<ScrollView>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const hero = HEROES.find((h) => h.id === heroId);
 
@@ -109,16 +145,9 @@ export default function StoryScreen() {
     if (!soundscape || soundscape === "none") return;
     const soundFile = AMBIENT_SOUNDS[soundscape];
     if (!soundFile) return;
-
     try {
-      await Audio.setAudioModeAsync({
-        playsInSilentModeIOS: true,
-        staysActiveInBackground: true,
-      });
-      const { sound } = await Audio.Sound.createAsync(soundFile, {
-        isLooping: true,
-        volume: 0.3,
-      });
+      await Audio.setAudioModeAsync({ playsInSilentModeIOS: true, staysActiveInBackground: true });
+      const { sound } = await Audio.Sound.createAsync(soundFile, { isLooping: true, volume: 0.3 });
       soundRef.current = sound;
       await sound.playAsync();
     } catch (e) {
@@ -140,14 +169,11 @@ export default function StoryScreen() {
     if (!sleepTimer || sleepTimer === "none") return;
     const minutes = parseInt(sleepTimer, 10);
     if (isNaN(minutes)) return;
-
     let remaining = minutes * 60;
     setTimerRemaining(remaining);
-
     timerRef.current = setInterval(() => {
       remaining -= 1;
       setTimerRemaining(remaining);
-
       if (remaining <= 0) {
         if (timerRef.current) clearInterval(timerRef.current);
         Speech.stop();
@@ -161,9 +187,9 @@ export default function StoryScreen() {
   const generateStory = useCallback(async () => {
     if (!hero) return;
     setStoryState("generating");
-    setStoryText("");
-    setStoryTitle("");
-    storyRef.current = "";
+    setStoryData(null);
+    setCurrentPartIndex(0);
+    setSceneImage(null);
 
     try {
       const baseUrl = getApiUrl();
@@ -179,9 +205,7 @@ export default function StoryScreen() {
       };
 
       if (storyMode === "madlibs" && madlibWords) {
-        try {
-          bodyData.madlibWords = JSON.parse(madlibWords);
-        } catch {}
+        try { bodyData.madlibWords = JSON.parse(madlibWords); } catch {}
       }
 
       const res = await fetch(url.toString(), {
@@ -190,74 +214,53 @@ export default function StoryScreen() {
         body: JSON.stringify(bodyData),
       });
 
-      const reader = res.body?.getReader();
-      if (!reader) throw new Error("No reader available");
+      if (!res.ok) throw new Error("Failed to generate story");
 
-      const decoder = new TextDecoder();
-      let buffer = "";
-
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
-
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || "";
-
-        for (const line of lines) {
-          if (line.startsWith("data: ")) {
-            try {
-              const data = JSON.parse(line.slice(6));
-              if (data.done) {
-                setStoryState("ready");
-              } else if (data.content) {
-                storyRef.current += data.content;
-                setStoryText(storyRef.current);
-              } else if (data.error) {
-                setStoryState("error");
-              }
-            } catch {}
-          }
-        }
-      }
-
-      if (storyRef.current) {
-        setStoryState("ready");
-      }
-
-      try {
-        const titleUrl = new URL("/api/generate-title", baseUrl);
-        const titleRes = await fetch(titleUrl.toString(), {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            heroName: hero.name,
-            storyText: storyRef.current,
-            mode: storyMode,
-          }),
-        });
-        const titleData = await titleRes.json();
-        setStoryTitle(titleData.title);
-      } catch {
-        setStoryTitle(`${hero.name}'s Adventure`);
-      }
+      const data = await res.json();
+      setStoryData(data as StoryFull);
+      setStoryState("ready");
     } catch (error) {
       console.error("Story generation error:", error);
       setStoryState("error");
     }
   }, [hero, duration, storyMode, madlibWords]);
 
+  const loadSceneImage = useCallback(async (partText: string) => {
+    if (!hero) return;
+    setSceneLoading(true);
+    setSceneImage(null);
+    try {
+      const baseUrl = getApiUrl();
+      const url = new URL("/api/generate-scene", baseUrl);
+      const res = await fetch(url.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          heroName: hero.name,
+          sceneText: partText,
+          heroDescription: hero.description,
+        }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setSceneImage(data.image);
+      }
+    } catch (e) {
+      console.log("Scene generation failed:", e);
+    }
+    setSceneLoading(false);
+  }, [hero]);
+
   useEffect(() => {
     generateStory();
-
     if (storyMode === "sleep" && soundscape && soundscape !== "none") {
       startAmbientSound();
     }
-
     return () => {
       Speech.stop();
       stopAmbientSound();
       if (timerRef.current) clearInterval(timerRef.current);
+      if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
   }, []);
 
@@ -267,54 +270,70 @@ export default function StoryScreen() {
     }
   }, [storyState]);
 
-  const paragraphs = storyText
-    .split(/\n\n+/)
-    .map((p) => p.trim())
-    .filter((p) => p.length > 0);
+  useEffect(() => {
+    if (storyState === "ready" && storyData && storyData.parts[currentPartIndex]) {
+      loadSceneImage(storyData.parts[currentPartIndex].text);
+    }
+  }, [currentPartIndex, storyState]);
 
-  const speakStory = useCallback(() => {
-    if (paragraphs.length === 0) return;
+  useEffect(() => {
+    if (storyState === "ready" && storyMode === "sleep" && storyData) {
+      const currentPart = storyData.parts[currentPartIndex];
+      if (currentPart && currentPartIndex < storyData.parts.length - 1) {
+        const wordCount = currentPart.text.split(/\s+/).length;
+        const readingTimeMs = Math.max(wordCount * 300, 8000);
+        autoAdvanceRef.current = setTimeout(() => {
+          setCurrentPartIndex((prev) => prev + 1);
+          scrollRef.current?.scrollTo({ y: 0, animated: true });
+        }, readingTimeMs);
+        return () => {
+          if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
+        };
+      }
+    }
+  }, [currentPartIndex, storyState, storyMode]);
 
+  const currentPart = storyData?.parts[currentPartIndex];
+  const isLastPart = storyData ? currentPartIndex >= storyData.parts.length - 1 : false;
+  const hasChoices = currentPart?.choices && currentPart.choices.length > 0 && !isLastPart;
+
+  const speakCurrentPart = useCallback(() => {
+    if (!currentPart) return;
     if (isSpeaking) {
       Speech.stop();
       setIsSpeaking(false);
-      setCurrentParagraph(-1);
       return;
     }
-
     setIsSpeaking(true);
-    const fullText = paragraphs.join(". . . ");
     const voiceRate = storyMode === "sleep" ? 0.72 : 0.85;
-
-    setCurrentParagraph(0);
-
-    Speech.speak(fullText, {
+    Speech.speak(currentPart.text, {
       rate: voiceRate,
       pitch: storyMode === "sleep" ? 0.9 : 1.0,
-      onDone: () => {
-        setIsSpeaking(false);
-        setCurrentParagraph(-1);
-        if (storyMode !== "sleep") {
-          handleStoryComplete();
-        }
-      },
-      onStopped: () => {
-        setIsSpeaking(false);
-        setCurrentParagraph(-1);
-      },
+      onDone: () => setIsSpeaking(false),
+      onStopped: () => setIsSpeaking(false),
     });
-  }, [paragraphs, isSpeaking, storyMode]);
+  }, [currentPart, isSpeaking, storyMode]);
+
+  const handleChoiceSelect = (choiceIndex: number) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    Speech.stop();
+    setIsSpeaking(false);
+    setCurrentPartIndex((prev) => prev + 1);
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
 
   const handleStoryComplete = () => {
-    if (!hero) return;
+    if (!hero || !storyData) return;
     stopAmbientSound();
+    Speech.stop();
     if (timerRef.current) clearInterval(timerRef.current);
+    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     router.push({
       pathname: "/completion",
       params: {
         heroId: hero.id,
-        storyTitle: storyTitle || `${hero.name}'s Adventure`,
         mode: storyMode,
+        storyJson: JSON.stringify(storyData),
       },
     });
   };
@@ -323,14 +342,8 @@ export default function StoryScreen() {
     Speech.stop();
     stopAmbientSound();
     if (timerRef.current) clearInterval(timerRef.current);
+    if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     router.dismissAll();
-  };
-
-  const handleRegenerate = () => {
-    Speech.stop();
-    setIsSpeaking(false);
-    setCurrentParagraph(-1);
-    generateStory();
   };
 
   const formatTimer = (seconds: number) => {
@@ -355,16 +368,13 @@ export default function StoryScreen() {
     ? ["#1A0533", "#0B0D1E", "#060810"]
     : [hero.gradient[0], Colors.primary, "#080D1E"];
 
-  const modeLabel =
-    storyMode === "madlibs" ? "Mad Libs" : storyMode === "sleep" ? "Sleep Mode" : "";
+  const paragraphs = currentPart
+    ? currentPart.text.split(/\n\n+/).map((p) => p.trim()).filter((p) => p.length > 0)
+    : [];
 
   return (
     <View style={styles.container}>
-      <LinearGradient
-        colors={gradientColors}
-        locations={[0, 0.4, 1]}
-        style={StyleSheet.absoluteFill}
-      />
+      <LinearGradient colors={gradientColors} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
       <StarField />
 
       <View style={[styles.topBar, { paddingTop: topInset + 8 }]}>
@@ -373,27 +383,34 @@ export default function StoryScreen() {
         </Pressable>
 
         <View style={styles.topBarCenter}>
-          {storyState === "ready" && (
-            <Animated.View entering={FadeIn.duration(400)} style={styles.heroBadge}>
-              <Ionicons name={hero.iconName as any} size={14} color={hero.color} />
-              <Text style={styles.heroBadgeText}>{hero.name}</Text>
-              {modeLabel ? (
-                <View style={[styles.modePill, isSleep && { backgroundColor: "rgba(206,147,216,0.2)" }]}>
-                  <Text style={[styles.modePillText, isSleep && { color: "#CE93D8" }]}>
-                    {modeLabel}
-                  </Text>
-                </View>
-              ) : null}
+          {storyState === "ready" && storyData && (
+            <Animated.View entering={FadeIn.duration(400)} style={styles.progressBadge}>
+              <Text style={styles.progressText}>
+                {currentPartIndex + 1} / {storyData.parts.length}
+              </Text>
+              <View style={styles.progressBarBg}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${((currentPartIndex + 1) / storyData.parts.length) * 100}%` },
+                    isSleep && { backgroundColor: "#CE93D8" },
+                  ]}
+                />
+              </View>
             </Animated.View>
           )}
         </View>
 
-        {storyState === "ready" && !isSleep && (
-          <Pressable onPress={handleRegenerate} hitSlop={12} style={styles.iconBtn}>
-            <Ionicons name="refresh" size={22} color="rgba(255,255,255,0.7)" />
+        {storyState === "ready" && (
+          <Pressable onPress={speakCurrentPart} hitSlop={12} style={styles.iconBtn}>
+            <Ionicons
+              name={isSpeaking ? "volume-high" : "volume-medium-outline"}
+              size={22}
+              color={isSpeaking ? Colors.accent : "rgba(255,255,255,0.7)"}
+            />
           </Pressable>
         )}
-        {(storyState !== "ready" || isSleep) && <View style={{ width: 40 }} />}
+        {storyState !== "ready" && <View style={{ width: 40 }} />}
       </View>
 
       {timerRemaining !== null && timerRemaining > 0 && (
@@ -403,29 +420,27 @@ export default function StoryScreen() {
         </Animated.View>
       )}
 
-      {storyState === "generating" && paragraphs.length === 0 ? (
+      {storyState === "generating" ? (
         <Animated.View entering={FadeIn.duration(600)} style={styles.loadingContainer}>
           <PulsingOrb />
           <View style={styles.loadingIconWrap}>
             <Ionicons name={hero.iconName as any} size={40} color={hero.color} />
           </View>
           <Text style={styles.loadingTitle}>
-            {isSleep ? "Preparing your dreamscape..." : storyMode === "madlibs" ? "Mixing your silly words..." : "Crafting your story..."}
+            {isSleep ? "Preparing your dreamscape..." : storyMode === "madlibs" ? "Mixing your silly words..." : "Crafting your adventure..."}
           </Text>
           <Text style={styles.loadingSubtitle}>
-            {hero.name} is preparing tonight's adventure
+            {hero.name} is preparing tonight's story
           </Text>
           <ActivityIndicator size="small" color={isSleep ? "#CE93D8" : Colors.accent} style={{ marginTop: 20 }} />
         </Animated.View>
-      ) : storyState === "error" && paragraphs.length === 0 ? (
+      ) : storyState === "error" ? (
         <Animated.View entering={FadeIn.duration(600)} style={styles.loadingContainer}>
           <Ionicons name="cloud-offline-outline" size={56} color={Colors.textMuted} />
           <Text style={styles.loadingTitle}>Something went wrong</Text>
-          <Text style={styles.loadingSubtitle}>
-            Could not generate the story. Please try again.
-          </Text>
-          <Pressable onPress={handleRegenerate} style={styles.retryButton}>
-            <Ionicons name="refresh" size={18} color={Colors.primary} />
+          <Text style={styles.loadingSubtitle}>Could not generate the story. Please try again.</Text>
+          <Pressable onPress={generateStory} style={styles.retryButton}>
+            <Ionicons name="refresh" size={18} color="#FFF" />
             <Text style={styles.retryText}>Try Again</Text>
           </Pressable>
         </Animated.View>
@@ -433,38 +448,49 @@ export default function StoryScreen() {
         <>
           <ScrollView
             ref={scrollRef}
-            contentContainerStyle={[
-              styles.storyContent,
-              { paddingBottom: bottomInset + 120 },
-            ]}
+            contentContainerStyle={[styles.storyContent, { paddingBottom: bottomInset + 140 }]}
             showsVerticalScrollIndicator={false}
           >
-            {storyTitle ? (
-              <Animated.Text
-                entering={FadeInDown.duration(600)}
-                style={styles.storyTitleText}
-              >
-                {storyTitle}
+            {storyData && (
+              <Animated.Text entering={FadeInDown.duration(600)} style={styles.storyTitleText}>
+                {storyData.title}
               </Animated.Text>
-            ) : null}
+            )}
+
+            {sceneLoading && (
+              <Animated.View entering={FadeIn.duration(300)} style={styles.sceneLoadingWrap}>
+                <ActivityIndicator size="small" color={Colors.accent} />
+                <Text style={styles.sceneLoadingText}>Painting the scene...</Text>
+              </Animated.View>
+            )}
+
+            {sceneImage && !sceneLoading && (
+              <Animated.View entering={FadeIn.duration(600)} style={styles.sceneImageWrap}>
+                <Image source={{ uri: sceneImage }} style={styles.sceneImage} resizeMode="cover" />
+              </Animated.View>
+            )}
 
             {paragraphs.map((paragraph, index) => (
               <Animated.Text
-                key={index}
+                key={`${currentPartIndex}-${index}`}
                 entering={FadeInDown.duration(400).delay(index * 80)}
-                style={[
-                  styles.paragraphText,
-                  isSleep && styles.paragraphSleep,
-                  currentParagraph === index && styles.paragraphActive,
-                ]}
+                style={[styles.paragraphText, isSleep && styles.paragraphSleep]}
               >
                 {paragraph}
               </Animated.Text>
             ))}
 
-            {storyState === "generating" && (
-              <View style={styles.streamingIndicator}>
-                <ActivityIndicator size="small" color={isSleep ? "#CE93D8" : Colors.accent} />
+            {hasChoices && (
+              <View style={styles.choicesSection}>
+                <Text style={styles.choicesLabel}>What should {hero.name} do next?</Text>
+                {currentPart!.choices!.map((choice, i) => (
+                  <ChoiceButton
+                    key={`${currentPartIndex}-choice-${i}`}
+                    label={choice}
+                    index={i}
+                    onPress={() => handleChoiceSelect(i)}
+                  />
+                ))}
               </View>
             )}
           </ScrollView>
@@ -474,49 +500,26 @@ export default function StoryScreen() {
             style={[styles.bottomGradient, { paddingBottom: bottomInset + 20 }]}
             pointerEvents="box-none"
           >
-            {storyState === "ready" && (
-              <Animated.View entering={FadeInDown.duration(400)} style={styles.controlsRow}>
+            {storyState === "ready" && isLastPart && (
+              <Animated.View entering={FadeInUp.duration(400)} style={styles.controlsRow}>
                 <Pressable
-                  onPress={speakStory}
+                  onPress={handleStoryComplete}
                   style={({ pressed }) => [
-                    styles.playButton,
+                    styles.finishButton,
                     { transform: [{ scale: pressed ? 0.95 : 1 }] },
                   ]}
-                  testID="play-button"
+                  testID="finish-story-button"
                 >
                   <LinearGradient
-                    colors={
-                      isSpeaking
-                        ? ["#FF6B6B", "#E55555"]
-                        : isSleep
-                          ? ["#CE93D8", "#7B1FA2"]
-                          : [Colors.accent, "#E5A825"]
-                    }
-                    style={styles.playButtonGradient}
+                    colors={isSleep ? ["#CE93D8", "#7B1FA2"] : [Colors.accent, "#2563EB"]}
+                    style={styles.finishButtonGradient}
                   >
-                    <Ionicons
-                      name={isSpeaking ? "stop" : "play"}
-                      size={24}
-                      color="#FFF"
-                    />
-                    <Text style={[styles.playButtonText, { color: isSpeaking || isSleep ? "#FFF" : Colors.primary }]}>
-                      {isSpeaking ? "Stop" : isSleep ? "Begin Narration" : "Read Aloud"}
+                    <Ionicons name="sparkles" size={20} color="#FFF" />
+                    <Text style={styles.finishButtonText}>
+                      {isSleep ? "Sweet Dreams" : "Complete Story"}
                     </Text>
                   </LinearGradient>
                 </Pressable>
-
-                {!isSleep && (
-                  <Pressable
-                    onPress={handleStoryComplete}
-                    style={({ pressed }) => [
-                      styles.doneButton,
-                      { transform: [{ scale: pressed ? 0.95 : 1 }] },
-                    ]}
-                    testID="done-button"
-                  >
-                    <Ionicons name="checkmark-circle" size={24} color={Colors.accent} />
-                  </Pressable>
-                )}
               </Animated.View>
             )}
           </LinearGradient>
@@ -527,217 +530,92 @@ export default function StoryScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: Colors.primary,
-  },
-  centered: {
-    justifyContent: "center",
-    alignItems: "center",
-  },
+  container: { flex: 1, backgroundColor: Colors.primary },
+  centered: { justifyContent: "center", alignItems: "center" },
   topBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-    zIndex: 10,
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingHorizontal: 16, paddingBottom: 8, zIndex: 10,
   },
   iconBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
+    width: 40, height: 40, borderRadius: 20, backgroundColor: "rgba(0,0,0,0.25)",
+    alignItems: "center", justifyContent: "center",
   },
-  topBarCenter: {
-    flex: 1,
-    alignItems: "center",
+  topBarCenter: { flex: 1, alignItems: "center" },
+  progressBadge: { alignItems: "center", gap: 6 },
+  progressText: { fontFamily: "Nunito_600SemiBold", fontSize: 12, color: "rgba(255,255,255,0.6)" },
+  progressBarBg: {
+    width: 100, height: 4, borderRadius: 2, backgroundColor: "rgba(255,255,255,0.15)",
   },
-  heroBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-  },
-  heroBadgeText: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 13,
-    color: "rgba(255,255,255,0.8)",
-  },
-  modePill: {
-    backgroundColor: "rgba(255, 138, 101, 0.2)",
-    paddingHorizontal: 8,
-    paddingVertical: 2,
-    borderRadius: 8,
-    marginLeft: 4,
-  },
-  modePillText: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 10,
-    color: "#FF8A65",
+  progressBarFill: {
+    height: 4, borderRadius: 2, backgroundColor: Colors.accent,
   },
   timerBar: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 6,
-    paddingVertical: 6,
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 6,
   },
-  timerText: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 13,
-    color: "#CE93D8",
-  },
+  timerText: { fontFamily: "Nunito_600SemiBold", fontSize: 13, color: "#CE93D8" },
   loadingContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 40,
-    gap: 12,
+    flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40, gap: 12,
   },
   pulsingOrb: {
-    position: "absolute",
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: "rgba(245, 197, 66, 0.06)",
-    alignItems: "center",
-    justifyContent: "center",
+    position: "absolute", width: 160, height: 160, borderRadius: 80,
+    backgroundColor: "rgba(245, 197, 66, 0.06)", alignItems: "center", justifyContent: "center",
   },
-  orbInner: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-    backgroundColor: "rgba(245, 197, 66, 0.08)",
-  },
+  orbInner: { width: 100, height: 100, borderRadius: 50, backgroundColor: "rgba(245, 197, 66, 0.08)" },
   loadingIconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 8,
+    width: 80, height: 80, borderRadius: 40, backgroundColor: "rgba(255,255,255,0.08)",
+    alignItems: "center", justifyContent: "center", marginBottom: 8,
   },
-  loadingTitle: {
-    fontFamily: "Nunito_700Bold",
-    fontSize: 22,
-    color: Colors.textPrimary,
-    textAlign: "center",
-  },
-  loadingSubtitle: {
-    fontFamily: "Nunito_400Regular",
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: "center",
-  },
-  storyContent: {
-    paddingHorizontal: 24,
-    paddingTop: 8,
-  },
+  loadingTitle: { fontFamily: "Nunito_700Bold", fontSize: 22, color: Colors.textPrimary, textAlign: "center" },
+  loadingSubtitle: { fontFamily: "Nunito_400Regular", fontSize: 14, color: Colors.textSecondary, textAlign: "center" },
+  storyContent: { paddingHorizontal: 24, paddingTop: 8 },
   storyTitleText: {
-    fontFamily: "Nunito_800ExtraBold",
-    fontSize: 26,
-    color: Colors.textPrimary,
-    textAlign: "center",
-    marginBottom: 28,
-    lineHeight: 34,
+    fontFamily: "Nunito_800ExtraBold", fontSize: 26, color: Colors.textPrimary,
+    textAlign: "center", marginBottom: 24, lineHeight: 34,
   },
+  sceneLoadingWrap: {
+    alignItems: "center", justifyContent: "center", gap: 8,
+    backgroundColor: "rgba(255,255,255,0.04)", borderRadius: 16,
+    paddingVertical: 30, marginBottom: 20,
+  },
+  sceneLoadingText: { fontFamily: "Nunito_400Regular", fontSize: 12, color: Colors.textMuted },
+  sceneImageWrap: {
+    borderRadius: 16, overflow: "hidden", marginBottom: 20,
+    borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+  },
+  sceneImage: { width: "100%", height: 200, borderRadius: 16 },
   paragraphText: {
-    fontFamily: "Nunito_400Regular",
-    fontSize: 18,
-    color: "rgba(255,255,255,0.88)",
-    lineHeight: 32,
-    marginBottom: 22,
-    textAlign: "left",
+    fontFamily: "Nunito_400Regular", fontSize: 18, color: "rgba(255,255,255,0.88)",
+    lineHeight: 32, marginBottom: 22, textAlign: "left",
   },
-  paragraphSleep: {
-    fontSize: 20,
-    lineHeight: 36,
-    color: "rgba(220, 210, 240, 0.85)",
+  paragraphSleep: { fontSize: 20, lineHeight: 36, color: "rgba(220, 210, 240, 0.85)" },
+  choicesSection: { marginTop: 12, gap: 12 },
+  choicesLabel: {
+    fontFamily: "Nunito_700Bold", fontSize: 16, color: Colors.accent,
+    textAlign: "center", marginBottom: 4,
   },
-  paragraphActive: {
-    color: Colors.accent,
+  choiceButton: { borderRadius: 16, overflow: "hidden" },
+  choiceGradient: {
+    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
+    paddingVertical: 16, paddingHorizontal: 20,
   },
-  streamingIndicator: {
-    alignItems: "center",
-    paddingVertical: 12,
+  choiceText: {
+    fontFamily: "Nunito_700Bold", fontSize: 15, color: "#FFF", flex: 1, marginRight: 8,
   },
   bottomGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: 40,
-    paddingHorizontal: 20,
+    position: "absolute", bottom: 0, left: 0, right: 0,
+    paddingTop: 40, paddingHorizontal: 20,
   },
-  controlsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
+  controlsRow: { flexDirection: "row", justifyContent: "center", alignItems: "center", gap: 12 },
+  finishButton: { flex: 1, borderRadius: 28, overflow: "hidden", elevation: 6, shadowColor: Colors.accent, shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.3, shadowRadius: 10 },
+  finishButtonGradient: {
+    flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10, paddingVertical: 18,
   },
-  playButton: {
-    flex: 1,
-    borderRadius: 28,
-    overflow: "hidden",
-    elevation: 6,
-    shadowColor: Colors.accent,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 10,
-  },
-  playButtonGradient: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 10,
-    paddingVertical: 18,
-  },
-  playButtonText: {
-    fontFamily: "Nunito_700Bold",
-    fontSize: 18,
-    color: Colors.primary,
-  },
-  doneButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: "rgba(245, 197, 66, 0.12)",
-    borderWidth: 2,
-    borderColor: Colors.accent,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  finishButtonText: { fontFamily: "Nunito_700Bold", fontSize: 18, color: "#FFF" },
   retryButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: Colors.accent,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 24,
-    marginTop: 12,
+    flexDirection: "row", alignItems: "center", gap: 8,
+    backgroundColor: Colors.accent, paddingHorizontal: 24, paddingVertical: 14, borderRadius: 24, marginTop: 12,
   },
-  retryText: {
-    fontFamily: "Nunito_700Bold",
-    fontSize: 16,
-    color: Colors.primary,
-  },
-  errorText: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 18,
-    color: Colors.textMuted,
-  },
-  errorLink: {
-    fontFamily: "Nunito_700Bold",
-    fontSize: 16,
-    color: Colors.accent,
-    marginTop: 16,
-  },
+  retryText: { fontFamily: "Nunito_700Bold", fontSize: 16, color: "#FFF" },
+  errorText: { fontFamily: "Nunito_600SemiBold", fontSize: 18, color: Colors.textMuted },
+  errorLink: { fontFamily: "Nunito_700Bold", fontSize: 16, color: Colors.accent, marginTop: 16 },
 });

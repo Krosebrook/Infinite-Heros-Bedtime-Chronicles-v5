@@ -1,148 +1,178 @@
-const SUNO_API_BASE = "https://api.sunoapi.org/api/v1";
+const DEFAPI_BASE = "https://api.defapi.org/api/suno";
 
-function getHeaders() {
+function getApiKey(): string {
   const apiKey = process.env.DEF_API_KEY || process.env.SUNO_API_KEY;
   if (!apiKey) throw new Error("Music API key not configured");
+  return apiKey;
+}
+
+function getHeaders() {
   return {
-    Authorization: `Bearer ${apiKey}`,
+    Authorization: `Bearer ${getApiKey()}`,
     "Content-Type": "application/json",
   };
 }
 
-const MODE_MUSIC_STYLES: Record<string, { style: string; title: string; prompt: string }> = {
+const MODE_MUSIC_STYLES: Record<string, { tags: string; title: string; prompt: string }> = {
   classic: {
-    style: "Orchestral, Fantasy, Cinematic, Gentle",
+    tags: "Orchestral, Fantasy, Cinematic, Gentle",
     title: "Hero's Gentle Adventure",
-    prompt: "A gentle orchestral adventure theme for a children's bedtime story. Soft strings, warm woodwinds, twinkling bells, and a sense of wonder. Calm but magical, like floating through a starlit sky. No vocals.",
+    prompt: "A gentle orchestral adventure theme for a children's bedtime story. Soft strings, warm woodwinds, twinkling bells, and a sense of wonder. Calm but magical, like floating through a starlit sky.",
   },
   madlibs: {
-    style: "Playful, Whimsical, Comedy, Children's Music",
+    tags: "Playful, Whimsical, Comedy, Children's Music",
     title: "Silly Story Time",
-    prompt: "A playful, bouncy, and silly instrumental track for a funny children's story. Pizzicato strings, xylophone, quirky flutes, and gentle percussion. Light-hearted and giggly. No vocals.",
+    prompt: "A playful, bouncy, and silly instrumental track for a funny children's story. Pizzicato strings, xylophone, quirky flutes, and gentle percussion. Light-hearted and giggly.",
   },
   sleep: {
-    style: "Ambient, Lullaby, Meditation, Piano",
+    tags: "Ambient, Lullaby, Meditation, Piano",
     title: "Dreamtime Lullaby",
-    prompt: "An extremely soft and soothing lullaby for a child falling asleep. Gentle piano, soft pads, distant wind chimes, slow tempo. Deeply calming and hypnotic, like being rocked to sleep under the stars. No vocals.",
+    prompt: "An extremely soft and soothing lullaby for a child falling asleep. Gentle piano, soft pads, distant wind chimes, slow tempo. Deeply calming and hypnotic, like being rocked to sleep under the stars.",
   },
 };
 
-interface SunoGenerateResponse {
-  code: number;
-  msg: string;
-  data: {
-    taskId: string;
-    [key: string]: any;
-  };
+interface MusicResult {
+  audioUrl: string;
+  generatedAt: number;
 }
 
-interface SunoTrack {
-  id: string;
-  audio_url: string;
-  stream_audio_url?: string;
-  title: string;
-  duration?: number;
-  [key: string]: any;
-}
-
-interface SunoStatusResponse {
-  code: number;
-  msg: string;
-  data: {
-    taskId: string;
-    status: string;
-    response?: {
-      data: SunoTrack[];
-    };
-    [key: string]: any;
-  };
-}
-
-const musicCache = new Map<string, { audioUrl: string; generatedAt: number }>();
+const musicCache = new Map<string, MusicResult>();
 const CACHE_TTL = 12 * 60 * 60 * 1000;
 
+const pendingCallbacks = new Map<string, {
+  mode: string;
+  resolve: (url: string | null) => void;
+  timeout: ReturnType<typeof setTimeout>;
+}>();
+
+export function handleMusicCallback(taskId: string, data: any): void {
+  console.log(`[Music] Callback received for task: ${taskId}`);
+
+  const pending = pendingCallbacks.get(taskId);
+  if (!pending) {
+    console.log(`[Music] No pending request for task: ${taskId}, storing anyway`);
+  }
+
+  try {
+    let audioUrl: string | null = null;
+
+    if (data?.output?.clips) {
+      const clips = data.output.clips;
+      const firstClip = Object.values(clips)[0] as any;
+      if (firstClip?.audio_url) {
+        audioUrl = firstClip.audio_url;
+      }
+    }
+
+    if (!audioUrl && data?.data) {
+      const items = Array.isArray(data.data) ? data.data : [data.data];
+      for (const item of items) {
+        if (item?.audio_url) {
+          audioUrl = item.audio_url;
+          break;
+        }
+      }
+    }
+
+    if (!audioUrl && data?.audio_url) {
+      audioUrl = data.audio_url;
+    }
+
+    if (!audioUrl && Array.isArray(data)) {
+      for (const item of data) {
+        if (item?.audio_url) {
+          audioUrl = item.audio_url;
+          break;
+        }
+      }
+    }
+
+    if (audioUrl && pending) {
+      musicCache.set(pending.mode, { audioUrl, generatedAt: Date.now() });
+      clearTimeout(pending.timeout);
+      pending.resolve(audioUrl);
+      pendingCallbacks.delete(taskId);
+      console.log(`[Music] Audio URL resolved: ${audioUrl}`);
+    } else if (audioUrl) {
+      console.log(`[Music] Got audio URL but no pending handler: ${audioUrl}`);
+    } else {
+      console.log(`[Music] Callback data did not contain audio_url:`, JSON.stringify(data).slice(0, 500));
+      if (pending) {
+        clearTimeout(pending.timeout);
+        pending.resolve(null);
+        pendingCallbacks.delete(taskId);
+      }
+    }
+  } catch (err) {
+    console.error(`[Music] Error processing callback:`, err);
+    if (pending) {
+      clearTimeout(pending.timeout);
+      pending.resolve(null);
+      pendingCallbacks.delete(taskId);
+    }
+  }
+}
+
+function getCallbackUrl(): string {
+  const domain = process.env.REPLIT_DOMAINS || process.env.REPLIT_DEV_DOMAIN;
+  if (!domain) throw new Error("No domain configured for callback");
+  return `https://${domain}:5000/api/music-callback`;
+}
+
 export async function generateMusic(mode: string): Promise<string | null> {
-  const cacheKey = mode;
-  const cached = musicCache.get(cacheKey);
+  const cached = musicCache.get(mode);
   if (cached && Date.now() - cached.generatedAt < CACHE_TTL) {
-    console.log(`[Suno] Cache hit for mode: ${mode}`);
+    console.log(`[Music] Cache hit for mode: ${mode}`);
     return cached.audioUrl;
   }
 
   const config = MODE_MUSIC_STYLES[mode] || MODE_MUSIC_STYLES.classic;
 
   try {
-    console.log(`[Suno] Generating music for mode: ${mode}`);
-    const genResponse = await fetch(`${SUNO_API_BASE}/generate`, {
+    const callbackUrl = getCallbackUrl();
+    console.log(`[Music] Generating for mode: ${mode}, callback: ${callbackUrl}`);
+
+    const genResponse = await fetch(`${DEFAPI_BASE}/generate`, {
       method: "POST",
       headers: getHeaders(),
       body: JSON.stringify({
-        customMode: true,
-        instrumental: true,
-        model: "V4",
-        style: config.style,
+        mv: "chirp-v4-5",
+        custom_mode: true,
+        make_instrumental: true,
+        tags: config.tags,
         title: config.title,
         prompt: config.prompt,
-        negativeTags: "Heavy Metal, Scary, Intense, Loud, Aggressive",
+        negative_tags: "Heavy Metal, Scary, Intense, Loud, Aggressive",
+        callback_url: callbackUrl,
       }),
     });
 
     if (!genResponse.ok) {
       const errText = await genResponse.text();
-      console.error(`[Suno] Generate request failed: ${genResponse.status} ${errText}`);
+      console.error(`[Music] Generate request failed: ${genResponse.status} ${errText}`);
       return null;
     }
 
-    const genData = (await genResponse.json()) as SunoGenerateResponse;
-    const taskId = genData.data?.taskId;
+    const genData = await genResponse.json() as any;
+    const taskId = genData.data?.task_id;
     if (!taskId) {
-      console.error("[Suno] No taskId in response:", genData);
+      console.error("[Music] No task_id in response:", genData);
       return null;
     }
 
-    console.log(`[Suno] Task created: ${taskId}, polling for completion...`);
+    console.log(`[Music] Task created: ${taskId}, waiting for callback...`);
 
-    const maxWait = 180000;
-    const pollInterval = 5000;
-    const startTime = Date.now();
+    return new Promise<string | null>((resolve) => {
+      const timeout = setTimeout(() => {
+        console.error(`[Music] Timeout waiting for callback on task: ${taskId}`);
+        pendingCallbacks.delete(taskId);
+        resolve(null);
+      }, 300000);
 
-    while (Date.now() - startTime < maxWait) {
-      await new Promise((resolve) => setTimeout(resolve, pollInterval));
-
-      const statusResponse = await fetch(
-        `${SUNO_API_BASE}/generate/record-info?taskId=${taskId}`,
-        { headers: getHeaders() }
-      );
-
-      if (!statusResponse.ok) continue;
-
-      const statusData = (await statusResponse.json()) as SunoStatusResponse;
-      const status = statusData.data?.status;
-
-      if (status === "SUCCESS" || status === "completed") {
-        const tracks = statusData.data?.response?.data;
-        if (tracks && tracks.length > 0) {
-          const audioUrl = tracks[0].audio_url || tracks[0].stream_audio_url;
-          if (audioUrl) {
-            console.log(`[Suno] Music ready: ${audioUrl}`);
-            musicCache.set(cacheKey, { audioUrl, generatedAt: Date.now() });
-            return audioUrl;
-          }
-        }
-        console.error("[Suno] Success but no audio URL found:", statusData);
-        return null;
-      }
-
-      if (status === "FAILED") {
-        console.error("[Suno] Generation failed:", statusData);
-        return null;
-      }
-    }
-
-    console.error("[Suno] Timed out waiting for music generation");
-    return null;
+      pendingCallbacks.set(taskId, { mode, resolve, timeout });
+    });
   } catch (error) {
-    console.error("[Suno] Error:", error);
+    console.error("[Music] Error:", error);
     return null;
   }
 }
@@ -165,4 +195,8 @@ export async function generateMusicCached(mode: string): Promise<string | null> 
   });
   pendingGenerations.set(mode, promise);
   return promise;
+}
+
+export function isApiKeyConfigured(): boolean {
+  return !!(process.env.DEF_API_KEY || process.env.SUNO_API_KEY);
 }

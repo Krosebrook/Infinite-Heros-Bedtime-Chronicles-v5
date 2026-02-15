@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { generateSpeech, VOICE_MAP } from "./elevenlabs";
-import { generateMusicCached, handleMusicCallback } from "./suno";
+import { getMusicFilePath, getMusicFileName } from "./suno";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
@@ -282,39 +282,15 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
     }
   });
 
-  app.post("/api/generate-music", async (req, res) => {
-    try {
-      const { mode } = req.body;
-      const storyMode = mode || "classic";
-      const audioUrl = await generateMusicCached(storyMode);
-      if (!audioUrl) {
-        return res.status(500).json({ error: "Failed to generate music" });
+  app.get("/api/music/:mode", (req, res) => {
+    const mode = req.params.mode || "classic";
+    const filePath = getMusicFilePath(mode);
+    res.sendFile(filePath, (err) => {
+      if (err) {
+        console.error("Music file error:", err);
+        res.status(404).json({ error: "Music file not found" });
       }
-      res.json({ audioUrl });
-    } catch (error: any) {
-      console.error("Music generation error:", error?.message || error);
-      res.status(500).json({ error: "Failed to generate music" });
-    }
-  });
-
-  app.post("/api/music-callback", (req, res) => {
-    try {
-      const body = req.body;
-      const taskId = body?.task_id || body?.data?.task_id || body?.taskId;
-      console.log("[Music Callback] Received:", JSON.stringify(body).slice(0, 500));
-
-      if (taskId) {
-        handleMusicCallback(taskId, body);
-      } else {
-        console.log("[Music Callback] No task_id found in body, trying all data");
-        handleMusicCallback("unknown", body);
-      }
-
-      res.json({ received: true });
-    } catch (error: any) {
-      console.error("[Music Callback] Error:", error?.message);
-      res.status(200).json({ received: true });
-    }
+    });
   });
 
   app.get("/api/voices", (_req, res) => {

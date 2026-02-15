@@ -268,15 +268,7 @@ export default function StoryScreen() {
     setMusicLoading(true);
     try {
       const baseUrl = getApiUrl();
-      const url = new URL("/api/generate-music", baseUrl);
-      const res = await fetch(url.toString(), {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: storyMode }),
-      });
-      if (!res.ok) throw new Error("Music generation failed");
-      const data = await res.json();
-      if (!data.audioUrl) throw new Error("No audio URL");
+      const musicUrl = new URL(`/api/music/${storyMode}`, baseUrl).toString();
 
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -284,7 +276,7 @@ export default function StoryScreen() {
       });
 
       const { sound } = await Audio.Sound.createAsync(
-        { uri: data.audioUrl },
+        { uri: musicUrl },
         { shouldPlay: true, volume: MUSIC_VOLUME, isLooping: true }
       );
       bgMusicRef.current = sound;

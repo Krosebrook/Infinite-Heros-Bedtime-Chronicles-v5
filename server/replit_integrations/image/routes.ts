@@ -1,26 +1,37 @@
 import type { Express, Request, Response } from "express";
-import { openai } from "./client";
+import { Modality } from "@google/genai";
+import { ai } from "./client";
 
 export function registerImageRoutes(app: Express): void {
   app.post("/api/generate-image", async (req: Request, res: Response) => {
     try {
-      const { prompt, size = "1024x1024" } = req.body;
+      const { prompt } = req.body;
 
       if (!prompt) {
         return res.status(400).json({ error: "Prompt is required" });
       }
 
-      const response = await openai.images.generate({
-        model: "gpt-image-1",
-        prompt,
-        n: 1,
-        size: size as "1024x1024" | "512x512" | "256x256",
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          responseModalities: [Modality.TEXT, Modality.IMAGE],
+        },
       });
 
-      const imageData = response.data[0];
+      const candidate = response.candidates?.[0];
+      const imagePart = candidate?.content?.parts?.find(
+        (part: any) => part.inlineData
+      );
+
+      if (!imagePart?.inlineData?.data) {
+        return res.status(500).json({ error: "No image data in response" });
+      }
+
+      const mimeType = imagePart.inlineData.mimeType || "image/png";
       res.json({
-        url: imageData.url,
-        b64_json: imageData.b64_json,
+        b64_json: imagePart.inlineData.data,
+        mimeType,
       });
     } catch (error) {
       console.error("Error generating image:", error);
@@ -28,4 +39,3 @@ export function registerImageRoutes(app: Express): void {
     }
   });
 }
-

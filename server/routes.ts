@@ -1,10 +1,13 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
-import OpenAI from "openai";
+import { GoogleGenAI, Modality } from "@google/genai";
 
-const openai = new OpenAI({
-  apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
-  baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
+const ai = new GoogleGenAI({
+  apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
+  httpOptions: {
+    apiVersion: "",
+    baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
+  },
 });
 
 const CHILD_SAFETY_RULES = `
@@ -140,18 +143,20 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const systemPrompt = getStorySystemPrompt(storyMode, partCount);
       const userPrompt = getStoryUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, partCount, madlibWords);
 
-      const response = await openai.chat.completions.create({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          { role: "user", parts: [{ text: userPrompt }] },
         ],
-        response_format: { type: "json_object" },
-        max_tokens: 4096,
-        temperature: storyMode === "sleep" ? 0.7 : 0.9,
+        config: {
+          systemInstruction: systemPrompt,
+          temperature: storyMode === "sleep" ? 0.7 : 0.9,
+          maxOutputTokens: 8192,
+          responseMimeType: "application/json",
+        },
       });
 
-      const content = response.choices[0]?.message?.content;
+      const content = response.text;
       if (!content) {
         return res.status(500).json({ error: "No response from AI" });
       }
@@ -190,20 +195,25 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const prompt = `Create a cute, friendly, child-safe cartoon avatar of a superhero character named "${heroName}" who is "${heroTitle}" with the power of "${heroPower}". ${heroDescription}. 
 Style: Adorable Pixar/Disney-inspired character design, round friendly features, big expressive eyes, vibrant colors, cosmic/starry background, suitable for ages 3-9. No scary elements, no weapons. Circular portrait composition.`;
 
-      const response = await openai.images.generate({
-        model: "gpt-image-1",
-        prompt,
-        n: 1,
-        size: "1024x1024",
-        quality: "low",
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          responseModalities: [Modality.TEXT, Modality.IMAGE],
+        },
       });
 
-      const imageData = response.data?.[0]?.b64_json;
-      if (!imageData) {
+      const candidate = response.candidates?.[0];
+      const imagePart = candidate?.content?.parts?.find(
+        (part: any) => part.inlineData
+      );
+
+      if (!imagePart?.inlineData?.data) {
         return res.status(500).json({ error: "No image generated" });
       }
 
-      res.json({ image: `data:image/png;base64,${imageData}` });
+      const mimeType = imagePart.inlineData.mimeType || "image/png";
+      res.json({ image: `data:${mimeType};base64,${imagePart.inlineData.data}` });
     } catch (error) {
       console.error("Error generating avatar:", error);
       res.status(500).json({ error: "Failed to generate avatar" });
@@ -223,20 +233,25 @@ Style: Adorable Pixar/Disney-inspired character design, round friendly features,
 Scene: ${summary}
 Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magical atmosphere, suitable for ages 3-9. No scary elements. Warm, cozy, wonder-filled. Landscape composition with soft edges.`;
 
-      const response = await openai.images.generate({
-        model: "gpt-image-1",
-        prompt,
-        n: 1,
-        size: "1536x1024",
-        quality: "low",
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash-image",
+        contents: [{ role: "user", parts: [{ text: prompt }] }],
+        config: {
+          responseModalities: [Modality.TEXT, Modality.IMAGE],
+        },
       });
 
-      const imageData = response.data?.[0]?.b64_json;
-      if (!imageData) {
+      const candidate = response.candidates?.[0];
+      const imagePart = candidate?.content?.parts?.find(
+        (part: any) => part.inlineData
+      );
+
+      if (!imagePart?.inlineData?.data) {
         return res.status(500).json({ error: "No image generated" });
       }
 
-      res.json({ image: `data:image/png;base64,${imageData}` });
+      const mimeType = imagePart.inlineData.mimeType || "image/png";
+      res.json({ image: `data:${mimeType};base64,${imagePart.inlineData.data}` });
     } catch (error) {
       console.error("Error generating scene:", error);
       res.status(500).json({ error: "Failed to generate scene" });

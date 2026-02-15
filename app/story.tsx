@@ -72,7 +72,7 @@ function PulsingOrb() {
 }
 
 function ChoiceButton({ label, index, onPress }: { label: string; index: number; onPress: () => void }) {
-  const colors = [
+  const colors: [string, string][] = [
     ["#3B82F6", "#2563EB"],
     ["#8B5CF6", "#7C3AED"],
     ["#F59E0B", "#D97706"],

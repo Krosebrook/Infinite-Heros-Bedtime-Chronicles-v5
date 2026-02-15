@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { generateSpeech, VOICE_MAP } from "./elevenlabs";
+import { generateMusicCached } from "./suno";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
@@ -278,6 +279,21 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
     } catch (error: any) {
       console.error("TTS error:", error?.message || error);
       res.status(500).json({ error: "Failed to generate speech" });
+    }
+  });
+
+  app.post("/api/generate-music", async (req, res) => {
+    try {
+      const { mode } = req.body;
+      const storyMode = mode || "classic";
+      const audioUrl = await generateMusicCached(storyMode);
+      if (!audioUrl) {
+        return res.status(500).json({ error: "Failed to generate music" });
+      }
+      res.json({ audioUrl });
+    } catch (error: any) {
+      console.error("Music generation error:", error?.message || error);
+      res.status(500).json({ error: "Failed to generate music" });
     }
   });
 

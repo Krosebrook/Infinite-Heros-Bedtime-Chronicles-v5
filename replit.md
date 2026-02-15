@@ -14,10 +14,13 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend (Expo / React Native)
 - **Framework**: Expo SDK 54 with React Native 0.81, using the new architecture
-- **Routing**: Expo Router v6 with file-based routing (`app/` directory). Three main screens:
-  - `index.tsx` — Hero selection (horizontal card carousel)
-  - `options.tsx` — Story duration and voice selection
+- **Routing**: Expo Router v6 with file-based routing (`app/` directory). Single-page combined layout:
+  - `index.tsx` — Combined single-page with dark "INFINITY HEROES" header, mode tabs (Classic/Mad Libs/Sleepy), white card containing hero picker (circular avatar + prev/next arrows), duration timeline (5 connected nodes), narrator voice chips, and "ENGAGE MISSION" button
+  - `madlibs.tsx` — Mad Libs word input screen
+  - `sleep-setup.tsx` — Sleep mode soundscape and timer setup
   - `story.tsx` — Story generation and display with streaming text
+  - `completion.tsx` — Post-story celebration screen
+  - `options.tsx` — Legacy screen (no longer used in main flow)
 - **State Management**: TanStack React Query for server state, local component state with useState
 - **Local Storage**: AsyncStorage for favorites and read story tracking (`lib/storage.ts`)
 - **Styling**: React Native StyleSheet with a dark cosmic color theme defined in `constants/colors.ts`

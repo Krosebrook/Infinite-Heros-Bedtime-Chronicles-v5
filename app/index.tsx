@@ -1,14 +1,14 @@
-import React, { useRef, useState } from "react";
+import React, { useState, useRef } from "react";
 import {
   View,
   Text,
   Pressable,
   StyleSheet,
   Platform,
+  ScrollView,
   Dimensions,
-  FlatList,
 } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -18,310 +18,688 @@ import Colors from "@/constants/colors";
 import { HEROES, Hero } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 
-const { width } = Dimensions.get("window");
-const CARD_WIDTH = width * 0.72;
-const CARD_SPACING = 16;
-const SNAP_INTERVAL = CARD_WIDTH + CARD_SPACING;
+const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-interface HeroSlideProps {
-  hero: Hero;
-  isActive: boolean;
+const MODES = [
+  {
+    id: "classic",
+    label: "CLASSIC",
+    icon: "sword-cross" as const,
+    iconSet: "mci",
+    color: "#4A90D9",
+  },
+  {
+    id: "madlibs",
+    label: "MAD LIBS",
+    icon: "emoticon-tongue-outline" as const,
+    iconSet: "mci",
+    color: "#FF8A65",
+  },
+  {
+    id: "sleep",
+    label: "SLEEPY",
+    icon: "moon-waning-crescent" as const,
+    iconSet: "mci",
+    color: "#CE93D8",
+  },
+];
+
+const DURATIONS = [
+  { id: "short", time: "~3 min", icon: "flash" as const },
+  { id: "medium-short", time: "~5 min", icon: "book" as const },
+  { id: "medium", time: "~8 min", icon: "time" as const },
+  { id: "long", time: "~12 min", icon: "document-text" as const },
+  { id: "epic", time: "~15+ min", icon: "infinite" as const },
+];
+
+const VOICES = [
+  { id: "kore", label: "Kore", desc: "Soothing", icon: "flower-outline" as const },
+  { id: "aoede", label: "Aoede", desc: "Melodic", icon: "musical-notes-outline" as const },
+  { id: "zephyr", label: "Zephyr", desc: "Gentle", icon: "leaf-outline" as const },
+  { id: "leda", label: "Leda", desc: "Ethereal", icon: "sparkles-outline" as const },
+  { id: "puck", label: "Puck", desc: "Playful", icon: "happy-outline" as const },
+  { id: "charon", label: "Charon", desc: "Deep", icon: "moon-outline" as const },
+  { id: "fenrir", label: "Fenrir", desc: "Bold", icon: "flame-outline" as const },
+];
+
+function HeroAvatar({ hero }: { hero: Hero }) {
+  return (
+    <LinearGradient
+      colors={hero.gradient}
+      style={s.heroAvatarCircle}
+    >
+      <Ionicons name={hero.iconName as any} size={28} color={hero.color} />
+    </LinearGradient>
+  );
 }
 
-function HeroSlide({ hero, isActive }: HeroSlideProps) {
+function DurationTimeline({
+  selected,
+  onSelect,
+}: {
+  selected: string;
+  onSelect: (id: string) => void;
+}) {
+  const selectedIndex = DURATIONS.findIndex((d) => d.id === selected);
+
   return (
-    <View style={[styles.cardWrapper, { width: CARD_WIDTH }]}>
-      <LinearGradient
-        colors={hero.gradient}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
-        style={[styles.heroCard, { opacity: isActive ? 1 : 0.6 }]}
-      >
-        <View style={styles.glowRing}>
-          <View style={[styles.heroIconWrap, { shadowColor: hero.color }]}>
-            <Ionicons
-              name={hero.iconName as any}
-              size={48}
-              color={hero.color}
-            />
-          </View>
-        </View>
+    <View style={s.timelineContainer}>
+      <View style={s.timelineLine}>
+        <View
+          style={[
+            s.timelineLineFilled,
+            { width: `${(selectedIndex / (DURATIONS.length - 1)) * 100}%` },
+          ]}
+        />
+      </View>
 
-        <Text style={styles.heroName}>{hero.name}</Text>
-        <Text style={styles.heroTitle}>{hero.title}</Text>
+      <View style={s.timelineNodes}>
+        {DURATIONS.map((d, i) => {
+          const isActive = d.id === selected;
+          const isPast = i <= selectedIndex;
+          return (
+            <Pressable
+              key={d.id}
+              onPress={() => {
+                Haptics.selectionAsync();
+                onSelect(d.id);
+              }}
+              style={s.timelineNodeWrap}
+              testID={`duration-${d.id}`}
+            >
+              <View
+                style={[
+                  s.timelineNode,
+                  isPast && s.timelineNodePast,
+                  isActive && s.timelineNodeActive,
+                ]}
+              >
+                <Ionicons
+                  name={d.icon as any}
+                  size={isActive ? 20 : 16}
+                  color={isActive ? "#FFF" : isPast ? "#FFF" : "#999"}
+                />
+              </View>
+            </Pressable>
+          );
+        })}
+      </View>
 
-        <View style={styles.powerRow}>
-          <Ionicons name="flash" size={12} color={Colors.accent} />
-          <Text style={styles.powerText}>{hero.power}</Text>
-        </View>
-
-        <Text style={styles.heroDesc} numberOfLines={3}>
-          {hero.description}
-        </Text>
-      </LinearGradient>
+      <Text style={s.timelineLabel}>{DURATIONS[selectedIndex]?.time}</Text>
     </View>
   );
 }
 
-export default function HeroSelectScreen() {
+export default function HomeScreen() {
   const insets = useSafeAreaInsets();
-  const [activeIndex, setActiveIndex] = useState(0);
-  const flatListRef = useRef<FlatList>(null);
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
-  const selectedHero = HEROES[activeIndex];
+  const [heroIndex, setHeroIndex] = useState(0);
+  const [mode, setMode] = useState("classic");
+  const [duration, setDuration] = useState("medium");
+  const [voice, setVoice] = useState("kore");
 
-  const handleSelect = () => {
-    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    router.push({
-      pathname: "/options",
-      params: { heroId: selectedHero.id },
-    });
+  const hero = HEROES[heroIndex];
+
+  const prevHero = () => {
+    Haptics.selectionAsync();
+    setHeroIndex((prev) => (prev === 0 ? HEROES.length - 1 : prev - 1));
   };
 
-  const onViewableItemsChanged = useRef(
-    ({ viewableItems }: { viewableItems: any[] }) => {
-      if (viewableItems.length > 0) {
-        setActiveIndex(viewableItems[0].index ?? 0);
-      }
-    }
-  ).current;
+  const nextHero = () => {
+    Haptics.selectionAsync();
+    setHeroIndex((prev) => (prev === HEROES.length - 1 ? 0 : prev + 1));
+  };
 
-  const viewabilityConfig = useRef({
-    itemVisiblePercentThreshold: 60,
-  }).current;
+  const handleEngage = () => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+
+    if (mode === "madlibs") {
+      router.push({
+        pathname: "/madlibs",
+        params: { heroId: hero.id, duration, voice },
+      });
+    } else if (mode === "sleep") {
+      router.push({
+        pathname: "/sleep-setup",
+        params: { heroId: hero.id, duration, voice },
+      });
+    } else {
+      router.push({
+        pathname: "/story",
+        params: { heroId: hero.id, duration, voice, mode: "classic" },
+      });
+    }
+  };
 
   return (
-    <View style={styles.container}>
+    <View style={s.container}>
       <LinearGradient
-        colors={[Colors.primary, "#0E1433", Colors.primary]}
+        colors={["#0B1A40", "#122050", "#0B1026"]}
         style={StyleSheet.absoluteFill}
       />
       <StarField />
 
-      <Animated.View
-        entering={FadeIn.duration(800)}
-        style={[styles.header, { paddingTop: topInset + 20 }]}
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: bottomInset + 20 }}
+        bounces={false}
       >
-        <Text style={styles.label}>BEDTIME CHRONICLES</Text>
-        <Text style={styles.title}>Choose Your Hero</Text>
-        <Text style={styles.subtitle}>
-          Pick a guardian for tonight's adventure
-        </Text>
-      </Animated.View>
-
-      <Animated.View
-        entering={FadeInDown.duration(600).delay(200)}
-        style={styles.carouselContainer}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={HEROES}
-          horizontal
-          pagingEnabled={false}
-          snapToInterval={SNAP_INTERVAL}
-          snapToAlignment="center"
-          decelerationRate="fast"
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={{
-            paddingHorizontal: (width - CARD_WIDTH) / 2,
-          }}
-          ItemSeparatorComponent={() => <View style={{ width: CARD_SPACING }} />}
-          keyExtractor={(item) => item.id}
-          renderItem={({ item, index }) => (
-            <HeroSlide hero={item} isActive={index === activeIndex} />
-          )}
-          onViewableItemsChanged={onViewableItemsChanged}
-          viewabilityConfig={viewabilityConfig}
-        />
-      </Animated.View>
-
-      <View style={styles.dotsRow}>
-        {HEROES.map((_, i) => (
-          <View
-            key={i}
-            style={[
-              styles.dot,
-              i === activeIndex && styles.dotActive,
-              i === activeIndex && {
-                backgroundColor: selectedHero.color,
-              },
-            ]}
-          />
-        ))}
-      </View>
-
-      <Animated.View
-        entering={FadeInDown.duration(600).delay(400)}
-        style={[styles.bottomSection, { paddingBottom: bottomInset + 20 }]}
-      >
-        <Pressable
-          onPress={handleSelect}
-          style={({ pressed }) => [
-            styles.selectButton,
-            { transform: [{ scale: pressed ? 0.96 : 1 }] },
-          ]}
-          testID="select-hero-button"
+        <Animated.View
+          entering={FadeIn.duration(800)}
+          style={[s.headerArea, { paddingTop: topInset + 24 }]}
         >
-          <LinearGradient
-            colors={[Colors.accent, "#E5A825"]}
-            start={{ x: 0, y: 0 }}
-            end={{ x: 1, y: 0 }}
-            style={styles.selectButtonGradient}
+          <Text style={s.titleLine1}>INFINITY</Text>
+          <Text style={s.titleLine2}>HEROES</Text>
+          <View style={s.subtitleRow}>
+            <View style={s.subtitleLine} />
+            <Text style={s.subtitleText}>CHOOSE YOUR DESTINY</Text>
+            <View style={s.subtitleLine} />
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(500).delay(100)} style={s.modesRow}>
+          {MODES.map((m) => {
+            const isActive = mode === m.id;
+            return (
+              <Pressable
+                key={m.id}
+                onPress={() => {
+                  Haptics.selectionAsync();
+                  setMode(m.id);
+                }}
+                style={[s.modeTab, isActive && s.modeTabActive]}
+                testID={`mode-${m.id}`}
+              >
+                {m.iconSet === "mci" ? (
+                  <MaterialCommunityIcons
+                    name={m.icon as any}
+                    size={20}
+                    color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
+                  />
+                ) : (
+                  <Ionicons
+                    name={m.icon as any}
+                    size={20}
+                    color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
+                  />
+                )}
+                <Text
+                  style={[s.modeTabLabel, isActive && s.modeTabLabelActive]}
+                >
+                  {m.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(600).delay(200)} style={s.whiteCard}>
+          <View style={s.heroSection}>
+            <View style={s.heroSelectorRow}>
+              <HeroAvatar hero={hero} />
+              <View style={s.heroQuestionBox}>
+                <Text style={s.heroQuestionText}>WHO IS OUR HERO TODAY?</Text>
+              </View>
+            </View>
+
+            <Text style={s.heroNameDisplay}>{hero.name}</Text>
+            <Text style={s.heroTitleDisplay}>{hero.title}</Text>
+
+            <View style={s.heroNavRow}>
+              <Pressable onPress={prevHero} style={s.arrowBtn} testID="prev-hero">
+                <Ionicons name="chevron-back" size={20} color="#999" />
+              </Pressable>
+
+              <View style={s.dotIndicators}>
+                {HEROES.map((_, i) => (
+                  <View
+                    key={i}
+                    style={[
+                      s.heroDot,
+                      i === heroIndex && s.heroDotActive,
+                    ]}
+                  />
+                ))}
+              </View>
+
+              <Pressable onPress={nextHero} style={s.nextBtn} testID="next-hero">
+                <Text style={s.nextBtnText}>NEXT</Text>
+                <Ionicons name="arrow-forward" size={16} color="#FFF" />
+              </Pressable>
+            </View>
+          </View>
+
+          <View style={s.divider} />
+
+          <View style={s.durationSection}>
+            <Text style={s.sectionTitle}>STORY DURATION</Text>
+            <DurationTimeline selected={duration} onSelect={setDuration} />
+          </View>
+
+          <View style={s.divider} />
+
+          <View style={s.voiceSection}>
+            <Text style={s.sectionTitle}>Select Narrator Voice</Text>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={s.voiceScrollContent}
+            >
+              {VOICES.map((v) => {
+                const isActive = voice === v.id;
+                return (
+                  <Pressable
+                    key={v.id}
+                    onPress={() => {
+                      Haptics.selectionAsync();
+                      setVoice(v.id);
+                    }}
+                    style={[s.voiceChip, isActive && s.voiceChipActive]}
+                    testID={`voice-${v.id}`}
+                  >
+                    <View
+                      style={[
+                        s.voiceChipIcon,
+                        isActive && s.voiceChipIconActive,
+                      ]}
+                    >
+                      <Ionicons
+                        name={v.icon as any}
+                        size={14}
+                        color={isActive ? "#FFF" : "#888"}
+                      />
+                    </View>
+                    <View>
+                      <Text
+                        style={[
+                          s.voiceChipDesc,
+                          isActive && s.voiceChipDescActive,
+                        ]}
+                      >
+                        {v.desc}
+                      </Text>
+                      <Text
+                        style={[
+                          s.voiceChipLabel,
+                          isActive && s.voiceChipLabelActive,
+                        ]}
+                      >
+                        {v.label}
+                      </Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+
+          <Pressable
+            onPress={handleEngage}
+            style={({ pressed }) => [
+              s.engageBtn,
+              { transform: [{ scale: pressed ? 0.97 : 1 }] },
+            ]}
+            testID="engage-mission-button"
           >
-            <Text style={styles.selectButtonText}>
-              Choose {selectedHero.name}
-            </Text>
-            <Ionicons name="arrow-forward" size={20} color={Colors.primary} />
-          </LinearGradient>
-        </Pressable>
-      </Animated.View>
+            <LinearGradient
+              colors={
+                mode === "sleep"
+                  ? ["#7B1FA2", "#CE93D8"]
+                  : mode === "madlibs"
+                    ? ["#E64A19", "#FF8A65"]
+                    : ["#2962FF", "#448AFF"]
+              }
+              start={{ x: 0, y: 0 }}
+              end={{ x: 1, y: 0 }}
+              style={s.engageBtnGradient}
+            >
+              <Text style={s.engageBtnText}>
+                {mode === "madlibs"
+                  ? "FILL IN WORDS"
+                  : mode === "sleep"
+                    ? "SET UP SLEEP"
+                    : "ENGAGE MISSION"}
+              </Text>
+            </LinearGradient>
+          </Pressable>
+        </Animated.View>
+      </ScrollView>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const s = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: Colors.primary,
   },
-  header: {
-    paddingHorizontal: 24,
+  headerArea: {
     alignItems: "center",
-    marginBottom: 8,
+    paddingBottom: 20,
   },
-  label: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 12,
-    color: Colors.accent,
-    letterSpacing: 2.5,
-    marginBottom: 8,
-  },
-  title: {
+  titleLine1: {
     fontFamily: "Nunito_800ExtraBold",
-    fontSize: 30,
-    color: Colors.textPrimary,
+    fontSize: 48,
+    color: "#FFFFFF",
+    letterSpacing: 4,
+    fontStyle: "italic",
     textAlign: "center",
-    marginBottom: 6,
+    lineHeight: 52,
+    textShadowColor: "rgba(0,100,255,0.3)",
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 12,
   },
-  subtitle: {
-    fontFamily: "Nunito_400Regular",
-    fontSize: 15,
-    color: Colors.textSecondary,
+  titleLine2: {
+    fontFamily: "Nunito_800ExtraBold",
+    fontSize: 52,
+    color: "#5B9CFF",
+    letterSpacing: 6,
+    fontStyle: "italic",
     textAlign: "center",
+    lineHeight: 56,
+    textShadowColor: "rgba(91,156,255,0.35)",
+    textShadowOffset: { width: 0, height: 4 },
+    textShadowRadius: 16,
+    marginTop: -4,
   },
-  carouselContainer: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  cardWrapper: {
-    justifyContent: "center",
-  },
-  heroCard: {
-    borderRadius: 28,
-    padding: 28,
+  subtitleRow: {
+    flexDirection: "row",
     alignItems: "center",
-    minHeight: 320,
+    gap: 12,
+    marginTop: 10,
+  },
+  subtitleLine: {
+    width: 32,
+    height: 1,
+    backgroundColor: "rgba(255,255,255,0.2)",
+  },
+  subtitleText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.5)",
+    letterSpacing: 3,
+  },
+  modesRow: {
+    flexDirection: "row",
     justifyContent: "center",
+    gap: 8,
+    paddingHorizontal: 20,
+    marginBottom: 16,
+  },
+  modeTab: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 20,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  glowRing: {
-    padding: 4,
-    borderRadius: 52,
-    borderWidth: 2,
     borderColor: "rgba(255,255,255,0.08)",
-    marginBottom: 20,
   },
-  heroIconWrap: {
-    width: 88,
-    height: 88,
-    borderRadius: 44,
-    backgroundColor: "rgba(255,255,255,0.12)",
+  modeTabActive: {
+    backgroundColor: "#2962FF",
+    borderColor: "#2962FF",
+  },
+  modeTabLabel: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.5)",
+    letterSpacing: 1,
+  },
+  modeTabLabelActive: {
+    color: "#FFF",
+  },
+  whiteCard: {
+    marginHorizontal: 12,
+    borderRadius: 28,
+    backgroundColor: "#FFFFFF",
+    paddingVertical: 24,
+    elevation: 8,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+  },
+  heroSection: {
+    paddingHorizontal: 20,
+    marginBottom: 8,
+  },
+  heroSelectorRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 16,
+  },
+  heroAvatarCircle: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.6,
-    shadowRadius: 20,
-    elevation: 8,
+    borderWidth: 2,
+    borderColor: "rgba(255,255,255,0.2)",
   },
-  heroName: {
+  heroQuestionBox: {
+    flex: 1,
+    borderWidth: 1.5,
+    borderColor: "#222",
+    borderRadius: 10,
+    paddingVertical: 12,
+    paddingHorizontal: 16,
+  },
+  heroQuestionText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 14,
+    color: "#222",
+    letterSpacing: 0.5,
+  },
+  heroNameDisplay: {
     fontFamily: "Nunito_800ExtraBold",
     fontSize: 28,
-    color: "#FFFFFF",
+    color: "#1A1A1A",
     textAlign: "center",
+    letterSpacing: 1,
   },
-  heroTitle: {
+  heroTitleDisplay: {
     fontFamily: "Nunito_500Medium",
-    fontSize: 15,
-    color: "rgba(255,255,255,0.65)",
+    fontSize: 13,
+    color: "#888",
     textAlign: "center",
-    marginTop: 4,
+    marginTop: 2,
     marginBottom: 14,
   },
-  powerRow: {
+  heroNavRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 6,
-    backgroundColor: "rgba(0,0,0,0.3)",
-    paddingHorizontal: 14,
-    paddingVertical: 6,
-    borderRadius: 16,
-    marginBottom: 14,
+    justifyContent: "space-between",
   },
-  powerText: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 12,
-    color: "rgba(255,255,255,0.85)",
-  },
-  heroDesc: {
-    fontFamily: "Nunito_400Regular",
-    fontSize: 13,
-    color: "rgba(255,255,255,0.55)",
-    textAlign: "center",
-    lineHeight: 20,
-    paddingHorizontal: 8,
-  },
-  dotsRow: {
-    flexDirection: "row",
+  arrowBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "#F0F0F0",
+    alignItems: "center",
     justifyContent: "center",
-    gap: 6,
-    paddingVertical: 16,
   },
-  dot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: "rgba(255,255,255,0.15)",
+  dotIndicators: {
+    flexDirection: "row",
+    gap: 5,
   },
-  dotActive: {
-    width: 24,
-    borderRadius: 4,
+  heroDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#DDD",
   },
-  bottomSection: {
-    paddingHorizontal: 24,
+  heroDotActive: {
+    width: 18,
+    borderRadius: 3,
+    backgroundColor: "#2962FF",
   },
-  selectButton: {
+  nextBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "#2962FF",
+    paddingVertical: 10,
+    paddingHorizontal: 18,
+    borderRadius: 20,
+  },
+  nextBtnText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 13,
+    color: "#FFF",
+    letterSpacing: 0.5,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: "#EEE",
+    marginHorizontal: 20,
+    marginVertical: 16,
+  },
+  durationSection: {
+    paddingHorizontal: 20,
+  },
+  sectionTitle: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 12,
+    color: "#777",
+    letterSpacing: 2,
+    textTransform: "uppercase",
+    marginBottom: 16,
+    textAlign: "center",
+  },
+  timelineContainer: {
+    alignItems: "center",
+  },
+  timelineLine: {
+    position: "absolute",
+    top: 20,
+    left: 32,
+    right: 32,
+    height: 3,
+    backgroundColor: "#E0E0E0",
+    borderRadius: 2,
+  },
+  timelineLineFilled: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    height: 3,
+    backgroundColor: "#2962FF",
+    borderRadius: 2,
+  },
+  timelineNodes: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    width: "100%",
+    paddingHorizontal: 12,
+  },
+  timelineNodeWrap: {
+    alignItems: "center",
+  },
+  timelineNode: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "#E8E8E8",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 2,
+    borderColor: "#E0E0E0",
+  },
+  timelineNodePast: {
+    backgroundColor: "#2962FF",
+    borderColor: "#2962FF",
+  },
+  timelineNodeActive: {
+    backgroundColor: "#2962FF",
+    borderColor: "#1A56DB",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    borderWidth: 3,
+  },
+  timelineLabel: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 14,
+    color: "#2962FF",
+    marginTop: 10,
+    letterSpacing: 0.5,
+  },
+  voiceSection: {
+    paddingLeft: 20,
+  },
+  voiceScrollContent: {
+    gap: 10,
+    paddingRight: 20,
+    paddingBottom: 4,
+  },
+  voiceChip: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    backgroundColor: "#F5F5F5",
+    borderRadius: 24,
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderWidth: 1.5,
+    borderColor: "#EEE",
+  },
+  voiceChipActive: {
+    borderColor: "#2962FF",
+    backgroundColor: "#EDF2FF",
+  },
+  voiceChipIcon: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "#E8E8E8",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  voiceChipIconActive: {
+    backgroundColor: "#2962FF",
+  },
+  voiceChipDesc: {
+    fontFamily: "Nunito_500Medium",
+    fontSize: 10,
+    color: "#999",
+  },
+  voiceChipDescActive: {
+    color: "#2962FF",
+  },
+  voiceChipLabel: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 13,
+    color: "#555",
+  },
+  voiceChipLabelActive: {
+    color: "#222",
+  },
+  engageBtn: {
+    marginHorizontal: 20,
+    marginTop: 20,
     borderRadius: 28,
     overflow: "hidden",
-    elevation: 6,
-    shadowColor: Colors.accent,
+    elevation: 4,
+    shadowColor: "#2962FF",
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
+    shadowOpacity: 0.3,
     shadowRadius: 12,
   },
-  selectButtonGradient: {
-    flexDirection: "row",
+  engageBtnGradient: {
+    paddingVertical: 18,
     alignItems: "center",
     justifyContent: "center",
-    gap: 10,
-    paddingVertical: 18,
-    paddingHorizontal: 32,
   },
-  selectButtonText: {
-    fontFamily: "Nunito_700Bold",
-    fontSize: 18,
-    color: Colors.primary,
+  engageBtnText: {
+    fontFamily: "Nunito_800ExtraBold",
+    fontSize: 16,
+    color: "#FFF",
+    letterSpacing: 2,
   },
 });

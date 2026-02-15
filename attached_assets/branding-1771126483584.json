@@ -1,0 +1,138 @@
+{
+  "colorScheme": "dark",
+  "fonts": [
+    {
+      "family": "Bangers",
+      "role": "heading"
+    },
+    {
+      "family": "Comic Sans MS",
+      "role": "body"
+    }
+  ],
+  "colors": {
+    "primary": "#0E1528",
+    "accent": "#3B82F6",
+    "background": "#020617",
+    "textPrimary": "#020617",
+    "link": "#020617"
+  },
+  "typography": {
+    "fontFamilies": {
+      "primary": "Comic Sans MS",
+      "heading": "Bangers"
+    },
+    "fontStacks": {
+      "heading": [
+        "Bangers",
+        "cursive"
+      ],
+      "body": [
+        "Comic Neue",
+        "cursive"
+      ],
+      "paragraph": [
+        "ui-monospace",
+        "SFMono-Regular",
+        "Menlo",
+        "Monaco",
+        "Consolas",
+        "Liberation Mono",
+        "Courier New",
+        "monospace"
+      ]
+    },
+    "fontSizes": {
+      "h1": "112px",
+      "h2": "112px",
+      "body": "12.25px"
+    }
+  },
+  "spacing": {
+    "baseUnit": 4,
+    "borderRadius": "10px"
+  },
+  "components": {
+    "input": {
+      "background": "transparent",
+      "textColor": "#000000",
+      "borderColor": null,
+      "borderRadius": "0px",
+      "borderRadiusCorners": {
+        "topLeft": "0px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "0px"
+      },
+      "shadow": "none"
+    },
+    "buttonPrimary": {
+      "background": "#3B82F6",
+      "textColor": "#FFFFFF",
+      "borderColor": "#000000",
+      "borderRadius": "9999px",
+      "borderRadiusCorners": {
+        "topLeft": "9999px",
+        "topRight": "9999px",
+        "bottomRight": "9999px",
+        "bottomLeft": "9999px"
+      },
+      "shadow": "rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgba(0, 0, 0, 0) 0px 0px 0px 0px, rgb(0, 0, 0) 4px 4px 0px 0px"
+    },
+    "buttonSecondary": {
+      "background": "#0E1528",
+      "textColor": "#000000",
+      "borderRadius": "0px",
+      "borderRadiusCorners": {
+        "topLeft": "0px",
+        "topRight": "0px",
+        "bottomRight": "0px",
+        "bottomLeft": "0px"
+      },
+      "shadow": "none"
+    }
+  },
+  "images": {
+    "logo": null,
+    "favicon": "https://infinity-heroes-bedtime-chronicles-208838859250.us-west1.run.app/icons/icon-192.svg",
+    "ogImage": null
+  },
+  "__llm_button_reasoning": {
+    "primary": {
+      "index": 11,
+      "text": "Next ➡",
+      "reasoning": "Button #11 has a vibrant blue background (#3B82F6) and action-oriented text 'Next ➡', making it the primary CTA."
+    },
+    "secondary": {
+      "index": 8,
+      "text": "⚔️Classic",
+      "reasoning": "Button #8 has a different background color (#0E1528) and is less prominent, fitting the role of a secondary button."
+    },
+    "confidence": 0.95
+  },
+  "personality": {
+    "tone": "playful",
+    "energy": "medium",
+    "targetAudience": "children and families"
+  },
+  "designSystem": {
+    "framework": "tailwind",
+    "componentLibrary": ""
+  },
+  "confidence": {
+    "buttons": 0.95,
+    "colors": 0.9,
+    "overall": 0.925
+  },
+  "__llm_metadata": {
+    "logoSelection": {
+      "llmCalled": false,
+      "llmSucceeded": false,
+      "finalSource": "none"
+    },
+    "buttonClassification": {
+      "llmCalled": true,
+      "llmSucceeded": true
+    }
+  }
+}

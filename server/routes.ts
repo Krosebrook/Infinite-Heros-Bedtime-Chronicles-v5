@@ -285,10 +285,14 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
   app.get("/api/music/:mode", (req, res) => {
     const mode = req.params.mode || "classic";
     const filePath = getMusicFilePath(mode);
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "public, max-age=86400");
     res.sendFile(filePath, (err) => {
       if (err) {
         console.error("Music file error:", err);
-        res.status(404).json({ error: "Music file not found" });
+        if (!res.headersSent) {
+          res.status(404).json({ error: "Music file not found" });
+        }
       }
     });
   });

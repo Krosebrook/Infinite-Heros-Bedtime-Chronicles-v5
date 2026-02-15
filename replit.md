@@ -27,13 +27,20 @@ Preferred communication style: Simple, everyday language.
 - **Animations**: React Native Reanimated for entrance animations, pulsing effects, and star twinkling
 - **Fonts**: Nunito (Google Fonts) in multiple weights via `@expo-google-fonts/nunito`
 - **Haptics**: Expo Haptics for touch feedback on interactions
-- **Text-to-Speech**: Expo Speech for reading stories aloud
+- **Text-to-Speech**: ElevenLabs via Replit connector for natural voice narration (7 voice options), with expo-av for audio playback
+- **Background Music**: Static royalty-free MP3 files served from Express backend (`assets/music/`), played via expo-av with looping. Three tracks: Gymnopedie No. 1 (classic), Dreamy Flashback (sleep), Merry Go (madlibs) — all CC-BY Kevin MacLeod
 
 ### Backend (Express)
 - **Runtime**: Node.js with TypeScript (tsx for dev, esbuild for production bundling)
 - **API Server**: Express v5 running on the same deployment, serves both API routes and (in production) static web assets
-- **Key Endpoint**: `POST /api/generate-story` — Accepts hero details and duration, streams a bedtime story back via SSE (Server-Sent Events)
-- **AI Integration**: OpenAI SDK configured with Replit AI Integrations environment variables (`AI_INTEGRATIONS_OPENAI_API_KEY`, `AI_INTEGRATIONS_OPENAI_BASE_URL`), using `gpt-4o-mini` model
+- **Key Endpoints**:
+  - `POST /api/generate-story` — Generates bedtime story using Gemini 2.5 Flash
+  - `POST /api/generate-avatar` — AI hero avatar generation via Gemini image model
+  - `POST /api/generate-scene` — Scene illustration generation
+  - `POST /api/tts` — Text-to-speech via ElevenLabs
+  - `GET /api/music/:mode` — Serves static background music files (classic, sleep, madlibs)
+  - `GET /api/voices` — Lists available narrator voices
+- **AI Integration**: Google Gemini AI via Replit AI Integrations (`AI_INTEGRATIONS_GEMINI_API_KEY`, `AI_INTEGRATIONS_GEMINI_BASE_URL`), using `gemini-2.5-flash` for text and `gemini-2.5-flash-image` for images
 - **CORS**: Dynamic origin handling supporting Replit dev domains and localhost for Expo web development
 
 ### Shared Code (`shared/`)

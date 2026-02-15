@@ -17,6 +17,30 @@ import Colors from "@/constants/colors";
 import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 
+const MODES = [
+  {
+    id: "classic",
+    label: "Classic",
+    desc: "A magical adventure",
+    icon: "book-outline" as const,
+    color: "#F5C542",
+  },
+  {
+    id: "madlibs",
+    label: "Mad Libs",
+    desc: "Fill in silly words",
+    icon: "happy-outline" as const,
+    color: "#FF8A65",
+  },
+  {
+    id: "sleep",
+    label: "Sleep",
+    desc: "Drift off gently",
+    icon: "moon-outline" as const,
+    color: "#CE93D8",
+  },
+];
+
 const DURATIONS = [
   { id: "short", label: "Quick Tale", time: "~2 min", icon: "flash-outline" as const },
   { id: "medium", label: "Classic Story", time: "~4 min", icon: "book-outline" as const },
@@ -24,17 +48,21 @@ const DURATIONS = [
 ];
 
 const VOICES = [
-  { id: "alloy", label: "Alloy", desc: "Warm & Balanced", icon: "mic-outline" as const },
-  { id: "nova", label: "Nova", desc: "Gentle & Soft", icon: "sparkles-outline" as const },
-  { id: "echo", label: "Echo", desc: "Deep & Soothing", icon: "moon-outline" as const },
-  { id: "shimmer", label: "Shimmer", desc: "Bright & Clear", icon: "sunny-outline" as const },
+  { id: "kore", label: "Kore", desc: "Soothing", icon: "flower-outline" as const },
+  { id: "aoede", label: "Aoede", desc: "Melodic", icon: "musical-notes-outline" as const },
+  { id: "zephyr", label: "Zephyr", desc: "Gentle", icon: "leaf-outline" as const },
+  { id: "leda", label: "Leda", desc: "Ethereal", icon: "sparkles-outline" as const },
+  { id: "puck", label: "Puck", desc: "Playful", icon: "happy-outline" as const },
+  { id: "charon", label: "Charon", desc: "Deep", icon: "moon-outline" as const },
+  { id: "fenrir", label: "Fenrir", desc: "Bold", icon: "flame-outline" as const },
 ];
 
 export default function OptionsScreen() {
   const { heroId } = useLocalSearchParams<{ heroId: string }>();
   const insets = useSafeAreaInsets();
+  const [mode, setMode] = useState("classic");
   const [duration, setDuration] = useState("medium");
-  const [voice, setVoice] = useState("nova");
+  const [voice, setVoice] = useState("kore");
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
@@ -47,15 +75,38 @@ export default function OptionsScreen() {
 
   const handleStart = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-    router.push({
-      pathname: "/story",
-      params: {
-        heroId: hero.id,
-        duration,
-        voice,
-      },
-    });
+
+    if (mode === "madlibs") {
+      router.push({
+        pathname: "/madlibs",
+        params: { heroId: hero.id, duration, voice },
+      });
+    } else if (mode === "sleep") {
+      router.push({
+        pathname: "/sleep-setup",
+        params: { heroId: hero.id, duration, voice },
+      });
+    } else {
+      router.push({
+        pathname: "/story",
+        params: { heroId: hero.id, duration, voice, mode: "classic" },
+      });
+    }
   };
+
+  const buttonLabel =
+    mode === "madlibs"
+      ? "Fill In Words"
+      : mode === "sleep"
+        ? "Set Up Sleep Mode"
+        : "Generate Story";
+
+  const buttonIcon =
+    mode === "madlibs"
+      ? "pencil"
+      : mode === "sleep"
+        ? "moon"
+        : "sparkles";
 
   return (
     <View style={styles.container}>
@@ -78,10 +129,7 @@ export default function OptionsScreen() {
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeIn.duration(600)} style={styles.heroPreview}>
-          <LinearGradient
-            colors={hero.gradient}
-            style={styles.heroPreviewCard}
-          >
+          <LinearGradient colors={hero.gradient} style={styles.heroPreviewCard}>
             <View style={styles.heroMiniIcon}>
               <Ionicons name={hero.iconName as any} size={32} color={hero.color} />
             </View>
@@ -90,6 +138,41 @@ export default function OptionsScreen() {
               <Text style={styles.heroPreviewTitle}>{hero.title}</Text>
             </View>
           </LinearGradient>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(500).delay(50)}>
+          <Text style={styles.sectionLabel}>STORY MODE</Text>
+          <View style={styles.modeGrid}>
+            {MODES.map((m) => {
+              const isActive = mode === m.id;
+              return (
+                <Pressable
+                  key={m.id}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setMode(m.id);
+                  }}
+                  style={[
+                    styles.modeCard,
+                    isActive && [styles.modeCardActive, { borderColor: m.color }],
+                  ]}
+                  testID={`mode-${m.id}`}
+                >
+                  <View style={[styles.modeIconWrap, isActive && { backgroundColor: m.color + "20" }]}>
+                    <Ionicons
+                      name={m.icon}
+                      size={22}
+                      color={isActive ? m.color : Colors.textSecondary}
+                    />
+                  </View>
+                  <Text style={[styles.modeLabel, isActive && { color: m.color }]}>
+                    {m.label}
+                  </Text>
+                  <Text style={styles.modeMeta}>{m.desc}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
@@ -104,10 +187,7 @@ export default function OptionsScreen() {
                     Haptics.selectionAsync();
                     setDuration(d.id);
                   }}
-                  style={[
-                    styles.optionCard,
-                    isActive && styles.optionCardActive,
-                  ]}
+                  style={[styles.optionCard, isActive && styles.optionCardActive]}
                   testID={`duration-${d.id}`}
                 >
                   <Ionicons
@@ -115,12 +195,7 @@ export default function OptionsScreen() {
                     size={24}
                     color={isActive ? Colors.accent : Colors.textSecondary}
                   />
-                  <Text
-                    style={[
-                      styles.optionLabel,
-                      isActive && styles.optionLabelActive,
-                    ]}
-                  >
+                  <Text style={[styles.optionLabel, isActive && styles.optionLabelActive]}>
                     {d.label}
                   </Text>
                   <Text style={styles.optionMeta}>{d.time}</Text>
@@ -132,7 +207,11 @@ export default function OptionsScreen() {
 
         <Animated.View entering={FadeInDown.duration(500).delay(200)}>
           <Text style={styles.sectionLabel}>NARRATOR VOICE</Text>
-          <View style={styles.voiceGrid}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.voiceScroll}
+          >
             {VOICES.map((v) => {
               const isActive = voice === v.id;
               return (
@@ -142,37 +221,26 @@ export default function OptionsScreen() {
                     Haptics.selectionAsync();
                     setVoice(v.id);
                   }}
-                  style={[
-                    styles.voiceCard,
-                    isActive && styles.voiceCardActive,
-                  ]}
+                  style={[styles.voiceChip, isActive && styles.voiceChipActive]}
                   testID={`voice-${v.id}`}
                 >
-                  <View
-                    style={[
-                      styles.voiceIconWrap,
-                      isActive && styles.voiceIconWrapActive,
-                    ]}
-                  >
+                  <View style={[styles.voiceChipIcon, isActive && styles.voiceChipIconActive]}>
                     <Ionicons
                       name={v.icon}
-                      size={20}
+                      size={16}
                       color={isActive ? Colors.primary : Colors.textSecondary}
                     />
                   </View>
-                  <Text
-                    style={[
-                      styles.voiceLabel,
-                      isActive && styles.voiceLabelActive,
-                    ]}
-                  >
-                    {v.label}
-                  </Text>
-                  <Text style={styles.voiceDesc}>{v.desc}</Text>
+                  <View>
+                    <Text style={[styles.voiceChipLabel, isActive && styles.voiceChipLabelActive]}>
+                      {v.label}
+                    </Text>
+                    <Text style={styles.voiceChipDesc}>{v.desc}</Text>
+                  </View>
                 </Pressable>
               );
             })}
-          </View>
+          </ScrollView>
         </Animated.View>
       </ScrollView>
 
@@ -189,13 +257,21 @@ export default function OptionsScreen() {
           testID="start-story-button"
         >
           <LinearGradient
-            colors={[Colors.accent, "#E5A825"]}
+            colors={
+              mode === "sleep"
+                ? ["#CE93D8", "#AB47BC"]
+                : mode === "madlibs"
+                  ? ["#FF8A65", "#E64A19"]
+                  : [Colors.accent, "#E5A825"]
+            }
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.startButtonGradient}
           >
-            <Ionicons name="sparkles" size={20} color={Colors.primary} />
-            <Text style={styles.startButtonText}>Generate Story</Text>
+            <Ionicons name={buttonIcon as any} size={20} color={mode === "classic" ? Colors.primary : "#FFF"} />
+            <Text style={[styles.startButtonText, mode !== "classic" && { color: "#FFF" }]}>
+              {buttonLabel}
+            </Text>
           </LinearGradient>
         </Pressable>
       </Animated.View>
@@ -225,7 +301,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   heroPreview: {
-    marginBottom: 28,
+    marginBottom: 24,
   },
   heroPreviewCard: {
     flexDirection: "row",
@@ -263,10 +339,48 @@ const styles = StyleSheet.create({
     letterSpacing: 2,
     marginBottom: 14,
   },
+  modeGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 24,
+  },
+  modeCard: {
+    flex: 1,
+    backgroundColor: Colors.cardBg,
+    borderRadius: 18,
+    padding: 14,
+    alignItems: "center",
+    gap: 8,
+    borderWidth: 2,
+    borderColor: Colors.cardBorder,
+  },
+  modeCardActive: {
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  modeIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  modeLabel: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 14,
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
+  modeMeta: {
+    fontFamily: "Nunito_400Regular",
+    fontSize: 11,
+    color: Colors.textMuted,
+    textAlign: "center",
+  },
   optionGrid: {
     flexDirection: "row",
     gap: 12,
-    marginBottom: 28,
+    marginBottom: 24,
   },
   optionCard: {
     flex: 1,
@@ -296,46 +410,46 @@ const styles = StyleSheet.create({
     fontSize: 11,
     color: Colors.textMuted,
   },
-  voiceGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 28,
+  voiceScroll: {
+    gap: 10,
+    paddingBottom: 8,
+    marginBottom: 20,
   },
-  voiceCard: {
-    width: "47%" as any,
-    backgroundColor: Colors.cardBg,
-    borderRadius: 18,
-    padding: 16,
+  voiceChip: {
+    flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
+    backgroundColor: Colors.cardBg,
+    borderRadius: 28,
+    paddingVertical: 10,
+    paddingHorizontal: 16,
     borderWidth: 2,
     borderColor: Colors.cardBorder,
   },
-  voiceCardActive: {
+  voiceChipActive: {
     borderColor: Colors.accent,
     backgroundColor: "rgba(245, 197, 66, 0.08)",
   },
-  voiceIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
+  voiceChipIcon: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center",
     justifyContent: "center",
   },
-  voiceIconWrapActive: {
+  voiceChipIconActive: {
     backgroundColor: Colors.accent,
   },
-  voiceLabel: {
+  voiceChipLabel: {
     fontFamily: "Nunito_700Bold",
-    fontSize: 15,
+    fontSize: 14,
     color: Colors.textSecondary,
   },
-  voiceLabelActive: {
+  voiceChipLabelActive: {
     color: Colors.textPrimary,
   },
-  voiceDesc: {
+  voiceChipDesc: {
     fontFamily: "Nunito_400Regular",
     fontSize: 11,
     color: Colors.textMuted,

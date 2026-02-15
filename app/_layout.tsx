@@ -34,7 +34,22 @@ function RootLayoutNav() {
         options={{ animation: "slide_from_right" }}
       />
       <Stack.Screen
+        name="madlibs"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="sleep-setup"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
         name="story"
+        options={{
+          presentation: "fullScreenModal",
+          animation: "fade",
+        }}
+      />
+      <Stack.Screen
+        name="completion"
         options={{
           presentation: "fullScreenModal",
           animation: "fade",

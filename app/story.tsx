@@ -14,6 +14,7 @@ import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import * as Speech from "expo-speech";
+import { Audio } from "expo-av";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -31,6 +32,14 @@ import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 
 type StoryState = "generating" | "ready" | "error";
+
+const AMBIENT_SOUNDS: Record<string, any> = {
+  rain: require("@/assets/sounds/rain.wav"),
+  ocean: require("@/assets/sounds/ocean.wav"),
+  crickets: require("@/assets/sounds/crickets.wav"),
+  wind: require("@/assets/sounds/wind.wav"),
+  fire: require("@/assets/sounds/fire.wav"),
+};
 
 function PulsingOrb() {
   const scale = useSharedValue(1);
@@ -68,24 +77,86 @@ function PulsingOrb() {
 }
 
 export default function StoryScreen() {
-  const { heroId, duration, voice } = useLocalSearchParams<{
-    heroId: string;
-    duration: string;
-    voice: string;
-  }>();
+  const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer } =
+    useLocalSearchParams<{
+      heroId: string;
+      duration: string;
+      voice: string;
+      mode: string;
+      madlibWords: string;
+      soundscape: string;
+      sleepTimer: string;
+    }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
+  const storyMode = mode || "classic";
   const [storyText, setStoryText] = useState("");
   const [storyTitle, setStoryTitle] = useState("");
   const [storyState, setStoryState] = useState<StoryState>("generating");
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [currentParagraph, setCurrentParagraph] = useState(-1);
+  const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const storyRef = useRef("");
   const scrollRef = useRef<ScrollView>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const hero = HEROES.find((h) => h.id === heroId);
+
+  const startAmbientSound = useCallback(async () => {
+    if (!soundscape || soundscape === "none") return;
+    const soundFile = AMBIENT_SOUNDS[soundscape];
+    if (!soundFile) return;
+
+    try {
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+      });
+      const { sound } = await Audio.Sound.createAsync(soundFile, {
+        isLooping: true,
+        volume: 0.3,
+      });
+      soundRef.current = sound;
+      await sound.playAsync();
+    } catch (e) {
+      console.log("Could not play ambient sound:", e);
+    }
+  }, [soundscape]);
+
+  const stopAmbientSound = useCallback(async () => {
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+      } catch {}
+      soundRef.current = null;
+    }
+  }, []);
+
+  const startSleepTimer = useCallback(() => {
+    if (!sleepTimer || sleepTimer === "none") return;
+    const minutes = parseInt(sleepTimer, 10);
+    if (isNaN(minutes)) return;
+
+    let remaining = minutes * 60;
+    setTimerRemaining(remaining);
+
+    timerRef.current = setInterval(() => {
+      remaining -= 1;
+      setTimerRemaining(remaining);
+
+      if (remaining <= 0) {
+        if (timerRef.current) clearInterval(timerRef.current);
+        Speech.stop();
+        stopAmbientSound();
+        setIsSpeaking(false);
+        setTimerRemaining(null);
+      }
+    }, 1000);
+  }, [sleepTimer, stopAmbientSound]);
 
   const generateStory = useCallback(async () => {
     if (!hero) return;
@@ -98,17 +169,25 @@ export default function StoryScreen() {
       const baseUrl = getApiUrl();
       const url = new URL("/api/generate-story", baseUrl);
 
+      const bodyData: any = {
+        heroName: hero.name,
+        heroTitle: hero.title,
+        heroPower: hero.power,
+        heroDescription: hero.description,
+        duration: duration || "medium",
+        mode: storyMode,
+      };
+
+      if (storyMode === "madlibs" && madlibWords) {
+        try {
+          bodyData.madlibWords = JSON.parse(madlibWords);
+        } catch {}
+      }
+
       const res = await fetch(url.toString(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          heroName: hero.name,
-          heroTitle: hero.title,
-          heroPower: hero.power,
-          heroDescription: hero.description,
-          duration: duration || "medium",
-          voice: voice || "nova",
-        }),
+        body: JSON.stringify(bodyData),
       });
 
       const reader = res.body?.getReader();
@@ -142,7 +221,7 @@ export default function StoryScreen() {
         }
       }
 
-      if (storyRef.current && storyState !== "ready") {
+      if (storyRef.current) {
         setStoryState("ready");
       }
 
@@ -154,6 +233,7 @@ export default function StoryScreen() {
           body: JSON.stringify({
             heroName: hero.name,
             storyText: storyRef.current,
+            mode: storyMode,
           }),
         });
         const titleData = await titleRes.json();
@@ -165,14 +245,27 @@ export default function StoryScreen() {
       console.error("Story generation error:", error);
       setStoryState("error");
     }
-  }, [hero, duration, voice]);
+  }, [hero, duration, storyMode, madlibWords]);
 
   useEffect(() => {
     generateStory();
+
+    if (storyMode === "sleep" && soundscape && soundscape !== "none") {
+      startAmbientSound();
+    }
+
     return () => {
       Speech.stop();
+      stopAmbientSound();
+      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, []);
+
+  useEffect(() => {
+    if (storyState === "ready" && storyMode === "sleep" && sleepTimer && sleepTimer !== "none") {
+      startSleepTimer();
+    }
+  }, [storyState]);
 
   const paragraphs = storyText
     .split(/\n\n+/)
@@ -191,28 +284,46 @@ export default function StoryScreen() {
 
     setIsSpeaking(true);
     const fullText = paragraphs.join(". . . ");
+    const voiceRate = storyMode === "sleep" ? 0.72 : 0.85;
 
-    const voiceRate = 0.85;
     setCurrentParagraph(0);
 
     Speech.speak(fullText, {
       rate: voiceRate,
-      pitch: 1.0,
+      pitch: storyMode === "sleep" ? 0.9 : 1.0,
       onDone: () => {
         setIsSpeaking(false);
         setCurrentParagraph(-1);
+        if (storyMode !== "sleep") {
+          handleStoryComplete();
+        }
       },
       onStopped: () => {
         setIsSpeaking(false);
         setCurrentParagraph(-1);
       },
     });
-  }, [paragraphs, isSpeaking]);
+  }, [paragraphs, isSpeaking, storyMode]);
+
+  const handleStoryComplete = () => {
+    if (!hero) return;
+    stopAmbientSound();
+    if (timerRef.current) clearInterval(timerRef.current);
+    router.push({
+      pathname: "/completion",
+      params: {
+        heroId: hero.id,
+        storyTitle: storyTitle || `${hero.name}'s Adventure`,
+        mode: storyMode,
+      },
+    });
+  };
 
   const handleClose = () => {
     Speech.stop();
-    router.back();
-    setTimeout(() => router.back(), 50);
+    stopAmbientSound();
+    if (timerRef.current) clearInterval(timerRef.current);
+    router.dismissAll();
   };
 
   const handleRegenerate = () => {
@@ -220,6 +331,12 @@ export default function StoryScreen() {
     setIsSpeaking(false);
     setCurrentParagraph(-1);
     generateStory();
+  };
+
+  const formatTimer = (seconds: number) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${s.toString().padStart(2, "0")}`;
   };
 
   if (!hero) {
@@ -233,10 +350,18 @@ export default function StoryScreen() {
     );
   }
 
+  const isSleep = storyMode === "sleep";
+  const gradientColors: [string, string, string] = isSleep
+    ? ["#1A0533", "#0B0D1E", "#060810"]
+    : [hero.gradient[0], Colors.primary, "#080D1E"];
+
+  const modeLabel =
+    storyMode === "madlibs" ? "Mad Libs" : storyMode === "sleep" ? "Sleep Mode" : "";
+
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={[hero.gradient[0], Colors.primary, "#080D1E"]}
+        colors={gradientColors}
         locations={[0, 0.4, 1]}
         style={StyleSheet.absoluteFill}
       />
@@ -252,17 +377,31 @@ export default function StoryScreen() {
             <Animated.View entering={FadeIn.duration(400)} style={styles.heroBadge}>
               <Ionicons name={hero.iconName as any} size={14} color={hero.color} />
               <Text style={styles.heroBadgeText}>{hero.name}</Text>
+              {modeLabel ? (
+                <View style={[styles.modePill, isSleep && { backgroundColor: "rgba(206,147,216,0.2)" }]}>
+                  <Text style={[styles.modePillText, isSleep && { color: "#CE93D8" }]}>
+                    {modeLabel}
+                  </Text>
+                </View>
+              ) : null}
             </Animated.View>
           )}
         </View>
 
-        {storyState === "ready" && (
+        {storyState === "ready" && !isSleep && (
           <Pressable onPress={handleRegenerate} hitSlop={12} style={styles.iconBtn}>
             <Ionicons name="refresh" size={22} color="rgba(255,255,255,0.7)" />
           </Pressable>
         )}
-        {storyState !== "ready" && <View style={{ width: 40 }} />}
+        {(storyState !== "ready" || isSleep) && <View style={{ width: 40 }} />}
       </View>
+
+      {timerRemaining !== null && timerRemaining > 0 && (
+        <Animated.View entering={FadeIn.duration(400)} style={styles.timerBar}>
+          <Ionicons name="timer-outline" size={14} color="#CE93D8" />
+          <Text style={styles.timerText}>{formatTimer(timerRemaining)}</Text>
+        </Animated.View>
+      )}
 
       {storyState === "generating" && paragraphs.length === 0 ? (
         <Animated.View entering={FadeIn.duration(600)} style={styles.loadingContainer}>
@@ -270,11 +409,13 @@ export default function StoryScreen() {
           <View style={styles.loadingIconWrap}>
             <Ionicons name={hero.iconName as any} size={40} color={hero.color} />
           </View>
-          <Text style={styles.loadingTitle}>Crafting your story...</Text>
+          <Text style={styles.loadingTitle}>
+            {isSleep ? "Preparing your dreamscape..." : storyMode === "madlibs" ? "Mixing your silly words..." : "Crafting your story..."}
+          </Text>
           <Text style={styles.loadingSubtitle}>
             {hero.name} is preparing tonight's adventure
           </Text>
-          <ActivityIndicator size="small" color={Colors.accent} style={{ marginTop: 20 }} />
+          <ActivityIndicator size="small" color={isSleep ? "#CE93D8" : Colors.accent} style={{ marginTop: 20 }} />
         </Animated.View>
       ) : storyState === "error" && paragraphs.length === 0 ? (
         <Animated.View entering={FadeIn.duration(600)} style={styles.loadingContainer}>
@@ -294,7 +435,7 @@ export default function StoryScreen() {
             ref={scrollRef}
             contentContainerStyle={[
               styles.storyContent,
-              { paddingBottom: bottomInset + 100 },
+              { paddingBottom: bottomInset + 120 },
             ]}
             showsVerticalScrollIndicator={false}
           >
@@ -313,6 +454,7 @@ export default function StoryScreen() {
                 entering={FadeInDown.duration(400).delay(index * 80)}
                 style={[
                   styles.paragraphText,
+                  isSleep && styles.paragraphSleep,
                   currentParagraph === index && styles.paragraphActive,
                 ]}
               >
@@ -322,13 +464,13 @@ export default function StoryScreen() {
 
             {storyState === "generating" && (
               <View style={styles.streamingIndicator}>
-                <ActivityIndicator size="small" color={Colors.accent} />
+                <ActivityIndicator size="small" color={isSleep ? "#CE93D8" : Colors.accent} />
               </View>
             )}
           </ScrollView>
 
           <LinearGradient
-            colors={["transparent", "rgba(11, 16, 38, 0.95)", Colors.primary]}
+            colors={isSleep ? ["transparent", "rgba(10, 5, 20, 0.95)", "#060810"] : ["transparent", "rgba(11, 16, 38, 0.95)", Colors.primary]}
             style={[styles.bottomGradient, { paddingBottom: bottomInset + 20 }]}
             pointerEvents="box-none"
           >
@@ -346,25 +488,35 @@ export default function StoryScreen() {
                     colors={
                       isSpeaking
                         ? ["#FF6B6B", "#E55555"]
-                        : [Colors.accent, "#E5A825"]
+                        : isSleep
+                          ? ["#CE93D8", "#7B1FA2"]
+                          : [Colors.accent, "#E5A825"]
                     }
                     style={styles.playButtonGradient}
                   >
                     <Ionicons
                       name={isSpeaking ? "stop" : "play"}
                       size={24}
-                      color={isSpeaking ? "#FFF" : Colors.primary}
+                      color="#FFF"
                     />
-                    <Text
-                      style={[
-                        styles.playButtonText,
-                        isSpeaking && { color: "#FFF" },
-                      ]}
-                    >
-                      {isSpeaking ? "Stop" : "Read Aloud"}
+                    <Text style={[styles.playButtonText, { color: isSpeaking || isSleep ? "#FFF" : Colors.primary }]}>
+                      {isSpeaking ? "Stop" : isSleep ? "Begin Narration" : "Read Aloud"}
                     </Text>
                   </LinearGradient>
                 </Pressable>
+
+                {!isSleep && (
+                  <Pressable
+                    onPress={handleStoryComplete}
+                    style={({ pressed }) => [
+                      styles.doneButton,
+                      { transform: [{ scale: pressed ? 0.95 : 1 }] },
+                    ]}
+                    testID="done-button"
+                  >
+                    <Ionicons name="checkmark-circle" size={24} color={Colors.accent} />
+                  </Pressable>
+                )}
               </Animated.View>
             )}
           </LinearGradient>
@@ -416,6 +568,30 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_600SemiBold",
     fontSize: 13,
     color: "rgba(255,255,255,0.8)",
+  },
+  modePill: {
+    backgroundColor: "rgba(255, 138, 101, 0.2)",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 8,
+    marginLeft: 4,
+  },
+  modePillText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 10,
+    color: "#FF8A65",
+  },
+  timerBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 6,
+  },
+  timerText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 13,
+    color: "#CE93D8",
   },
   loadingContainer: {
     flex: 1,
@@ -480,6 +656,11 @@ const styles = StyleSheet.create({
     marginBottom: 22,
     textAlign: "left",
   },
+  paragraphSleep: {
+    fontSize: 20,
+    lineHeight: 36,
+    color: "rgba(220, 210, 240, 0.85)",
+  },
   paragraphActive: {
     color: Colors.accent,
   },
@@ -498,6 +679,7 @@ const styles = StyleSheet.create({
   controlsRow: {
     flexDirection: "row",
     justifyContent: "center",
+    alignItems: "center",
     gap: 12,
   },
   playButton: {
@@ -521,6 +703,16 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_700Bold",
     fontSize: 18,
     color: Colors.primary,
+  },
+  doneButton: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: "rgba(245, 197, 66, 0.12)",
+    borderWidth: 2,
+    borderColor: Colors.accent,
+    alignItems: "center",
+    justifyContent: "center",
   },
   retryButton: {
     flexDirection: "row",

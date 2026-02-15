@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI, Modality } from "@google/genai";
+import { generateSpeech, VOICE_MAP } from "./elevenlabs";
 
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
@@ -256,6 +257,37 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
       console.error("Error generating scene:", error);
       res.status(500).json({ error: "Failed to generate scene" });
     }
+  });
+
+  app.post("/api/tts", async (req, res) => {
+    try {
+      const { text, voice } = req.body;
+      if (!text || typeof text !== "string") {
+        return res.status(400).json({ error: "Text is required" });
+      }
+
+      const voiceKey = (voice || "kore").toLowerCase();
+      const audioBuffer = await generateSpeech(text, voiceKey);
+
+      res.set({
+        "Content-Type": "audio/mpeg",
+        "Content-Length": audioBuffer.length.toString(),
+        "Cache-Control": "public, max-age=86400",
+      });
+      res.send(audioBuffer);
+    } catch (error: any) {
+      console.error("TTS error:", error?.message || error);
+      res.status(500).json({ error: "Failed to generate speech" });
+    }
+  });
+
+  app.get("/api/voices", (_req, res) => {
+    const voices = Object.entries(VOICE_MAP).map(([key, val]) => ({
+      id: key,
+      name: val.name,
+      description: val.description,
+    }));
+    res.json({ voices });
   });
 
   const httpServer = createServer(app);

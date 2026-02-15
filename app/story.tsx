@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import * as Speech from "expo-speech";
+import { Audio } from "expo-av";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -236,6 +236,7 @@ export default function StoryScreen() {
   const [storyState, setStoryState] = useState<StoryState>("generating");
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
+  const [audioLoading, setAudioLoading] = useState(false);
   const [sceneImage, setSceneImage] = useState<string | null>(null);
   const [sceneLoading, setSceneLoading] = useState(false);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
@@ -244,6 +245,18 @@ export default function StoryScreen() {
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const loadingMsgRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const soundRef = useRef<Audio.Sound | null>(null);
+
+  const stopAudio = useCallback(async () => {
+    if (soundRef.current) {
+      try {
+        await soundRef.current.stopAsync();
+        await soundRef.current.unloadAsync();
+      } catch {}
+      soundRef.current = null;
+    }
+    setIsSpeaking(false);
+  }, []);
 
   const hero = HEROES.find((h) => h.id === heroId);
 
@@ -268,8 +281,7 @@ export default function StoryScreen() {
       setTimerRemaining(remaining);
       if (remaining <= 0) {
         if (timerRef.current) clearInterval(timerRef.current);
-        Speech.stop();
-        setIsSpeaking(false);
+        stopAudio();
         setTimerRemaining(null);
       }
     }, 1000);
@@ -345,7 +357,7 @@ export default function StoryScreen() {
   useEffect(() => {
     generateStory();
     return () => {
-      Speech.stop();
+      stopAudio();
       if (timerRef.current) clearInterval(timerRef.current);
       if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     };
@@ -384,34 +396,75 @@ export default function StoryScreen() {
   const isLastPart = storyData ? currentPartIndex >= storyData.parts.length - 1 : false;
   const hasChoices = currentPart?.choices && currentPart.choices.length > 0 && !isLastPart;
 
-  const speakCurrentPart = useCallback(() => {
+  const speakCurrentPart = useCallback(async () => {
     if (!currentPart) return;
-    if (isSpeaking) {
-      Speech.stop();
-      setIsSpeaking(false);
+    if (isSpeaking || audioLoading) {
+      await stopAudio();
       return;
     }
-    setIsSpeaking(true);
-    const voiceRate = storyMode === "sleep" ? 0.72 : 0.85;
-    Speech.speak(currentPart.text, {
-      rate: voiceRate,
-      pitch: storyMode === "sleep" ? 0.9 : 1.0,
-      onDone: () => setIsSpeaking(false),
-      onStopped: () => setIsSpeaking(false),
-    });
-  }, [currentPart, isSpeaking, storyMode]);
+
+    setAudioLoading(true);
+    try {
+      const baseUrl = getApiUrl();
+      const ttsUrl = new URL("/api/tts", baseUrl);
+
+      const response = await fetch(ttsUrl.toString(), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: currentPart.text,
+          voice: voice || "kore",
+        }),
+      });
+
+      if (!response.ok) throw new Error("TTS request failed");
+
+      const blob = await response.blob();
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onloadend = () => resolve(reader.result as string);
+        reader.onerror = reject;
+        reader.readAsDataURL(blob);
+      });
+      const dataUri = await base64Promise;
+
+      await Audio.setAudioModeAsync({
+        playsInSilentModeIOS: true,
+        staysActiveInBackground: true,
+      });
+
+      const { sound } = await Audio.Sound.createAsync(
+        { uri: dataUri },
+        { shouldPlay: true, rate: storyMode === "sleep" ? 0.9 : 1.0 }
+      );
+      soundRef.current = sound;
+      setIsSpeaking(true);
+      setAudioLoading(false);
+
+      sound.setOnPlaybackStatusUpdate((status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          sound.unloadAsync();
+          soundRef.current = null;
+          setIsSpeaking(false);
+        }
+      });
+    } catch (err) {
+      console.log("TTS error, falling back:", err);
+      setAudioLoading(false);
+      setIsSpeaking(false);
+    }
+  }, [currentPart, isSpeaking, audioLoading, storyMode, voice, stopAudio]);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
-    Speech.stop();
-    setIsSpeaking(false);
+    stopAudio();
     setCurrentPartIndex((prev) => prev + 1);
     scrollRef.current?.scrollTo({ y: 0, animated: true });
   };
 
   const handleStoryComplete = () => {
     if (!hero || !storyData) return;
-    Speech.stop();
+    stopAudio();
     if (timerRef.current) clearInterval(timerRef.current);
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     router.push({
@@ -425,7 +478,7 @@ export default function StoryScreen() {
   };
 
   const handleClose = () => {
-    Speech.stop();
+    stopAudio();
     if (timerRef.current) clearInterval(timerRef.current);
     if (autoAdvanceRef.current) clearTimeout(autoAdvanceRef.current);
     router.dismissAll();
@@ -488,12 +541,16 @@ export default function StoryScreen() {
         </View>
 
         {storyState === "ready" && (
-          <Pressable onPress={speakCurrentPart} hitSlop={12} style={styles.iconBtn}>
-            <Ionicons
-              name={isSpeaking ? "volume-high" : "volume-medium-outline"}
-              size={22}
-              color={isSpeaking ? theme.accent : "rgba(255,255,255,0.7)"}
-            />
+          <Pressable onPress={speakCurrentPart} hitSlop={12} style={styles.iconBtn} disabled={audioLoading}>
+            {audioLoading ? (
+              <ActivityIndicator size="small" color={theme.accent} />
+            ) : (
+              <Ionicons
+                name={isSpeaking ? "volume-high" : "volume-medium-outline"}
+                size={22}
+                color={isSpeaking ? theme.accent : "rgba(255,255,255,0.7)"}
+              />
+            )}
           </Pressable>
         )}
         {storyState !== "ready" && <View style={{ width: 40 }} />}

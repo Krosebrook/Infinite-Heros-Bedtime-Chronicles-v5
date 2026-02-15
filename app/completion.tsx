@@ -22,6 +22,7 @@ import Animated, {
   withTiming,
   withSequence,
   withDelay,
+  withSpring,
   Easing,
 } from "react-native-reanimated";
 import Colors from "@/constants/colors";
@@ -30,7 +31,31 @@ import { StarField } from "@/components/StarField";
 import { StoryFull } from "@/constants/types";
 import { saveStory } from "@/lib/storage";
 
-function FloatingStar({ delay, x, y }: { delay: number; x: number; y: number }) {
+const MODE_THEMES = {
+  classic: {
+    accent: "#3B82F6",
+    accentDark: "#2563EB",
+    gradient: ["#0B1A40", "#122050", "#0B1026"] as [string, string, string],
+    label: "STORY COMPLETE",
+    sublabel: "A heroic tale well told",
+  },
+  madlibs: {
+    accent: "#F59E0B",
+    accentDark: "#D97706",
+    gradient: ["#1A1008", "#261A0A", "#0B1026"] as [string, string, string],
+    label: "THAT WAS HILARIOUS!",
+    sublabel: "Your wacky words made magic",
+  },
+  sleep: {
+    accent: "#A78BFA",
+    accentDark: "#7C3AED",
+    gradient: ["#0F0A2A", "#14103A", "#080D1E"] as [string, string, string],
+    label: "SWEET DREAMS",
+    sublabel: "Time to drift off to sleep",
+  },
+};
+
+function FloatingStar({ delay, x, y, color }: { delay: number; x: number; y: number; color: string }) {
   const opacity = useSharedValue(0);
   const scale = useSharedValue(0.5);
 
@@ -56,8 +81,52 @@ function FloatingStar({ delay, x, y }: { delay: number; x: number; y: number }) 
 
   return (
     <Animated.View style={[{ position: "absolute", left: `${x}%` as any, top: `${y}%` as any }, animStyle]}>
-      <Ionicons name="star" size={16} color={Colors.accent} />
+      <Ionicons name="star" size={16} color={color} />
     </Animated.View>
+  );
+}
+
+function PulsingBadge({ emoji, color }: { emoji: string; color: string }) {
+  const pulseScale = useSharedValue(1);
+  const ringOpacity = useSharedValue(0);
+  const ringScale = useSharedValue(1);
+
+  useEffect(() => {
+    pulseScale.value = withDelay(500, withRepeat(
+      withSequence(
+        withSpring(1.08, { damping: 6, stiffness: 100 }),
+        withSpring(1, { damping: 6, stiffness: 100 })
+      ), -1, false
+    ));
+    ringOpacity.value = withDelay(500, withRepeat(
+      withSequence(
+        withTiming(0.6, { duration: 1200 }),
+        withTiming(0, { duration: 1200 })
+      ), -1, false
+    ));
+    ringScale.value = withDelay(500, withRepeat(
+      withSequence(
+        withTiming(1, { duration: 0 }),
+        withTiming(1.6, { duration: 2400 })
+      ), -1, false
+    ));
+  }, []);
+
+  const badgeStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: pulseScale.value }],
+  }));
+  const ringStyle = useAnimatedStyle(() => ({
+    opacity: ringOpacity.value,
+    transform: [{ scale: ringScale.value }],
+  }));
+
+  return (
+    <View style={styles.badgeWrapper}>
+      <Animated.View style={[styles.badgeRing, { borderColor: color }, ringStyle]} />
+      <Animated.View style={[styles.badgeCircle, { borderColor: `${color}50`, backgroundColor: `${color}12` }, badgeStyle]}>
+        <Text style={styles.badgeEmoji}>{emoji}</Text>
+      </Animated.View>
+    </View>
   );
 }
 
@@ -72,8 +141,8 @@ export default function CompletionScreen() {
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
   const hero = HEROES.find((h) => h.id === heroId);
-  const isMadLibs = mode === "madlibs";
-  const isSleep = mode === "sleep";
+  const modeKey = (mode || "classic") as keyof typeof MODE_THEMES;
+  const theme = MODE_THEMES[modeKey] || MODE_THEMES.classic;
   const [saved, setSaved] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
 
@@ -107,7 +176,7 @@ export default function CompletionScreen() {
     return (
       <View style={[styles.container, styles.centered]}>
         <Pressable onPress={() => router.dismissAll()}>
-          <Text style={styles.linkText}>Go Home</Text>
+          <Text style={[styles.linkText, { color: theme.accent }]}>Go Home</Text>
         </Pressable>
       </View>
     );
@@ -121,13 +190,13 @@ export default function CompletionScreen() {
 
   return (
     <View style={styles.container}>
-      <LinearGradient colors={["#0A0520", "#0B1026", "#080D1E"]} style={StyleSheet.absoluteFill} />
+      <LinearGradient colors={theme.gradient} style={StyleSheet.absoluteFill} />
       <StarField />
-      <FloatingStar delay={0} x={15} y={20} />
-      <FloatingStar delay={300} x={75} y={15} />
-      <FloatingStar delay={600} x={25} y={50} />
-      <FloatingStar delay={900} x={80} y={40} />
-      <FloatingStar delay={1200} x={50} y={65} />
+      <FloatingStar delay={0} x={15} y={20} color={theme.accent} />
+      <FloatingStar delay={300} x={75} y={15} color={theme.accent} />
+      <FloatingStar delay={600} x={25} y={50} color={theme.accent} />
+      <FloatingStar delay={900} x={80} y={40} color={theme.accent} />
+      <FloatingStar delay={1200} x={50} y={65} color={theme.accent} />
 
       <ScrollView
         contentContainerStyle={[styles.scrollContent, { paddingTop: topInset + 20, paddingBottom: bottomInset + 40 }]}
@@ -135,29 +204,28 @@ export default function CompletionScreen() {
       >
         {badge && (
           <Animated.View entering={FadeIn.duration(1000)} style={styles.badgeArea}>
-            <View style={styles.badgeCircle}>
-              <Text style={styles.badgeEmoji}>{badge.emoji}</Text>
-            </View>
-            <Text style={styles.badgeTitle}>{badge.title}</Text>
+            <PulsingBadge emoji={badge.emoji} color={theme.accent} />
+            <Text style={[styles.badgeTitle, { color: theme.accent }]}>{badge.title}</Text>
             <Text style={styles.badgeDescription}>{badge.description}</Text>
           </Animated.View>
         )}
 
         <Animated.View entering={FadeInDown.duration(800).delay(400)} style={styles.textArea}>
-          <Text style={styles.completionLabel}>
-            {isMadLibs ? "THAT WAS HILARIOUS!" : isSleep ? "SWEET DREAMS" : "STORY COMPLETE"}
+          <Text style={[styles.completionLabel, { color: theme.accent }]}>
+            {theme.label}
           </Text>
           <Text style={styles.completionTitle}>
             {storyData?.title || "Great Adventure!"}
           </Text>
+          <Text style={styles.completionSublabel}>{theme.sublabel}</Text>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(600).delay(600)} style={styles.extrasArea}>
           {vocabWord && (
             <Pressable onPress={() => toggleSection("vocab")} style={styles.extraCard}>
               <View style={styles.extraCardHeader}>
-                <View style={[styles.extraIconWrap, { backgroundColor: "rgba(59, 130, 246, 0.15)" }]}>
-                  <Ionicons name="book-outline" size={18} color="#3B82F6" />
+                <View style={[styles.extraIconWrap, { backgroundColor: `${theme.accent}18` }]}>
+                  <Ionicons name="book-outline" size={18} color={theme.accent} />
                 </View>
                 <View style={styles.extraCardHeaderText}>
                   <Text style={styles.extraCardLabel}>New Word</Text>
@@ -226,9 +294,9 @@ export default function CompletionScreen() {
           )}
 
           {tomorrowHook && (
-            <View style={styles.tomorrowCard}>
-              <Ionicons name="telescope-outline" size={18} color="#CE93D8" />
-              <Text style={styles.tomorrowText}>{tomorrowHook}</Text>
+            <View style={[styles.tomorrowCard, { borderColor: `${theme.accent}22`, backgroundColor: `${theme.accent}08` }]}>
+              <Ionicons name="telescope-outline" size={18} color={theme.accent} />
+              <Text style={[styles.tomorrowText, { color: theme.accent }]}>{tomorrowHook}</Text>
             </View>
           )}
         </Animated.View>
@@ -239,6 +307,7 @@ export default function CompletionScreen() {
             disabled={saved}
             style={({ pressed }) => [
               styles.saveButton,
+              { borderColor: saved ? "rgba(16, 185, 129, 0.2)" : `${theme.accent}30` },
               saved && styles.saveButtonDone,
               { transform: [{ scale: pressed && !saved ? 0.96 : 1 }] },
             ]}
@@ -247,9 +316,9 @@ export default function CompletionScreen() {
             <Ionicons
               name={saved ? "checkmark-circle" : "archive-outline"}
               size={20}
-              color={saved ? "#10B981" : Colors.accent}
+              color={saved ? "#10B981" : theme.accent}
             />
-            <Text style={[styles.saveButtonText, saved && { color: "#10B981" }]}>
+            <Text style={[styles.saveButtonText, { color: saved ? "#10B981" : theme.accent }]}>
               {saved ? "Saved to Memory Jar" : "Save to Memory Jar"}
             </Text>
           </Pressable>
@@ -258,12 +327,13 @@ export default function CompletionScreen() {
             onPress={handleNewStory}
             style={({ pressed }) => [
               styles.primaryButton,
+              { shadowColor: theme.accent },
               { transform: [{ scale: pressed ? 0.96 : 1 }] },
             ]}
             testID="new-story-button"
           >
             <LinearGradient
-              colors={[Colors.accent, "#2563EB"]}
+              colors={[theme.accent, theme.accentDark]}
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
               style={styles.primaryButtonGradient}
@@ -283,15 +353,22 @@ const styles = StyleSheet.create({
   centered: { justifyContent: "center", alignItems: "center" },
   scrollContent: { paddingHorizontal: 24 },
   badgeArea: { alignItems: "center", marginBottom: 24 },
+  badgeWrapper: {
+    width: 120, height: 120, alignItems: "center", justifyContent: "center", marginBottom: 12,
+  },
+  badgeRing: {
+    position: "absolute",
+    width: 120, height: 120, borderRadius: 60,
+    borderWidth: 2,
+  },
   badgeCircle: {
     width: 100, height: 100, borderRadius: 50,
-    backgroundColor: "rgba(245, 197, 66, 0.1)",
-    borderWidth: 2, borderColor: "rgba(245, 197, 66, 0.3)",
-    alignItems: "center", justifyContent: "center", marginBottom: 12,
+    borderWidth: 2,
+    alignItems: "center", justifyContent: "center",
   },
   badgeEmoji: { fontSize: 44 },
   badgeTitle: {
-    fontFamily: "Nunito_800ExtraBold", fontSize: 20, color: Colors.accent,
+    fontFamily: "Nunito_800ExtraBold", fontSize: 20,
     textAlign: "center", marginBottom: 4,
   },
   badgeDescription: {
@@ -300,12 +377,16 @@ const styles = StyleSheet.create({
   },
   textArea: { alignItems: "center", marginBottom: 24 },
   completionLabel: {
-    fontFamily: "Nunito_700Bold", fontSize: 12, color: Colors.accent,
+    fontFamily: "Nunito_700Bold", fontSize: 12,
     letterSpacing: 3, marginBottom: 8,
   },
   completionTitle: {
     fontFamily: "Nunito_800ExtraBold", fontSize: 28, color: Colors.textPrimary,
     textAlign: "center", lineHeight: 36,
+  },
+  completionSublabel: {
+    fontFamily: "Nunito_400Regular", fontSize: 14, color: Colors.textSecondary,
+    marginTop: 6,
   },
   extrasArea: { gap: 12, marginBottom: 28 },
   extraCard: {
@@ -326,31 +407,29 @@ const styles = StyleSheet.create({
   },
   tomorrowCard: {
     flexDirection: "row", alignItems: "flex-start", gap: 12,
-    backgroundColor: "rgba(206, 147, 216, 0.06)",
-    borderRadius: 16, borderWidth: 1, borderColor: "rgba(206, 147, 216, 0.15)",
+    borderRadius: 16, borderWidth: 1,
     padding: 16,
   },
   tomorrowText: {
-    fontFamily: "Nunito_500Medium", fontSize: 14, color: "#CE93D8",
+    fontFamily: "Nunito_500Medium", fontSize: 14,
     flex: 1, lineHeight: 22, fontStyle: "italic",
   },
   actionsArea: { gap: 12 },
   saveButton: {
     flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 10,
-    backgroundColor: "rgba(59, 130, 246, 0.08)",
-    borderRadius: 28, borderWidth: 1.5, borderColor: "rgba(59, 130, 246, 0.2)",
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 28, borderWidth: 1.5,
     paddingVertical: 16,
   },
   saveButtonDone: {
     backgroundColor: "rgba(16, 185, 129, 0.08)",
-    borderColor: "rgba(16, 185, 129, 0.2)",
   },
   saveButtonText: {
-    fontFamily: "Nunito_700Bold", fontSize: 16, color: Colors.accent,
+    fontFamily: "Nunito_700Bold", fontSize: 16,
   },
   primaryButton: {
     borderRadius: 28, overflow: "hidden", elevation: 6,
-    shadowColor: Colors.accent, shadowOffset: { width: 0, height: 4 },
+    shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.4, shadowRadius: 12,
   },
   primaryButtonGradient: {
@@ -358,5 +437,5 @@ const styles = StyleSheet.create({
     gap: 10, paddingVertical: 18, paddingHorizontal: 32,
   },
   primaryButtonText: { fontFamily: "Nunito_700Bold", fontSize: 18, color: "#FFF" },
-  linkText: { fontFamily: "Nunito_700Bold", fontSize: 16, color: Colors.accent },
+  linkText: { fontFamily: "Nunito_700Bold", fontSize: 16 },
 });

@@ -1,8 +1,8 @@
 const SUNO_API_BASE = "https://api.sunoapi.org/api/v1";
 
 function getHeaders() {
-  const apiKey = process.env.SUNO_API_KEY;
-  if (!apiKey) throw new Error("SUNO_API_KEY not configured");
+  const apiKey = process.env.DEF_API_KEY || process.env.SUNO_API_KEY;
+  if (!apiKey) throw new Error("Music API key not configured");
   return {
     Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",

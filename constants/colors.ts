@@ -1,9 +1,9 @@
 const Colors = {
-  primary: '#0B1026',
-  primaryLight: '#151B3A',
-  secondary: '#1E2550',
-  accent: '#F5C542',
-  accentSoft: '#F5C54233',
+  primary: '#0E1528',
+  primaryLight: '#1A2240',
+  secondary: '#1E2B50',
+  accent: '#3B82F6',
+  accentSoft: '#3B82F633',
   purple: '#6B4C9A',
   purpleLight: '#8B6FBB',
   starlight: '#E8E4F0',
@@ -14,13 +14,14 @@ const Colors = {
   cardBorder: '#2A3160',
   success: '#4CAF50',
   error: '#FF5252',
-  overlay: 'rgba(11, 16, 38, 0.85)',
+  overlay: 'rgba(14, 21, 40, 0.85)',
+  background: '#020617',
   light: {
     text: '#FFFFFF',
-    background: '#0B1026',
-    tint: '#F5C542',
+    background: '#0E1528',
+    tint: '#3B82F6',
     tabIconDefault: '#6E6B80',
-    tabIconSelected: '#F5C542',
+    tabIconSelected: '#3B82F6',
   },
 };
 

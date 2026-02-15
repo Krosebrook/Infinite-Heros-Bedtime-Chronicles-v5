@@ -15,6 +15,7 @@ import {
   Nunito_700Bold,
   Nunito_800ExtraBold,
 } from "@expo-google-fonts/nunito";
+import { Bangers_400Regular } from "@expo-google-fonts/bangers";
 import Colors from "@/constants/colors";
 
 SplashScreen.preventAutoHideAsync();
@@ -66,6 +67,7 @@ export default function RootLayout() {
     Nunito_600SemiBold,
     Nunito_700Bold,
     Nunito_800ExtraBold,
+    Bangers_400Regular,
   });
 
   useEffect(() => {

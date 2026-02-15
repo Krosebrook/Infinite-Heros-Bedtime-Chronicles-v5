@@ -349,7 +349,7 @@ export default function HomeScreen() {
                   ? ["#7B1FA2", "#CE93D8"]
                   : mode === "madlibs"
                     ? ["#E64A19", "#FF8A65"]
-                    : ["#2962FF", "#448AFF"]
+                    : [Colors.accent, "#60A5FA"]
               }
               start={{ x: 0, y: 0 }}
               end={{ x: 1, y: 0 }}
@@ -380,25 +380,23 @@ const s = StyleSheet.create({
     paddingBottom: 20,
   },
   titleLine1: {
-    fontFamily: "Nunito_800ExtraBold",
-    fontSize: 48,
+    fontFamily: "Bangers_400Regular",
+    fontSize: 52,
     color: "#FFFFFF",
-    letterSpacing: 4,
-    fontStyle: "italic",
+    letterSpacing: 5,
     textAlign: "center",
-    lineHeight: 52,
+    lineHeight: 56,
     textShadowColor: "rgba(0,100,255,0.3)",
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 12,
   },
   titleLine2: {
-    fontFamily: "Nunito_800ExtraBold",
-    fontSize: 52,
+    fontFamily: "Bangers_400Regular",
+    fontSize: 56,
     color: "#5B9CFF",
-    letterSpacing: 6,
-    fontStyle: "italic",
+    letterSpacing: 7,
     textAlign: "center",
-    lineHeight: 56,
+    lineHeight: 60,
     textShadowColor: "rgba(91,156,255,0.35)",
     textShadowOffset: { width: 0, height: 4 },
     textShadowRadius: 16,
@@ -440,8 +438,8 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.08)",
   },
   modeTabActive: {
-    backgroundColor: "#2962FF",
-    borderColor: "#2962FF",
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
   },
   modeTabLabel: {
     fontFamily: "Nunito_700Bold",
@@ -517,9 +515,9 @@ const s = StyleSheet.create({
     justifyContent: "space-between",
   },
   arrowBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 18,
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     backgroundColor: "#F0F0F0",
     alignItems: "center",
     justifyContent: "center",
@@ -537,13 +535,13 @@ const s = StyleSheet.create({
   heroDotActive: {
     width: 18,
     borderRadius: 3,
-    backgroundColor: "#2962FF",
+    backgroundColor: Colors.accent,
   },
   nextBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "#2962FF",
+    backgroundColor: Colors.accent,
     paddingVertical: 10,
     paddingHorizontal: 18,
     borderRadius: 20,
@@ -589,7 +587,7 @@ const s = StyleSheet.create({
     top: 0,
     left: 0,
     height: 3,
-    backgroundColor: "#2962FF",
+    backgroundColor: Colors.accent,
     borderRadius: 2,
   },
   timelineNodes: {
@@ -612,12 +610,12 @@ const s = StyleSheet.create({
     borderColor: "#E0E0E0",
   },
   timelineNodePast: {
-    backgroundColor: "#2962FF",
-    borderColor: "#2962FF",
+    backgroundColor: Colors.accent,
+    borderColor: Colors.accent,
   },
   timelineNodeActive: {
-    backgroundColor: "#2962FF",
-    borderColor: "#1A56DB",
+    backgroundColor: Colors.accent,
+    borderColor: "#2563EB",
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -626,7 +624,7 @@ const s = StyleSheet.create({
   timelineLabel: {
     fontFamily: "Nunito_700Bold",
     fontSize: 14,
-    color: "#2962FF",
+    color: Colors.accent,
     marginTop: 10,
     letterSpacing: 0.5,
   },
@@ -650,8 +648,8 @@ const s = StyleSheet.create({
     borderColor: "#EEE",
   },
   voiceChipActive: {
-    borderColor: "#2962FF",
-    backgroundColor: "#EDF2FF",
+    borderColor: Colors.accent,
+    backgroundColor: "#EFF6FF",
   },
   voiceChipIcon: {
     width: 28,
@@ -662,7 +660,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   voiceChipIconActive: {
-    backgroundColor: "#2962FF",
+    backgroundColor: Colors.accent,
   },
   voiceChipDesc: {
     fontFamily: "Nunito_500Medium",
@@ -670,7 +668,7 @@ const s = StyleSheet.create({
     color: "#999",
   },
   voiceChipDescActive: {
-    color: "#2962FF",
+    color: Colors.accent,
   },
   voiceChipLabel: {
     fontFamily: "Nunito_700Bold",
@@ -683,10 +681,10 @@ const s = StyleSheet.create({
   engageBtn: {
     marginHorizontal: 20,
     marginTop: 20,
-    borderRadius: 28,
+    borderRadius: 9999,
     overflow: "hidden",
     elevation: 4,
-    shadowColor: "#2962FF",
+    shadowColor: Colors.accent,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 12,
@@ -697,8 +695,8 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   engageBtnText: {
-    fontFamily: "Nunito_800ExtraBold",
-    fontSize: 16,
+    fontFamily: "Bangers_400Regular",
+    fontSize: 18,
     color: "#FFF",
     letterSpacing: 2,
   },

@@ -23,17 +23,19 @@ function RootLayoutNav() {
   return (
     <Stack
       screenOptions={{
-        headerBackTitle: "Back",
-        headerStyle: { backgroundColor: Colors.primary },
-        headerTintColor: Colors.textPrimary,
+        headerShown: false,
         contentStyle: { backgroundColor: Colors.primary },
+        animation: "fade",
       }}
     >
-      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="index" />
       <Stack.Screen
-        name="story/[id]"
+        name="options"
+        options={{ animation: "slide_from_right" }}
+      />
+      <Stack.Screen
+        name="story"
         options={{
-          headerShown: false,
           presentation: "fullScreenModal",
           animation: "fade",
         }}

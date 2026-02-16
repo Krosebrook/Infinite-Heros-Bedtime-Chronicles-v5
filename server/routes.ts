@@ -3,6 +3,14 @@ import { createServer, type Server } from "node:http";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { generateSpeech, VOICE_MAP } from "./elevenlabs";
 import { getMusicFilePath, getMusicFileName } from "./suno";
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+
+const TTS_CACHE_DIR = path.resolve("/tmp/tts-cache");
+if (!fs.existsSync(TTS_CACHE_DIR)) {
+  fs.mkdirSync(TTS_CACHE_DIR, { recursive: true });
+}
 
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
@@ -268,18 +276,30 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
       }
 
       const voiceKey = (voice || "kore").toLowerCase();
-      const audioBuffer = await generateSpeech(text, voiceKey);
+      const hash = crypto.createHash("md5").update(`${voiceKey}:${text}`).digest("hex");
+      const fileName = `${hash}.mp3`;
+      const filePath = path.join(TTS_CACHE_DIR, fileName);
 
-      res.set({
-        "Content-Type": "audio/mpeg",
-        "Content-Length": audioBuffer.length.toString(),
-        "Cache-Control": "public, max-age=86400",
-      });
-      res.send(audioBuffer);
+      if (!fs.existsSync(filePath)) {
+        const audioBuffer = await generateSpeech(text, voiceKey);
+        fs.writeFileSync(filePath, audioBuffer);
+      }
+
+      res.json({ audioUrl: `/api/tts-audio/${fileName}` });
     } catch (error: any) {
       console.error("TTS error:", error?.message || error);
       res.status(500).json({ error: "Failed to generate speech" });
     }
+  });
+
+  app.get("/api/tts-audio/:file", (req, res) => {
+    const filePath = path.join(TTS_CACHE_DIR, req.params.file);
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).json({ error: "Audio not found" });
+    }
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.sendFile(filePath);
   });
 
   app.get("/api/music/:mode", (req, res) => {

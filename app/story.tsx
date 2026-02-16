@@ -476,14 +476,10 @@ export default function StoryScreen() {
 
       if (!response.ok) throw new Error("TTS request failed");
 
-      const blob = await response.blob();
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onloadend = () => resolve(reader.result as string);
-        reader.onerror = reject;
-        reader.readAsDataURL(blob);
-      });
-      const dataUri = await base64Promise;
+      const data = await response.json();
+      if (!data.audioUrl) throw new Error("No audio URL returned");
+
+      const audioFileUrl = new URL(data.audioUrl, baseUrl).toString();
 
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -491,7 +487,7 @@ export default function StoryScreen() {
       });
 
       const { sound } = await Audio.Sound.createAsync(
-        { uri: dataUri },
+        { uri: audioFileUrl },
         { shouldPlay: true, rate: 1.0 }
       );
       soundRef.current = sound;
@@ -506,7 +502,7 @@ export default function StoryScreen() {
         }
       });
     } catch (err) {
-      console.log("TTS error, falling back:", err);
+      console.log("TTS error:", err);
       setAudioLoading(false);
       setIsSpeaking(false);
     }

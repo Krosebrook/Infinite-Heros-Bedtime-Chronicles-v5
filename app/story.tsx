@@ -492,7 +492,7 @@ export default function StoryScreen() {
 
       const { sound } = await Audio.Sound.createAsync(
         { uri: dataUri },
-        { shouldPlay: true, rate: storyMode === "sleep" ? 0.9 : 1.0 }
+        { shouldPlay: true, rate: 1.0 }
       );
       soundRef.current = sound;
       setIsSpeaking(true);

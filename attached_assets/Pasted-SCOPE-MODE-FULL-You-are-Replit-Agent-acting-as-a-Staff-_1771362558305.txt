@@ -1,0 +1,98 @@
+SCOPE_MODE: FULL
+
+You are Replit Agent acting as a Staff Engineer + DevSecOps reviewer. Audit THIS repository for production readiness. Do NOT write a new app. Do NOT refactor for style. Analyze repo/code first, then generate missing files only; do not rewrite unchanged files.
+
+Hard rules:
+- No vague statements. Every finding MUST include: (a) evidence (file path + snippet summary), (b) risk, (c) fix with exact steps, (d) verification command(s).
+- If something is unknown, say “UNKNOWN” and list the smallest action to confirm it.
+- Prefer secure defaults. Treat secrets and auth as high-risk until proven safe.
+- Output must be executable in this environment (Replit shell). If a command depends on tooling not installed, install it or provide an alternative.
+- Do not include any real secrets in output. If secrets are found, redact values and provide remediation steps.
+
+PHASE 0 — Identify stack and entrypoints
+1) Determine the app type (Next.js/React/Vite/Node/Express/Python/etc.), runtime, package manager, and primary entrypoints.
+2) List critical directories (src/, app/, pages/, api/, server/, prisma/, supabase/, infra/).
+3) Produce a “System Map” including: frontend, backend, database, auth, storage, queues/jobs, third-party integrations, deployment target.
+
+PHASE 1 — Reproducible build & run (prove it)
+Run and record:
+- dependency install
+- build
+- test (if present)
+- lint/typecheck (if present)
+- start in production mode
+Capture failures and logs. If scripts are missing, propose exact scripts to add and where.
+
+PHASE 2 — Production Readiness Checklist (audit with evidence)
+For EACH category below, output PASS/FAIL/UNKNOWN with evidence:
+
+A) Reliability & correctness
+- Startup/shutdown behavior
+- Health check endpoint (or equivalent)
+- Graceful error handling (API + UI)
+- Background jobs stability (if any)
+- Idempotency for critical endpoints (payments/webhooks/tasks)
+
+B) Security (OWASP-style, practical)
+- AuthN/AuthZ correctness (sessions/JWT/cookies, role checks, route protection)
+- Secrets handling (.env usage, accidental commits, logging)
+- Input validation and output encoding (XSS, injection)
+- CSRF protections (if cookie auth)
+- CORS policy correctness
+- Rate limiting / abuse prevention
+- File upload safety (type/size scanning)
+- SSRF protections for fetchers/crawlers
+- Dependencies vulnerabilities (run audit tool)
+- Security headers (CSP, HSTS, X-Frame-Options, etc.) if web app
+
+C) Performance
+- Bundle size / code splitting
+- Server response times (basic profiling)
+- Caching strategy (HTTP caching, app cache, DB cache)
+- N+1 queries / slow queries (if ORM present)
+- Image optimization (if relevant)
+- Avoiding heavy libraries in critical path
+
+D) Observability & operations
+- Structured logging (no secrets)
+- Error tracking hooks (Sentry/etc.) or at least log levels
+- Metrics (request counts/latency) minimal viable approach
+- Tracing (optional) or correlation IDs
+- Runbooks: how to deploy, rollback, debug incidents
+
+E) Deployment readiness
+- Environment variable contract documented
+- DB migrations strategy + rollback plan
+- Build artifacts and start command correct for production
+- CI pipeline present (or propose)
+- Versioning + changelog (minimal)
+- Infrastructure as code (optional) or at least deployment instructions
+
+F) Data & privacy
+- PII handling and retention notes
+- Encryption in transit (assume yes) and at rest (DB dependent)
+- Access controls on stored objects (S3/Supabase buckets/etc.)
+- Audit log needs (basic)
+
+PHASE 3 — Automated checks to add (minimal but real)
+Add (only if missing) the smallest set of files/scripts to enforce quality gates, such as:
+- package.json scripts: lint, typecheck, test, build, start
+- .env.example (no secrets)
+- basic GitHub Actions CI OR Replit equivalent checks (if available)
+- SECURITY.md and DEPLOYMENT.md (minimal, accurate)
+- health endpoint (if missing) OR clear guidance where it should live
+
+PHASE 4 — Output deliverables (must be concrete)
+Produce these sections in the final response:
+
+1) Executive verdict (ship/no-ship) with 3–7 blocking issues max.
+2) Risk register table with: ID, severity (Critical/High/Med/Low), category, evidence path, fix summary, verification command.
+3) “Fix Plan” in the exact order to implement, with time estimates in rough buckets (S/M/L) not hours.
+4) “Golden Path” production run: exact commands to go from fresh clone → deployed-ready.
+5) “Smoke Test Checklist” to run before each deploy.
+
+Also include:
+- A short list of “Non-obvious footguns” you found (things that look fine but will bite in prod).
+- If the app handles payments/webhooks/auth, include special scrutiny and verify idempotency + signature checks.
+
+Start now by scanning the repo and printing the System Map before proposing any fixes.

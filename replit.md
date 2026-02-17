@@ -34,14 +34,18 @@ Preferred communication style: Simple, everyday language.
 - **Runtime**: Node.js with TypeScript (tsx for dev, esbuild for production bundling)
 - **API Server**: Express v5 running on the same deployment, serves both API routes and (in production) static web assets
 - **Key Endpoints**:
+  - `GET /api/health` — Health check (returns `{"status":"ok","timestamp":...}`)
   - `POST /api/generate-story` — Generates bedtime story using Gemini 2.5 Flash
   - `POST /api/generate-avatar` — AI hero avatar generation via Gemini image model
   - `POST /api/generate-scene` — Scene illustration generation
-  - `POST /api/tts` — Text-to-speech via ElevenLabs
+  - `POST /api/tts` — Text-to-speech via ElevenLabs (max 5000 chars)
+  - `GET /api/tts-audio/:file` — Serves cached TTS audio (hex hash filenames only)
   - `GET /api/music/:mode` — Serves static background music files (classic, sleep, madlibs)
   - `GET /api/voices` — Lists available narrator voices
 - **AI Integration**: Google Gemini AI via Replit AI Integrations (`AI_INTEGRATIONS_GEMINI_API_KEY`, `AI_INTEGRATIONS_GEMINI_BASE_URL`), using `gemini-2.5-flash` for text and `gemini-2.5-flash-image` for images
 - **CORS**: Dynamic origin handling supporting Replit dev domains and localhost for Expo web development
+- **Security**: Input sanitization (string length caps), rate limiting (10 req/min/IP on AI endpoints), path traversal protection on TTS audio serving, 100KB body size limit
+- **Reliability**: Graceful shutdown on SIGTERM/SIGINT, TTS cache auto-eviction (24h TTL, hourly cleanup)
 
 ### Shared Code (`shared/`)
 - **Schema**: Drizzle ORM schema definitions shared between frontend and backend

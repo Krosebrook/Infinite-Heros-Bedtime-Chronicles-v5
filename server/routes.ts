@@ -393,7 +393,7 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
 
   app.get("/api/tts-audio/:file", (req, res) => {
     const fileName = req.params.file;
-    if (!fileName || /[^a-f0-9.]/.test(fileName) || !fileName.endsWith(".mp3") || fileName.includes("..")) {
+    if (!fileName || !/^[a-f0-9]+\.mp3$/.test(fileName)) {
       return res.status(400).json({ error: "Invalid file name" });
     }
 

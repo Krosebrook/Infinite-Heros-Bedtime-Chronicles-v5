@@ -12,6 +12,64 @@ if (!fs.existsSync(TTS_CACHE_DIR)) {
   fs.mkdirSync(TTS_CACHE_DIR, { recursive: true });
 }
 
+const TTS_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+
+function cleanTtsCache() {
+  try {
+    const files = fs.readdirSync(TTS_CACHE_DIR);
+    const now = Date.now();
+    let removed = 0;
+    for (const file of files) {
+      const filePath = path.join(TTS_CACHE_DIR, file);
+      const stat = fs.statSync(filePath);
+      if (now - stat.mtimeMs > TTS_CACHE_MAX_AGE_MS) {
+        fs.unlinkSync(filePath);
+        removed++;
+      }
+    }
+    if (removed > 0) {
+      console.log(`[Cache] Cleaned ${removed} expired TTS files`);
+    }
+  } catch (err) {
+    console.error("[Cache] Cleanup error:", err);
+  }
+}
+
+setInterval(cleanTtsCache, 60 * 60 * 1000);
+cleanTtsCache();
+
+const MAX_TTS_TEXT_LENGTH = 5000;
+const MAX_INPUT_STRING_LENGTH = 500;
+const VALID_MODES = ["classic", "madlibs", "sleep"];
+const VALID_DURATIONS = ["short", "medium-short", "medium", "long", "epic"];
+
+const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const RATE_LIMIT_MAX = 10;
+
+function checkRateLimit(ip: string): boolean {
+  const now = Date.now();
+  const entry = rateLimitMap.get(ip);
+  if (!entry || now > entry.resetAt) {
+    rateLimitMap.set(ip, { count: 1, resetAt: now + RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= RATE_LIMIT_MAX;
+}
+
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateLimitMap) {
+    if (now > entry.resetAt) rateLimitMap.delete(ip);
+  }
+}, 5 * 60 * 1000);
+
+function sanitizeString(val: unknown, maxLen: number): string {
+  if (typeof val !== "string") return "";
+  return val.slice(0, maxLen).trim();
+}
+
 const ai = new GoogleGenAI({
   apiKey: process.env.AI_INTEGRATIONS_GEMINI_API_KEY,
   httpOptions: {
@@ -125,7 +183,8 @@ Total story length: approximately ${wordCount} words spread across ${partCount} 
 
   if (mode === "madlibs" && madlibWords) {
     const wordsList = Object.entries(madlibWords)
-      .map(([key, value]) => `${key}: "${value}"`)
+      .slice(0, 20)
+      .map(([key, value]) => `${sanitizeString(key, 50)}: "${sanitizeString(value, 100)}"`)
       .join(", ");
     prompt += `\n\nThe child provided these Mad Libs words that MUST appear naturally in the story: ${wordsList}`;
   }
@@ -138,17 +197,33 @@ Total story length: approximately ${wordCount} words spread across ${partCount} 
 }
 
 export async function registerRoutes(app: Express): Promise<Server> {
+  app.get("/api/health", (_req, res) => {
+    res.json({ status: "ok", timestamp: Date.now() });
+  });
+
   app.post("/api/generate-story", async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+    }
+
     try {
-      const { heroName, heroTitle, heroPower, heroDescription, duration, mode, madlibWords } = req.body;
+      const heroName = sanitizeString(req.body.heroName, MAX_INPUT_STRING_LENGTH);
+      const heroTitle = sanitizeString(req.body.heroTitle, MAX_INPUT_STRING_LENGTH);
+      const heroPower = sanitizeString(req.body.heroPower, MAX_INPUT_STRING_LENGTH);
+      const heroDescription = sanitizeString(req.body.heroDescription, MAX_INPUT_STRING_LENGTH);
+      const duration = sanitizeString(req.body.duration, 20);
+      const mode = sanitizeString(req.body.mode, 20);
+      const madlibWords = req.body.madlibWords;
 
       if (!heroName) {
         return res.status(400).json({ error: "Hero name is required" });
       }
 
-      const storyMode = mode || "classic";
-      const wordCount = getWordCount(duration || "medium");
-      const partCount = getPartCount(duration || "medium");
+      const storyMode = VALID_MODES.includes(mode) ? mode : "classic";
+      const storyDuration = VALID_DURATIONS.includes(duration) ? duration : "medium";
+      const wordCount = getWordCount(storyDuration);
+      const partCount = getPartCount(storyDuration);
 
       const systemPrompt = getStorySystemPrompt(storyMode, partCount);
       const userPrompt = getStoryUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, partCount, madlibWords);
@@ -195,8 +270,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/generate-avatar", async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+    }
+
     try {
-      const { heroName, heroTitle, heroPower, heroDescription } = req.body;
+      const heroName = sanitizeString(req.body.heroName, MAX_INPUT_STRING_LENGTH);
+      const heroTitle = sanitizeString(req.body.heroTitle, MAX_INPUT_STRING_LENGTH);
+      const heroPower = sanitizeString(req.body.heroPower, MAX_INPUT_STRING_LENGTH);
+      const heroDescription = sanitizeString(req.body.heroDescription, MAX_INPUT_STRING_LENGTH);
 
       if (!heroName) {
         return res.status(400).json({ error: "Hero name is required" });
@@ -231,8 +314,15 @@ Style: Adorable Pixar/Disney-inspired character design, round friendly features,
   });
 
   app.post("/api/generate-scene", async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+    }
+
     try {
-      const { heroName, sceneText, heroDescription } = req.body;
+      const heroName = sanitizeString(req.body.heroName, MAX_INPUT_STRING_LENGTH);
+      const sceneText = sanitizeString(req.body.sceneText, 2000);
+      const heroDescription = sanitizeString(req.body.heroDescription, MAX_INPUT_STRING_LENGTH);
 
       if (!sceneText) {
         return res.status(400).json({ error: "Scene text is required" });
@@ -269,13 +359,22 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
   });
 
   app.post("/api/tts", async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+    }
+
     try {
       const { text, voice } = req.body;
       if (!text || typeof text !== "string") {
         return res.status(400).json({ error: "Text is required" });
       }
 
-      const voiceKey = (voice || "kore").toLowerCase();
+      if (text.length > MAX_TTS_TEXT_LENGTH) {
+        return res.status(400).json({ error: `Text too long. Maximum ${MAX_TTS_TEXT_LENGTH} characters.` });
+      }
+
+      const voiceKey = sanitizeString(voice || "kore", 20).toLowerCase();
       const hash = crypto.createHash("md5").update(`${voiceKey}:${text}`).digest("hex");
       const fileName = `${hash}.mp3`;
       const filePath = path.join(TTS_CACHE_DIR, fileName);
@@ -293,17 +392,30 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
   });
 
   app.get("/api/tts-audio/:file", (req, res) => {
-    const filePath = path.join(TTS_CACHE_DIR, req.params.file);
-    if (!fs.existsSync(filePath)) {
+    const fileName = req.params.file;
+    if (!fileName || /[^a-f0-9.]/.test(fileName) || !fileName.endsWith(".mp3") || fileName.includes("..")) {
+      return res.status(400).json({ error: "Invalid file name" });
+    }
+
+    const filePath = path.join(TTS_CACHE_DIR, fileName);
+    const resolved = path.resolve(filePath);
+    if (!resolved.startsWith(TTS_CACHE_DIR)) {
+      return res.status(400).json({ error: "Invalid file path" });
+    }
+
+    if (!fs.existsSync(resolved)) {
       return res.status(404).json({ error: "Audio not found" });
     }
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "public, max-age=86400");
-    res.sendFile(filePath);
+    res.sendFile(resolved);
   });
 
   app.get("/api/music/:mode", (req, res) => {
-    const mode = req.params.mode || "classic";
+    const mode = sanitizeString(req.params.mode, 20);
+    if (!VALID_MODES.includes(mode)) {
+      return res.status(400).json({ error: "Invalid mode" });
+    }
     const filePath = getMusicFilePath(mode);
     res.setHeader("Content-Type", "audio/mpeg");
     res.setHeader("Cache-Control", "public, max-age=86400");

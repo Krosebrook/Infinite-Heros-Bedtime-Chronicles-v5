@@ -488,11 +488,9 @@ export default function StoryScreen() {
 
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioFileUrl },
-        { shouldPlay: true, rate: 1.0 }
+        { shouldPlay: false }
       );
       soundRef.current = sound;
-      setIsSpeaking(true);
-      setAudioLoading(false);
 
       sound.setOnPlaybackStatusUpdate((status) => {
         if (status.isLoaded && status.didJustFinish) {
@@ -501,6 +499,10 @@ export default function StoryScreen() {
           setIsSpeaking(false);
         }
       });
+
+      await sound.playAsync();
+      setIsSpeaking(true);
+      setAudioLoading(false);
     } catch (err) {
       console.log("TTS error:", err);
       setAudioLoading(false);

@@ -54,10 +54,10 @@ export async function generateSpeech(text: string, voiceKey: string): Promise<Bu
     model_id: "eleven_multilingual_v2",
     output_format: "mp3_44100_128",
     voice_settings: {
-      stability: 0.5,
-      similarity_boost: 0.8,
-      style: 0.45,
-      use_speaker_boost: true,
+      stability: 0.75,
+      similarity_boost: 0.75,
+      style: 0.15,
+      use_speaker_boost: false,
     },
   });
 

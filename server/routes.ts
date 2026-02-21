@@ -446,39 +446,25 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
       const voiceKeys = Object.keys(VOICE_MAP);
       const voiceDescriptions = Object.entries(VOICE_MAP).map(([k, v]) => `${k} (${v.description})`).join(", ");
 
-      const prompt = `You are a helpful bedtime story assistant for children ages 3-9. Based on the context below, suggest the best story settings.
-
-Context:
-- Time: ${timeOfDay} (${hour}:00)
-- Selected hero: ${heroName} — ${heroPower}. ${heroDescription}
-
-Available options:
-- Modes: classic (choose-your-own-adventure), madlibs (fill in silly words), sleep (calm auto-advancing story)
-- Durations: short (3 min), medium-short (5 min), medium (8 min), long (12 min), epic (15+ min)
-- Speeds: gentle (0.8x slow and soothing), medium (0.9x balanced), normal (1.0x regular pace)
-- Voices: ${voiceDescriptions}
-
-Reply in EXACTLY this JSON format, nothing else:
-{"mode":"<mode>","duration":"<duration>","speed":"<speed>","voice":"<voice_key>","tip":"<one friendly sentence explaining why these settings are perfect right now, max 80 chars>"}
-
-Rules:
-- At nighttime/bedtime, prefer sleep mode, gentle speed, and shorter durations
-- In the afternoon, prefer classic or madlibs mode with medium/normal speed
-- Match the voice personality to the hero's character
-- Keep the tip warm, short, and parent-friendly`;
+      const prompt = `Suggest bedtime story settings as JSON. Time: ${timeOfDay}. Hero: ${heroName} (${heroPower}). Modes: classic, madlibs, sleep. Durations: short, medium-short, medium, long, epic. Speeds: gentle, medium, normal. Voices: ${voiceKeys.join(", ")}. Night=sleep+gentle+short. Afternoon=classic/madlibs+medium/normal. Reply ONLY with: {"mode":"...","duration":"...","speed":"...","voice":"...","tip":"short parent-friendly reason"}`;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
-        contents: prompt,
+        contents: [
+          { role: "user", parts: [{ text: prompt }] },
+        ],
         config: {
           temperature: 0.7,
-          maxOutputTokens: 200,
+          maxOutputTokens: 2048,
+          thinkingConfig: { thinkingBudget: 0 },
         },
       });
 
-      const text = response?.text?.trim() || "";
+      let text = response?.text?.trim() || "";
+      text = text.replace(/```json\s*/g, "").replace(/```\s*/g, "");
       const jsonMatch = text.match(/\{[\s\S]*\}/);
       if (!jsonMatch) {
+        console.error("AI suggest-settings: no JSON in response");
         return res.status(500).json({ error: "Invalid AI response" });
       }
 

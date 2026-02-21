@@ -15,7 +15,7 @@ Preferred communication style: Simple, everyday language.
 ### Frontend (Expo / React Native)
 - **Framework**: Expo SDK 54 with React Native 0.81, using the new architecture
 - **Routing**: Expo Router v6 with file-based routing (`app/` directory). Single-page combined layout:
-  - `index.tsx` — Combined single-page with dark "INFINITY HEROES" header, mode tabs (Classic/Mad Libs/Sleepy), white card containing hero picker (circular avatar + prev/next arrows), duration timeline (5 connected nodes), narrator voice chips, and "ENGAGE MISSION" button
+  - `index.tsx` — Combined single-page with dark "INFINITY HEROES" header, mode tabs (Classic/Mad Libs/Sleepy), hero picker (circular avatar + prev/next arrows), duration timeline (5 connected nodes), narrator voice chips, narration speed presets (Gentle 0.8x/Medium 0.9x/Normal 1.0x), and "BEGIN ADVENTURE" button
   - `madlibs.tsx` — Mad Libs word input screen
   - `sleep-setup.tsx` — Sleep mode soundscape and timer setup
   - `story.tsx` — Story generation and display with streaming text
@@ -27,7 +27,7 @@ Preferred communication style: Simple, everyday language.
 - **Animations**: React Native Reanimated for entrance animations, pulsing effects, and star twinkling
 - **Fonts**: Nunito (Google Fonts) in multiple weights via `@expo-google-fonts/nunito`
 - **Haptics**: Expo Haptics for touch feedback on interactions
-- **Text-to-Speech**: ElevenLabs via Replit connector for natural voice narration (7 voice options), with expo-av for audio playback
+- **Text-to-Speech**: ElevenLabs via Replit connector for natural voice narration (7 voice options), with expo-av for audio playback. Adjustable narration speed (Gentle 0.8x, Medium 0.9x, Normal 1.0x) via expo-av rate control with pitch correction. Speed can be set on setup screen and adjusted mid-playback on story screen. Sleepy mode defaults to Gentle, others to Medium.
 - **Background Music**: Static royalty-free MP3 files served from Express backend (`assets/music/`), played via expo-av with looping. Three tracks: Gymnopedie No. 1 (classic), Dreamy Flashback (sleep), Merry Go (madlibs) — all CC-BY Kevin MacLeod
 
 ### Backend (Express)

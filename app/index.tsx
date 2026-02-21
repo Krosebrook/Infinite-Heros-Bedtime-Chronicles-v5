@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -28,6 +29,15 @@ import { HEROES, Hero } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 import { MemoryJar } from "@/components/MemoryJar";
 import { SettingsModal } from "@/components/SettingsModal";
+import { apiRequest } from "@/lib/query-client";
+
+interface AISuggestion {
+  mode: string;
+  duration: string;
+  speed: string;
+  voice: string;
+  tip: string;
+}
 
 const MODE_THEMES = {
   classic: {
@@ -63,6 +73,7 @@ const MODE_THEMES = {
 };
 
 type ModeId = keyof typeof MODE_THEMES;
+const VALID_MODES_LIST: ModeId[] = ["classic", "madlibs", "sleep"];
 
 const MODES: { id: ModeId; icon: string; iconSet: "mci" | "ion" }[] = [
   { id: "classic", icon: "sword-cross", iconSet: "mci" },
@@ -278,8 +289,58 @@ export default function HomeScreen() {
   const [jarVisible, setJarVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
 
+  const [suggestion, setSuggestion] = useState<AISuggestion | null>(null);
+  const [suggestionLoading, setSuggestionLoading] = useState(false);
+  const [suggestionDismissed, setSuggestionDismissed] = useState(false);
+  const lastFetchedHeroRef = useRef<number>(-1);
+
   const hero = HEROES[heroIndex];
   const theme = MODE_THEMES[mode];
+
+  const fetchSuggestion = useCallback(async (h: Hero) => {
+    setSuggestionLoading(true);
+    setSuggestion(null);
+    setSuggestionDismissed(false);
+    try {
+      const res = await apiRequest("POST", "/api/suggest-settings", {
+        heroName: h.name,
+        heroPower: h.power,
+        heroDescription: h.description,
+        hour: new Date().getHours(),
+      });
+      const data: AISuggestion = await res.json();
+      setSuggestion(data);
+    } catch (e) {
+      console.log("Suggestion fetch failed:", e);
+    } finally {
+      setSuggestionLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (lastFetchedHeroRef.current !== heroIndex) {
+      lastFetchedHeroRef.current = heroIndex;
+      fetchSuggestion(HEROES[heroIndex]);
+    }
+  }, [heroIndex, fetchSuggestion]);
+
+  const applySuggestion = () => {
+    if (!suggestion) return;
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (VALID_MODES_LIST.includes(suggestion.mode as ModeId)) {
+      setMode(suggestion.mode as ModeId);
+    }
+    if (DURATIONS.some(d => d.id === suggestion.duration)) {
+      setDuration(suggestion.duration);
+    }
+    if (SPEED_PRESETS.some(sp => sp.id === suggestion.speed)) {
+      setSpeed(suggestion.speed);
+    }
+    if (VOICES.some(v => v.id === suggestion.voice)) {
+      setVoice(suggestion.voice);
+    }
+    setSuggestionDismissed(true);
+  };
 
   const handleModeChange = (newMode: ModeId) => {
     setMode(newMode);
@@ -366,6 +427,77 @@ export default function HomeScreen() {
             <View style={[s.taglineLine, { backgroundColor: theme.accent }]} />
           </View>
         </Animated.View>
+
+        {(suggestionLoading || (suggestion && !suggestionDismissed)) && (
+          <Animated.View entering={FadeInDown.duration(400)} style={s.suggestionCard}>
+            <LinearGradient
+              colors={[`${theme.accent}15`, `${theme.accent}08`]}
+              style={s.suggestionGradient}
+            >
+              <View style={s.suggestionHeader}>
+                <View style={[s.suggestionIconWrap, { backgroundColor: `${theme.accent}30` }]}>
+                  <Ionicons name="sparkles" size={14} color={theme.accent} />
+                </View>
+                <Text style={[s.suggestionTitle, { color: theme.accent }]}>AI Suggestion</Text>
+                <View style={{ flex: 1 }} />
+                <Pressable
+                  onPress={() => fetchSuggestion(hero)}
+                  style={s.suggestionAction}
+                  testID="refresh-suggestion"
+                >
+                  <Ionicons name="refresh" size={14} color="rgba(255,255,255,0.5)" />
+                </Pressable>
+                <Pressable
+                  onPress={() => setSuggestionDismissed(true)}
+                  style={s.suggestionAction}
+                  testID="dismiss-suggestion"
+                >
+                  <Ionicons name="close" size={14} color="rgba(255,255,255,0.5)" />
+                </Pressable>
+              </View>
+              {suggestionLoading ? (
+                <View style={s.suggestionLoadingWrap}>
+                  <ActivityIndicator size="small" color={theme.accent} />
+                  <Text style={s.suggestionLoadingText}>Thinking...</Text>
+                </View>
+              ) : suggestion ? (
+                <>
+                  <Text style={s.suggestionTip}>{suggestion.tip}</Text>
+                  <View style={s.suggestionChips}>
+                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                      <Text style={s.suggestionChipText}>
+                        {MODE_THEMES[suggestion.mode as ModeId]?.label || suggestion.mode}
+                      </Text>
+                    </View>
+                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                      <Text style={s.suggestionChipText}>
+                        {DURATIONS.find(d => d.id === suggestion.duration)?.label || suggestion.duration}
+                      </Text>
+                    </View>
+                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                      <Text style={s.suggestionChipText}>
+                        {SPEED_PRESETS.find(sp => sp.id === suggestion.speed)?.label || suggestion.speed}
+                      </Text>
+                    </View>
+                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                      <Text style={s.suggestionChipText}>
+                        {VOICES.find(v => v.id === suggestion.voice)?.label || suggestion.voice}
+                      </Text>
+                    </View>
+                  </View>
+                  <Pressable
+                    onPress={applySuggestion}
+                    style={[s.suggestionApplyBtn, { backgroundColor: theme.accent }]}
+                    testID="apply-suggestion"
+                  >
+                    <Ionicons name="checkmark-circle" size={14} color="#FFF" />
+                    <Text style={s.suggestionApplyText}>Apply Settings</Text>
+                  </Pressable>
+                </>
+              ) : null}
+            </LinearGradient>
+          </Animated.View>
+        )}
 
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
           <View style={s.sectionHeader}>
@@ -859,5 +991,92 @@ const s = StyleSheet.create({
     fontSize: 10,
     color: "rgba(255,255,255,0.35)",
     letterSpacing: 1,
+  },
+  suggestionCard: {
+    marginHorizontal: 20,
+    marginBottom: 4,
+  },
+  suggestionGradient: {
+    borderRadius: 16,
+    padding: 14,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+  },
+  suggestionHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 8,
+  },
+  suggestionIconWrap: {
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  suggestionTitle: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 12,
+    letterSpacing: 1,
+  },
+  suggestionAction: {
+    width: 28,
+    height: 28,
+    borderRadius: 14,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  suggestionLoadingWrap: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    paddingVertical: 10,
+  },
+  suggestionLoadingText: {
+    fontFamily: "Nunito_500Medium",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.4)",
+  },
+  suggestionTip: {
+    fontFamily: "Nunito_500Medium",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.7)",
+    lineHeight: 18,
+    marginBottom: 10,
+  },
+  suggestionChips: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 6,
+    marginBottom: 10,
+  },
+  suggestionChip: {
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 10,
+    borderWidth: 1,
+    backgroundColor: "rgba(255,255,255,0.04)",
+  },
+  suggestionChipText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.6)",
+  },
+  suggestionApplyBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 8,
+    borderRadius: 10,
+  },
+  suggestionApplyText: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 12,
+    color: "#FFF",
+    letterSpacing: 0.5,
   },
 });

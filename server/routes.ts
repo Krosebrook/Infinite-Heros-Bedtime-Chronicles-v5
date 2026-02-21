@@ -429,6 +429,75 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
     });
   });
 
+  app.post("/api/suggest-settings", async (req, res) => {
+    const clientIp = req.ip || "unknown";
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: "Too many requests" });
+    }
+
+    try {
+      const heroName = sanitizeString(req.body.heroName, MAX_INPUT_STRING_LENGTH);
+      const heroPower = sanitizeString(req.body.heroPower, MAX_INPUT_STRING_LENGTH);
+      const heroDescription = sanitizeString(req.body.heroDescription, MAX_INPUT_STRING_LENGTH);
+      const hour = typeof req.body.hour === "number" ? Math.min(23, Math.max(0, Math.floor(req.body.hour))) : new Date().getHours();
+
+      const timeOfDay = hour >= 19 || hour < 6 ? "nighttime/bedtime" : hour >= 17 ? "evening" : hour >= 12 ? "afternoon" : "morning";
+
+      const voiceKeys = Object.keys(VOICE_MAP);
+      const voiceDescriptions = Object.entries(VOICE_MAP).map(([k, v]) => `${k} (${v.description})`).join(", ");
+
+      const prompt = `You are a helpful bedtime story assistant for children ages 3-9. Based on the context below, suggest the best story settings.
+
+Context:
+- Time: ${timeOfDay} (${hour}:00)
+- Selected hero: ${heroName} — ${heroPower}. ${heroDescription}
+
+Available options:
+- Modes: classic (choose-your-own-adventure), madlibs (fill in silly words), sleep (calm auto-advancing story)
+- Durations: short (3 min), medium-short (5 min), medium (8 min), long (12 min), epic (15+ min)
+- Speeds: gentle (0.8x slow and soothing), medium (0.9x balanced), normal (1.0x regular pace)
+- Voices: ${voiceDescriptions}
+
+Reply in EXACTLY this JSON format, nothing else:
+{"mode":"<mode>","duration":"<duration>","speed":"<speed>","voice":"<voice_key>","tip":"<one friendly sentence explaining why these settings are perfect right now, max 80 chars>"}
+
+Rules:
+- At nighttime/bedtime, prefer sleep mode, gentle speed, and shorter durations
+- In the afternoon, prefer classic or madlibs mode with medium/normal speed
+- Match the voice personality to the hero's character
+- Keep the tip warm, short, and parent-friendly`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: {
+          temperature: 0.7,
+          maxOutputTokens: 200,
+        },
+      });
+
+      const text = response?.text?.trim() || "";
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        return res.status(500).json({ error: "Invalid AI response" });
+      }
+
+      const suggestion = JSON.parse(jsonMatch[0]);
+
+      if (!VALID_MODES.includes(suggestion.mode)) suggestion.mode = "classic";
+      if (!VALID_DURATIONS.includes(suggestion.duration)) suggestion.duration = "medium";
+      if (!["gentle", "medium", "normal"].includes(suggestion.speed)) suggestion.speed = "medium";
+      if (!voiceKeys.includes(suggestion.voice)) suggestion.voice = "kore";
+      if (typeof suggestion.tip !== "string") suggestion.tip = "A great story awaits!";
+      suggestion.tip = suggestion.tip.slice(0, 120);
+
+      res.json(suggestion);
+    } catch (error: any) {
+      console.error("Suggest settings error:", error?.message || error);
+      res.status(500).json({ error: "Failed to generate suggestion" });
+    }
+  });
+
   app.get("/api/voices", (_req, res) => {
     const voices = Object.entries(VOICE_MAP).map(([key, val]) => ({
       id: key,

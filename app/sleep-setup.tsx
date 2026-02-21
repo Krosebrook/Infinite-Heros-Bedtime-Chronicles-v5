@@ -35,10 +35,11 @@ const SLEEP_TIMERS = [
 ];
 
 export default function SleepSetupScreen() {
-  const { heroId, duration, voice } = useLocalSearchParams<{
+  const { heroId, duration, voice, speed } = useLocalSearchParams<{
     heroId: string;
     duration: string;
     voice: string;
+    speed: string;
   }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -65,6 +66,7 @@ export default function SleepSetupScreen() {
         mode: "sleep",
         soundscape,
         sleepTimer,
+        speed: speed || "gentle",
       },
     });
   };

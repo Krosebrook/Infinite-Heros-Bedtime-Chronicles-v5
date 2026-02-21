@@ -88,6 +88,18 @@ const VOICES = [
   { id: "fenrir", label: "Fenrir", desc: "Bold", icon: "flame-outline" as const },
 ];
 
+const SPEED_PRESETS = [
+  { id: "gentle", label: "Gentle", desc: "0.8×", rate: 0.8, icon: "moon-outline" as const },
+  { id: "medium", label: "Medium", desc: "0.9×", rate: 0.9, icon: "cloudy-night-outline" as const },
+  { id: "normal", label: "Normal", desc: "1.0×", rate: 1.0, icon: "sunny-outline" as const },
+];
+
+const MODE_DEFAULT_SPEED: Record<ModeId, string> = {
+  classic: "medium",
+  madlibs: "medium",
+  sleep: "gentle",
+};
+
 function PulsingOrb({ color, size, style }: { color: string; size: number; style?: any }) {
   const scale = useSharedValue(1);
   const opacity = useSharedValue(0.4);
@@ -262,11 +274,17 @@ export default function HomeScreen() {
   const [mode, setMode] = useState<ModeId>("classic");
   const [duration, setDuration] = useState("medium");
   const [voice, setVoice] = useState("kore");
+  const [speed, setSpeed] = useState(MODE_DEFAULT_SPEED["classic"]);
   const [jarVisible, setJarVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
 
   const hero = HEROES[heroIndex];
   const theme = MODE_THEMES[mode];
+
+  const handleModeChange = (newMode: ModeId) => {
+    setMode(newMode);
+    setSpeed(MODE_DEFAULT_SPEED[newMode]);
+  };
 
   const prevHero = () => {
     Haptics.selectionAsync();
@@ -284,17 +302,17 @@ export default function HomeScreen() {
     if (mode === "madlibs") {
       router.push({
         pathname: "/madlibs",
-        params: { heroId: hero.id, duration, voice },
+        params: { heroId: hero.id, duration, voice, speed },
       });
     } else if (mode === "sleep") {
       router.push({
         pathname: "/sleep-setup",
-        params: { heroId: hero.id, duration, voice },
+        params: { heroId: hero.id, duration, voice, speed },
       });
     } else {
       router.push({
         pathname: "/story",
-        params: { heroId: hero.id, duration, voice, mode: "classic" },
+        params: { heroId: hero.id, duration, voice, mode: "classic", speed },
       });
     }
   };
@@ -446,6 +464,49 @@ export default function HomeScreen() {
           </ScrollView>
         </Animated.View>
 
+        <Animated.View entering={FadeInDown.duration(500).delay(350)}>
+          <View style={s.sectionHeader}>
+            <Ionicons name="speedometer-outline" size={14} color={theme.accent} />
+            <Text style={s.sectionLabel}>NARRATION SPEED</Text>
+          </View>
+          <View style={s.speedRow}>
+            {SPEED_PRESETS.map((sp) => {
+              const isActive = speed === sp.id;
+              return (
+                <Pressable
+                  key={sp.id}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setSpeed(sp.id);
+                  }}
+                  style={[
+                    s.speedChip,
+                    isActive && { borderColor: theme.accent, backgroundColor: `${theme.accent}18` },
+                  ]}
+                  testID={`speed-${sp.id}`}
+                >
+                  <View
+                    style={[
+                      s.voiceChipDot,
+                      isActive && { backgroundColor: theme.accent },
+                    ]}
+                  >
+                    <Ionicons
+                      name={sp.icon as any}
+                      size={13}
+                      color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
+                    />
+                  </View>
+                  <View>
+                    <Text style={[s.voiceChipName, isActive && { color: "#FFF" }]}>{sp.label}</Text>
+                    <Text style={[s.voiceChipDesc, isActive && { color: theme.accent }]}>{sp.desc}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </View>
+        </Animated.View>
+
         <Animated.View entering={FadeInUp.duration(600).delay(400)}>
           <Pressable
             onPress={handleEngage}
@@ -479,7 +540,7 @@ export default function HomeScreen() {
           colors={["transparent", "rgba(0,0,0,0.8)", "rgba(0,0,0,0.95)"]}
           style={s.modeDockGradient}
         />
-        <ModeDock activeMode={mode} onSelect={setMode} />
+        <ModeDock activeMode={mode} onSelect={handleModeChange} />
       </View>
 
       <MemoryJar visible={jarVisible} onClose={() => setJarVisible(false)} />
@@ -717,6 +778,23 @@ const s = StyleSheet.create({
     fontFamily: "Nunito_400Regular",
     fontSize: 9,
     color: "rgba(255,255,255,0.3)",
+  },
+  speedRow: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  speedChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingVertical: 8,
+    paddingHorizontal: 10,
+    borderRadius: 16,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   engageBtn: {
     marginHorizontal: 20,

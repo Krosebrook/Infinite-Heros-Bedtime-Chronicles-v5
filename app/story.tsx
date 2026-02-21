@@ -215,7 +215,7 @@ function ChoiceButton({
 }
 
 export default function StoryScreen() {
-  const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer } =
+  const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer, speed: initialSpeed } =
     useLocalSearchParams<{
       heroId: string;
       duration: string;
@@ -224,6 +224,7 @@ export default function StoryScreen() {
       madlibWords: string;
       soundscape: string;
       sleepTimer: string;
+      speed: string;
     }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -232,11 +233,17 @@ export default function StoryScreen() {
   const storyMode = (mode || "classic") as keyof typeof MODE_THEME;
   const theme = MODE_THEME[storyMode] || MODE_THEME.classic;
 
+  const SPEED_RATES: Record<string, number> = { gentle: 0.8, medium: 0.9, normal: 1.0 };
+  const SPEED_LABELS: Record<string, string> = { gentle: "Gentle", medium: "Medium", normal: "Normal" };
+  const SPEED_ICONS: Record<string, string> = { gentle: "moon-outline", medium: "cloudy-night-outline", normal: "sunny-outline" };
+  const defaultSpeed = initialSpeed || (storyMode === "sleep" ? "gentle" : "medium");
+
   const [storyData, setStoryData] = useState<StoryFull | null>(null);
   const [storyState, setStoryState] = useState<StoryState>("generating");
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
+  const [playbackSpeed, setPlaybackSpeed] = useState(defaultSpeed);
   const [sceneImage, setSceneImage] = useState<string | null>(null);
   const [sceneLoading, setSceneLoading] = useState(false);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
@@ -486,9 +493,10 @@ export default function StoryScreen() {
         staysActiveInBackground: true,
       });
 
+      const rate = SPEED_RATES[playbackSpeed] || 0.9;
       const { sound } = await Audio.Sound.createAsync(
         { uri: audioFileUrl },
-        { shouldPlay: false }
+        { shouldPlay: false, rate, shouldCorrectPitch: true }
       );
       soundRef.current = sound;
 
@@ -508,7 +516,20 @@ export default function StoryScreen() {
       setAudioLoading(false);
       setIsSpeaking(false);
     }
-  }, [currentPart, isSpeaking, audioLoading, storyMode, voice, stopAudio]);
+  }, [currentPart, isSpeaking, audioLoading, storyMode, voice, stopAudio, playbackSpeed]);
+
+  const cycleSpeed = useCallback(async () => {
+    const keys = ["gentle", "medium", "normal"];
+    const idx = keys.indexOf(playbackSpeed);
+    const next = keys[(idx + 1) % keys.length];
+    setPlaybackSpeed(next);
+    Haptics.selectionAsync();
+    if (soundRef.current) {
+      try {
+        await soundRef.current.setRateAsync(SPEED_RATES[next], true);
+      } catch {}
+    }
+  }, [playbackSpeed]);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -612,17 +633,25 @@ export default function StoryScreen() {
         </View>
 
         {storyState === "ready" && (
-          <Pressable onPress={speakCurrentPart} hitSlop={12} style={styles.iconBtn} disabled={audioLoading}>
-            {audioLoading ? (
-              <ActivityIndicator size="small" color={theme.accent} />
-            ) : (
-              <Ionicons
-                name={isSpeaking ? "volume-high" : "volume-medium-outline"}
-                size={22}
-                color={isSpeaking ? theme.accent : "rgba(255,255,255,0.7)"}
-              />
-            )}
-          </Pressable>
+          <View style={styles.audioControls}>
+            <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.speedBtn} testID="speed-cycle-btn">
+              <Ionicons name={SPEED_ICONS[playbackSpeed] as any} size={14} color={theme.accent} />
+              <Text style={[styles.speedBtnLabel, { color: theme.accent }]}>
+                {SPEED_LABELS[playbackSpeed]}
+              </Text>
+            </Pressable>
+            <Pressable onPress={speakCurrentPart} hitSlop={12} style={styles.iconBtn} disabled={audioLoading}>
+              {audioLoading ? (
+                <ActivityIndicator size="small" color={theme.accent} />
+              ) : (
+                <Ionicons
+                  name={isSpeaking ? "volume-high" : "volume-medium-outline"}
+                  size={22}
+                  color={isSpeaking ? theme.accent : "rgba(255,255,255,0.7)"}
+                />
+              )}
+            </Pressable>
+          </View>
         )}
         {storyState !== "ready" && <View style={{ width: 40 }} />}
       </View>
@@ -992,6 +1021,27 @@ const styles = StyleSheet.create({
     fontFamily: "Nunito_600SemiBold",
     fontSize: 18,
     color: Colors.textMuted,
+  },
+  audioControls: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  speedBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 3,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  speedBtnLabel: {
+    fontFamily: "Nunito_700Bold",
+    fontSize: 10,
+    letterSpacing: 0.3,
   },
   errorLink: {
     fontFamily: "Nunito_700Bold",

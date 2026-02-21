@@ -41,6 +41,7 @@ Preferred communication style: Simple, everyday language.
   - `POST /api/tts` — Text-to-speech via ElevenLabs (max 5000 chars)
   - `GET /api/tts-audio/:file` — Serves cached TTS audio (hex hash filenames only)
   - `GET /api/music/:mode` — Serves static background music files (classic, sleep, madlibs)
+  - `POST /api/suggest-settings` — AI-powered story setting suggestions via Gemini (mode, duration, speed, voice, tip based on time of day and hero)
   - `GET /api/voices` — Lists available narrator voices
 - **AI Integration**: Google Gemini AI via Replit AI Integrations (`AI_INTEGRATIONS_GEMINI_API_KEY`, `AI_INTEGRATIONS_GEMINI_BASE_URL`), using `gemini-2.5-flash` for text and `gemini-2.5-flash-image` for images
 - **CORS**: Dynamic origin handling supporting Replit dev domains and localhost for Expo web development

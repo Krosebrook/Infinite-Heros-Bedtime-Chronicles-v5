@@ -440,13 +440,18 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
       const heroPower = sanitizeString(req.body.heroPower, MAX_INPUT_STRING_LENGTH);
       const heroDescription = sanitizeString(req.body.heroDescription, MAX_INPUT_STRING_LENGTH);
       const hour = typeof req.body.hour === "number" ? Math.min(23, Math.max(0, Math.floor(req.body.hour))) : new Date().getHours();
+      const childAge = typeof req.body.childAge === "number" ? Math.min(12, Math.max(1, Math.floor(req.body.childAge))) : null;
+      const childName = req.body.childName ? sanitizeString(req.body.childName, 30) : null;
 
       const timeOfDay = hour >= 19 || hour < 6 ? "nighttime/bedtime" : hour >= 17 ? "evening" : hour >= 12 ? "afternoon" : "morning";
 
       const voiceKeys = Object.keys(VOICE_MAP);
       const voiceDescriptions = Object.entries(VOICE_MAP).map(([k, v]) => `${k} (${v.description})`).join(", ");
 
-      const prompt = `Suggest bedtime story settings as JSON. Time: ${timeOfDay}. Hero: ${heroName} (${heroPower}). Modes: classic, madlibs, sleep. Durations: short, medium-short, medium, long, epic. Speeds: gentle, medium, normal. Voices: ${voiceKeys.join(", ")}. Night=sleep+gentle+short. Afternoon=classic/madlibs+medium/normal. Reply ONLY with: {"mode":"...","duration":"...","speed":"...","voice":"...","tip":"short parent-friendly reason"}`;
+      const ageContext = childAge ? ` Child age: ${childAge} years old.${childAge <= 5 ? " For younger kids, prefer shorter, gentler stories with sleep mode." : " For older kids, classic and madlibs modes with longer stories work great."}` : "";
+      const nameContext = childName ? ` Child name: ${childName}.` : "";
+
+      const prompt = `Suggest bedtime story settings as JSON. Time: ${timeOfDay}.${ageContext}${nameContext} Hero: ${heroName} (${heroPower}). Modes: classic, madlibs, sleep. Durations: short, medium-short, medium, long, epic. Speeds: gentle, medium, normal. Voices: ${voiceKeys.join(", ")}. Night=sleep+gentle+short. Afternoon=classic/madlibs+medium/normal. Reply ONLY with: {"mode":"...","duration":"...","speed":"...","voice":"...","tip":"short parent-friendly reason"}`;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",

@@ -29,6 +29,9 @@ import { HEROES, Hero } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 import { MemoryJar } from "@/components/MemoryJar";
 import { SettingsModal } from "@/components/SettingsModal";
+import { ProfileModal } from "@/components/ProfileModal";
+import { ParentControlsModal } from "@/components/ParentControlsModal";
+import { useProfile } from "@/lib/ProfileContext";
 import { apiRequest } from "@/lib/query-client";
 
 interface AISuggestion {
@@ -288,6 +291,9 @@ export default function HomeScreen() {
   const [speed, setSpeed] = useState(MODE_DEFAULT_SPEED["classic"]);
   const [jarVisible, setJarVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
+  const [profileVisible, setProfileVisible] = useState(false);
+  const [parentControlsVisible, setParentControlsVisible] = useState(false);
+  const { activeProfile } = useProfile();
 
   const [suggestion, setSuggestion] = useState<AISuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
@@ -307,6 +313,8 @@ export default function HomeScreen() {
         heroPower: h.power,
         heroDescription: h.description,
         hour: new Date().getHours(),
+        childAge: activeProfile?.age,
+        childName: activeProfile?.name,
       });
       const data: AISuggestion = await res.json();
       setSuggestion(data);
@@ -398,6 +406,20 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
+              setProfileVisible(true);
+            }}
+            style={s.jarButton}
+            testID="profile-button"
+          >
+            {activeProfile ? (
+              <Text style={{ fontSize: 18 }}>{activeProfile.avatarEmoji}</Text>
+            ) : (
+              <Ionicons name="person-circle-outline" size={20} color="rgba(255,255,255,0.5)" />
+            )}
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
               setSettingsVisible(true);
             }}
             style={s.jarButton}
@@ -409,14 +431,42 @@ export default function HomeScreen() {
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
-              setJarVisible(true);
+              router.push("/trophies");
             }}
             style={s.jarButton}
+            testID="trophy-button"
+          >
+            <Ionicons name="trophy" size={20} color="#FFD54F" />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setParentControlsVisible(true);
+            }}
+            style={[s.jarButton, { marginLeft: 8 }]}
+            testID="parent-controls-button"
+          >
+            <Ionicons name="shield-checkmark-outline" size={20} color="rgba(255,255,255,0.5)" />
+          </Pressable>
+          <Pressable
+            onPress={() => {
+              Haptics.selectionAsync();
+              setJarVisible(true);
+            }}
+            style={[s.jarButton, { marginLeft: 8 }]}
             testID="memory-jar-button"
           >
             <Ionicons name="archive" size={20} color={theme.accent} />
           </Pressable>
         </View>
+
+        {activeProfile && (
+          <Animated.View entering={FadeIn.duration(400)} style={s.greetingRow}>
+            <Text style={s.greetingText}>
+              Welcome back, {activeProfile.name}! {activeProfile.avatarEmoji}
+            </Text>
+          </Animated.View>
+        )}
 
         <Animated.View entering={FadeIn.duration(800)} style={s.headerBlock}>
           <Text style={s.titleInfinity}>INFINITY</Text>
@@ -677,6 +727,8 @@ export default function HomeScreen() {
 
       <MemoryJar visible={jarVisible} onClose={() => setJarVisible(false)} />
       <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
+      <ProfileModal visible={profileVisible} onClose={() => setProfileVisible(false)} />
+      <ParentControlsModal visible={parentControlsVisible} onClose={() => setParentControlsVisible(false)} />
     </View>
   );
 }
@@ -701,6 +753,17 @@ const s = StyleSheet.create({
     borderColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
+  },
+  greetingRow: {
+    alignItems: "center",
+    paddingVertical: 8,
+    paddingHorizontal: 20,
+  },
+  greetingText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 15,
+    color: "rgba(255,255,255,0.7)",
+    textAlign: "center",
   },
   headerBlock: {
     alignItems: "center",

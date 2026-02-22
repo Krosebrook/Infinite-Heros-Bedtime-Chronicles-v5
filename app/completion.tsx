@@ -28,8 +28,9 @@ import Animated, {
 import Colors from "@/constants/colors";
 import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
-import { StoryFull } from "@/constants/types";
-import { saveStory } from "@/lib/storage";
+import { StoryFull, EarnedBadge } from "@/constants/types";
+import { saveStory, saveStoryWithProfile, updateStreak, checkAndAwardBadges } from "@/lib/storage";
+import { useProfile } from "@/lib/ProfileContext";
 
 const MODE_THEMES = {
   classic: {
@@ -145,6 +146,8 @@ export default function CompletionScreen() {
   const theme = MODE_THEMES[modeKey] || MODE_THEMES.classic;
   const [saved, setSaved] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [newBadges, setNewBadges] = useState<EarnedBadge[]>([]);
+  const { activeProfile } = useProfile();
 
   let storyData: StoryFull | null = null;
   try {
@@ -153,6 +156,30 @@ export default function CompletionScreen() {
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+    const trackCompletion = async () => {
+      if (!activeProfile || !hero) return;
+      try {
+        await updateStreak(activeProfile.id);
+        const storyId = `story_${Date.now()}`;
+        if (storyData) {
+          await saveStoryWithProfile(storyData, hero.id, mode || "classic", activeProfile.id);
+        }
+        const earned = await checkAndAwardBadges(
+          activeProfile.id,
+          storyId,
+          mode || "classic",
+          hero.id,
+        );
+        if (earned.length > 0) {
+          setNewBadges(earned);
+          Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+        }
+      } catch (e) {
+        console.log("Error tracking completion:", e);
+      }
+    };
+    trackCompletion();
   }, []);
 
   const handleSaveToJar = useCallback(async () => {
@@ -207,6 +234,22 @@ export default function CompletionScreen() {
             <PulsingBadge emoji={badge.emoji} color={theme.accent} />
             <Text style={[styles.badgeTitle, { color: theme.accent }]}>{badge.title}</Text>
             <Text style={styles.badgeDescription}>{badge.description}</Text>
+          </Animated.View>
+        )}
+
+        {newBadges.length > 0 && (
+          <Animated.View entering={FadeInDown.duration(800).delay(300)} style={styles.newBadgesArea}>
+            <Text style={[styles.newBadgesTitle, { color: "#FFD54F" }]}>
+              {newBadges.length === 1 ? "New Badge Earned!" : `${newBadges.length} New Badges!`}
+            </Text>
+            <View style={styles.newBadgesRow}>
+              {newBadges.map((b) => (
+                <View key={b.id} style={styles.newBadgeItem}>
+                  <Text style={{ fontSize: 28 }}>{b.emoji}</Text>
+                  <Text style={styles.newBadgeLabel}>{b.title}</Text>
+                </View>
+              ))}
+            </View>
           </Animated.View>
         )}
 
@@ -438,4 +481,23 @@ const styles = StyleSheet.create({
   },
   primaryButtonText: { fontFamily: "Nunito_700Bold", fontSize: 18, color: "#FFF" },
   linkText: { fontFamily: "Nunito_700Bold", fontSize: 16 },
+  newBadgesArea: {
+    alignItems: "center", marginBottom: 20,
+    paddingVertical: 16, paddingHorizontal: 20,
+    borderRadius: 20, backgroundColor: "rgba(255,215,79,0.06)",
+    borderWidth: 1.5, borderColor: "rgba(255,215,79,0.15)",
+  },
+  newBadgesTitle: {
+    fontFamily: "Nunito_800ExtraBold", fontSize: 16,
+    letterSpacing: 1, marginBottom: 12,
+  },
+  newBadgesRow: {
+    flexDirection: "row", flexWrap: "wrap",
+    justifyContent: "center", gap: 16,
+  },
+  newBadgeItem: { alignItems: "center", gap: 4 },
+  newBadgeLabel: {
+    fontFamily: "Nunito_600SemiBold", fontSize: 11,
+    color: "rgba(255,255,255,0.6)",
+  },
 });

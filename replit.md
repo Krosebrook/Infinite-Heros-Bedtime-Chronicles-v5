@@ -2,7 +2,7 @@
 
 ## Overview
 
-Infinity Heroes is a children's bedtime story app built with Expo (React Native) and an Express backend. Kids choose a superhero character, pick story options (duration, voice), and the app generates a unique bedtime story using OpenAI's GPT-4o-mini via streaming Server-Sent Events. The app features a space/cosmic theme with animated starfields, hero cards, and text-to-speech capabilities.
+Infinity Heroes is a children's bedtime story app built with Expo (React Native) and an Express backend. Kids choose a superhero character, pick story options (mode, duration, voice, speed), and the app generates a unique bedtime story using Google Gemini 2.5 Flash. The app features a space/cosmic theme with animated starfields, hero cards, ElevenLabs text-to-speech narration, AI-powered setting suggestions, and three story modes (Classic, Mad Libs, Sleep). Targets ages 3-9 with strict child safety content filtering.
 
 The project follows a monorepo structure with the mobile/web frontend (Expo Router) and backend (Express) living in the same repository, sharing types through a `shared/` directory.
 
@@ -15,7 +15,7 @@ Preferred communication style: Simple, everyday language.
 ### Frontend (Expo / React Native)
 - **Framework**: Expo SDK 54 with React Native 0.81, using the new architecture
 - **Routing**: Expo Router v6 with file-based routing (`app/` directory). Single-page combined layout:
-  - `index.tsx` — Combined single-page with dark "INFINITY HEROES" header, mode tabs (Classic/Mad Libs/Sleepy), hero picker (circular avatar + prev/next arrows), duration timeline (5 connected nodes), narrator voice chips, narration speed presets (Gentle 0.8x/Medium 0.9x/Normal 1.0x), and "BEGIN ADVENTURE" button
+  - `index.tsx` — Combined single-page with dark "INFINITY HEROES" header, AI suggestion card (contextual recommendations based on time of day and hero), mode tabs (Classic/Mad Libs/Sleepy), hero picker (circular avatar + prev/next arrows), duration timeline (5 connected nodes), narrator voice chips, narration speed presets (Gentle 0.8x/Medium 0.9x/Normal 1.0x), and "BEGIN ADVENTURE" button
   - `madlibs.tsx` — Mad Libs word input screen
   - `sleep-setup.tsx` — Sleep mode soundscape and timer setup
   - `story.tsx` — Story generation and display with streaming text
@@ -81,12 +81,14 @@ Pre-built integration modules available but not all actively used by the main ap
 ## External Dependencies
 
 ### Services & APIs
-- **OpenAI API** (via Replit AI Integrations): Story generation with `gpt-4o-mini`, image generation with `gpt-image-1`
-  - Configured through `AI_INTEGRATIONS_OPENAI_API_KEY` and `AI_INTEGRATIONS_OPENAI_BASE_URL`
+- **Google Gemini AI** (via Replit AI Integrations): Story generation and setting suggestions with `gemini-2.5-flash`, image generation with `gemini-2.5-flash-image`
+  - Configured through `AI_INTEGRATIONS_GEMINI_API_KEY` and `AI_INTEGRATIONS_GEMINI_BASE_URL`
+- **ElevenLabs** (via Replit connector): Text-to-speech narration with `eleven_multilingual_v2` model, 7 voice options
+  - Configured through `ELEVENLABS_API_KEY`
 - **PostgreSQL**: Database provisioned through Replit, connected via `DATABASE_URL`
 
 ### Key NPM Packages
-- **Frontend**: expo, expo-router, react-native-reanimated, react-native-gesture-handler, expo-speech, expo-haptics, expo-linear-gradient, @tanstack/react-query, @react-native-async-storage/async-storage
-- **Backend**: express, openai, drizzle-orm, pg, http-proxy-middleware
+- **Frontend**: expo, expo-router, react-native-reanimated, react-native-gesture-handler, expo-av, expo-haptics, expo-linear-gradient, @tanstack/react-query, @react-native-async-storage/async-storage
+- **Backend**: express, @google/genai, drizzle-orm, pg, http-proxy-middleware
 - **Shared**: drizzle-zod, zod
 - **Build**: drizzle-kit, esbuild, tsx, patch-package

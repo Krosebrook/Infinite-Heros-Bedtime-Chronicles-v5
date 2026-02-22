@@ -4,12 +4,24 @@ import {
   StoryFull,
   UserPreferences,
   DEFAULT_PREFERENCES,
+  ChildProfile,
+  EarnedBadge,
+  StreakData,
+  ParentControls,
+  DEFAULT_PARENT_CONTROLS,
+  BADGE_DEFINITIONS,
 } from '@/constants/types';
+import { HEROES } from '@/constants/heroes';
 
 const FAVORITES_KEY = '@infinity_heroes_favorites';
 const READ_STORIES_KEY = '@infinity_heroes_read';
 const STORIES_KEY = '@infinity_heroes_stories';
 const PREFERENCES_KEY = '@infinity_heroes_preferences';
+const PROFILES_KEY = '@infinity_heroes_profiles';
+const ACTIVE_PROFILE_KEY = '@infinity_heroes_active_profile';
+const BADGES_KEY = '@infinity_heroes_badges';
+const STREAKS_KEY = '@infinity_heroes_streaks';
+const PARENT_CONTROLS_KEY = '@infinity_heroes_parent_controls';
 
 export async function getFavorites(): Promise<string[]> {
   try {
@@ -122,4 +134,215 @@ export async function getPreferences(): Promise<UserPreferences> {
   } catch {
     return DEFAULT_PREFERENCES;
   }
+}
+
+export async function getProfiles(): Promise<ChildProfile[]> {
+  try {
+    const data = await AsyncStorage.getItem(PROFILES_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function saveProfile(profile: ChildProfile): Promise<void> {
+  const profiles = await getProfiles();
+  const idx = profiles.findIndex((p) => p.id === profile.id);
+  if (idx > -1) {
+    profiles[idx] = profile;
+  } else {
+    profiles.push(profile);
+  }
+  await AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(profiles));
+}
+
+export async function deleteProfile(id: string): Promise<void> {
+  const profiles = await getProfiles();
+  await AsyncStorage.setItem(PROFILES_KEY, JSON.stringify(profiles.filter((p) => p.id !== id)));
+}
+
+export async function getActiveProfileId(): Promise<string | null> {
+  try {
+    return await AsyncStorage.getItem(ACTIVE_PROFILE_KEY);
+  } catch {
+    return null;
+  }
+}
+
+export async function setActiveProfileId(id: string | null): Promise<void> {
+  if (id) {
+    await AsyncStorage.setItem(ACTIVE_PROFILE_KEY, id);
+  } else {
+    await AsyncStorage.removeItem(ACTIVE_PROFILE_KEY);
+  }
+}
+
+export async function saveStoryWithProfile(
+  story: StoryFull,
+  heroId: string,
+  mode: string,
+  profileId?: string,
+  avatar?: string
+): Promise<string> {
+  const id = Date.now().toString() + Math.random().toString(36).substr(2, 9);
+  const cached: CachedStory = {
+    id,
+    timestamp: Date.now(),
+    story,
+    heroId,
+    mode,
+    profileId,
+    ...(avatar ? { avatar } : {}),
+  };
+  const stories = await getAllStories();
+  stories.push(cached);
+  await AsyncStorage.setItem(STORIES_KEY, JSON.stringify(stories));
+  return id;
+}
+
+export async function getStoriesForProfile(profileId: string): Promise<CachedStory[]> {
+  const all = await getAllStories();
+  return all.filter((s) => s.profileId === profileId);
+}
+
+export async function getBadges(profileId: string): Promise<EarnedBadge[]> {
+  try {
+    const data = await AsyncStorage.getItem(BADGES_KEY);
+    const all: EarnedBadge[] = data ? JSON.parse(data) : [];
+    return all.filter((b) => b.profileId === profileId);
+  } catch {
+    return [];
+  }
+}
+
+export async function getAllBadges(): Promise<EarnedBadge[]> {
+  try {
+    const data = await AsyncStorage.getItem(BADGES_KEY);
+    return data ? JSON.parse(data) : [];
+  } catch {
+    return [];
+  }
+}
+
+export async function awardBadge(badge: EarnedBadge): Promise<boolean> {
+  const all = await getAllBadges();
+  if (all.some((b) => b.id === badge.id && b.profileId === badge.profileId)) {
+    return false;
+  }
+  all.push(badge);
+  await AsyncStorage.setItem(BADGES_KEY, JSON.stringify(all));
+  return true;
+}
+
+export async function getStreak(profileId: string): Promise<StreakData> {
+  try {
+    const data = await AsyncStorage.getItem(STREAKS_KEY);
+    const all: StreakData[] = data ? JSON.parse(data) : [];
+    return all.find((s) => s.profileId === profileId) || {
+      profileId,
+      currentStreak: 0,
+      longestStreak: 0,
+      lastStoryDate: '',
+    };
+  } catch {
+    return { profileId, currentStreak: 0, longestStreak: 0, lastStoryDate: '' };
+  }
+}
+
+export async function updateStreak(profileId: string): Promise<StreakData> {
+  const data = await AsyncStorage.getItem(STREAKS_KEY);
+  const all: StreakData[] = data ? JSON.parse(data) : [];
+  let streak = all.find((s) => s.profileId === profileId);
+
+  const today = new Date().toISOString().split('T')[0];
+
+  if (!streak) {
+    streak = { profileId, currentStreak: 1, longestStreak: 1, lastStoryDate: today };
+    all.push(streak);
+  } else if (streak.lastStoryDate === today) {
+    return streak;
+  } else {
+    const lastDate = new Date(streak.lastStoryDate);
+    const todayDate = new Date(today);
+    const diffDays = Math.floor((todayDate.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24));
+
+    if (diffDays === 1) {
+      streak.currentStreak += 1;
+    } else {
+      streak.currentStreak = 1;
+    }
+    streak.longestStreak = Math.max(streak.longestStreak, streak.currentStreak);
+    streak.lastStoryDate = today;
+  }
+
+  await AsyncStorage.setItem(STREAKS_KEY, JSON.stringify(all));
+  return streak;
+}
+
+export async function checkAndAwardBadges(
+  profileId: string,
+  storyId: string,
+  mode: string,
+  heroId: string,
+): Promise<EarnedBadge[]> {
+  const stories = await getStoriesForProfile(profileId);
+  const streak = await getStreak(profileId);
+  const existing = await getBadges(profileId);
+  const existingIds = new Set(existing.map((b) => b.id));
+  const newBadges: EarnedBadge[] = [];
+
+  const now = new Date();
+  const hour = now.getHours();
+  const totalStories = stories.length;
+  const modeCount = (m: string) => stories.filter((s) => s.mode === m).length;
+  const uniqueHeroes = new Set(stories.map((s) => s.heroId));
+
+  for (const def of BADGE_DEFINITIONS) {
+    if (existingIds.has(def.id)) continue;
+
+    let earned = false;
+    switch (def.condition) {
+      case 'first_story': earned = totalStories >= 1; break;
+      case 'night_story': earned = hour >= 20; break;
+      case 'morning_story': earned = hour >= 5 && hour < 10; break;
+      case 'all_heroes': earned = uniqueHeroes.size >= HEROES.length; break;
+      case 'madlibs_3': earned = modeCount('madlibs') >= 3; break;
+      case 'sleep_3': earned = modeCount('sleep') >= 3; break;
+      case 'classic_5': earned = modeCount('classic') >= 5; break;
+      case 'streak_3': earned = streak.currentStreak >= 3; break;
+      case 'streak_7': earned = streak.currentStreak >= 7; break;
+      case 'total_10': earned = totalStories >= 10; break;
+      case 'total_25': earned = totalStories >= 25; break;
+      case 'vocab_5': earned = totalStories >= 5; break;
+    }
+
+    if (earned) {
+      const badge: EarnedBadge = {
+        id: def.id,
+        emoji: def.emoji,
+        title: def.title,
+        description: def.description,
+        earnedAt: Date.now(),
+        storyId,
+        profileId,
+      };
+      const wasNew = await awardBadge(badge);
+      if (wasNew) newBadges.push(badge);
+    }
+  }
+
+  return newBadges;
+}
+
+export async function getParentControls(): Promise<ParentControls> {
+  try {
+    const data = await AsyncStorage.getItem(PARENT_CONTROLS_KEY);
+    return data ? JSON.parse(data) : DEFAULT_PARENT_CONTROLS;
+  } catch {
+    return DEFAULT_PARENT_CONTROLS;
+  }
+}
+
+export async function saveParentControls(controls: ParentControls): Promise<void> {
+  await AsyncStorage.setItem(PARENT_CONTROLS_KEY, JSON.stringify(controls));
 }

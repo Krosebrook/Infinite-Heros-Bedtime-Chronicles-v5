@@ -1,6 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI, Modality } from "@google/genai";
+import OpenAI from "openai";
 import { generateSpeech, VOICE_MAP, MODE_DEFAULT_VOICES, getVoicesForMode, type VoiceConfig } from "./elevenlabs";
 import { getMusicFilePath, getMusicFileName } from "./suno";
 import { createVideoJob, getVideoJob, getVideoFilePath, isVideoAvailable } from "./video";
@@ -78,6 +79,41 @@ const ai = new GoogleGenAI({
     baseUrl: process.env.AI_INTEGRATIONS_GEMINI_BASE_URL,
   },
 });
+
+function getOpenAIImageClient(): OpenAI | null {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) return null;
+  return new OpenAI({ apiKey });
+}
+
+async function generateImageWithOpenAI(prompt: string): Promise<string | null> {
+  const client = getOpenAIImageClient();
+  if (!client) return null;
+
+  try {
+    const response = await client.images.generate({
+      model: "gpt-image-1",
+      prompt,
+      size: "1536x1024",
+      quality: "low",
+      n: 1,
+    });
+
+    const imageData = response.data?.[0];
+    if (!imageData) return null;
+
+    if ((imageData as any).b64_json) {
+      return `data:image/png;base64,${(imageData as any).b64_json}`;
+    }
+    if (imageData.url) {
+      return imageData.url;
+    }
+    return null;
+  } catch (err: any) {
+    console.error("[OpenAI Image] Fallback error:", err?.message);
+    return null;
+  }
+}
 
 const CHILD_SAFETY_RULES = `
 CRITICAL SAFETY RULES (non-negotiable):
@@ -302,14 +338,26 @@ Style: Adorable Pixar/Disney-inspired character design, round friendly features,
         (part: any) => part.inlineData
       );
 
-      if (!imagePart?.inlineData?.data) {
-        return res.status(500).json({ error: "No image generated" });
+      if (imagePart?.inlineData?.data) {
+        const mimeType = imagePart.inlineData.mimeType || "image/png";
+        return res.json({ image: `data:${mimeType};base64,${imagePart.inlineData.data}` });
       }
 
-      const mimeType = imagePart.inlineData.mimeType || "image/png";
-      res.json({ image: `data:${mimeType};base64,${imagePart.inlineData.data}` });
-    } catch (error) {
-      console.error("Error generating avatar:", error);
+      console.log("[Avatar] Gemini returned no image, trying OpenAI fallback");
+      const fallback = await generateImageWithOpenAI(prompt);
+      if (fallback) {
+        return res.json({ image: fallback });
+      }
+      return res.status(500).json({ error: "No image generated" });
+    } catch (error: any) {
+      console.error("Error generating avatar (Gemini):", error?.message);
+      try {
+        const fallbackPrompt = `Cute cartoon superhero avatar for "${sanitizeString(req.body.heroName, 100)}", child-friendly Pixar style, cosmic background, no scary elements.`;
+        const fallback = await generateImageWithOpenAI(fallbackPrompt);
+        if (fallback) {
+          return res.json({ image: fallback });
+        }
+      } catch {}
       res.status(500).json({ error: "Failed to generate avatar" });
     }
   });
@@ -347,14 +395,27 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
         (part: any) => part.inlineData
       );
 
-      if (!imagePart?.inlineData?.data) {
-        return res.status(500).json({ error: "No image generated" });
+      if (imagePart?.inlineData?.data) {
+        const mimeType = imagePart.inlineData.mimeType || "image/png";
+        return res.json({ image: `data:${mimeType};base64,${imagePart.inlineData.data}` });
       }
 
-      const mimeType = imagePart.inlineData.mimeType || "image/png";
-      res.json({ image: `data:${mimeType};base64,${imagePart.inlineData.data}` });
-    } catch (error) {
-      console.error("Error generating scene:", error);
+      console.log("[Scene] Gemini returned no image, trying OpenAI fallback");
+      const fallback = await generateImageWithOpenAI(prompt);
+      if (fallback) {
+        return res.json({ image: fallback });
+      }
+      return res.status(500).json({ error: "No image generated" });
+    } catch (error: any) {
+      console.error("Error generating scene (Gemini):", error?.message);
+      try {
+        const sceneText = sanitizeString(req.body.sceneText, 300);
+        const fallbackPrompt = `Child-friendly dreamy watercolor illustration of a bedtime story scene: ${sceneText.substring(0, 200)}. Soft pastel colors, magical atmosphere, warm and cozy, suitable for ages 3-9.`;
+        const fallback = await generateImageWithOpenAI(fallbackPrompt);
+        if (fallback) {
+          return res.json({ image: fallback });
+        }
+      } catch {}
       res.status(500).json({ error: "Failed to generate scene" });
     }
   });

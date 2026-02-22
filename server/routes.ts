@@ -3,6 +3,7 @@ import { createServer, type Server } from "node:http";
 import { GoogleGenAI, Modality } from "@google/genai";
 import { generateSpeech, VOICE_MAP, MODE_DEFAULT_VOICES, getVoicesForMode, type VoiceConfig } from "./elevenlabs";
 import { getMusicFilePath, getMusicFileName } from "./suno";
+import { createVideoJob, getVideoJob, getVideoFilePath, isVideoAvailable } from "./video";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -503,6 +504,76 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
       category: val.category,
     }));
     res.json({ voices, defaults: MODE_DEFAULT_VOICES });
+  });
+
+  app.get("/api/video-available", (_req, res) => {
+    res.json({ available: isVideoAvailable() });
+  });
+
+  app.post("/api/generate-video", async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+    }
+
+    try {
+      const sceneText = sanitizeString(req.body.sceneText, 2000);
+      const heroName = sanitizeString(req.body.heroName, MAX_INPUT_STRING_LENGTH);
+      const heroDescription = sanitizeString(req.body.heroDescription, MAX_INPUT_STRING_LENGTH);
+
+      if (!sceneText) {
+        return res.status(400).json({ error: "Scene text is required" });
+      }
+
+      const result = await createVideoJob(sceneText, heroName, heroDescription);
+      if ("error" in result) {
+        return res.status(503).json({ error: result.error });
+      }
+
+      res.json({ jobId: result.jobId });
+    } catch (error: any) {
+      console.error("Video generation error:", error?.message || error);
+      res.status(500).json({ error: "Failed to start video generation" });
+    }
+  });
+
+  app.get("/api/video-status/:id", (req, res) => {
+    const jobId = sanitizeString(req.params.id, 32);
+    if (!jobId) {
+      return res.status(400).json({ error: "Job ID is required" });
+    }
+
+    const job = getVideoJob(jobId);
+    if (!job) {
+      return res.status(404).json({ error: "Video job not found" });
+    }
+
+    res.json({
+      status: job.status,
+      progress: job.progress,
+      error: job.error,
+      videoUrl: job.status === "completed" ? `/api/video/${jobId}` : undefined,
+    });
+  });
+
+  app.get("/api/video/:id", (req, res) => {
+    const jobId = req.params.id;
+    if (!jobId || !/^[a-f0-9]+$/.test(jobId)) {
+      return res.status(400).json({ error: "Invalid video ID" });
+    }
+
+    const filePath = getVideoFilePath(jobId);
+    if (!filePath) {
+      return res.status(404).json({ error: "Video not found" });
+    }
+
+    res.setHeader("Content-Type", "video/mp4");
+    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.sendFile(filePath, (err) => {
+      if (err && !res.headersSent) {
+        res.status(500).json({ error: "Failed to serve video" });
+      }
+    });
   });
 
   app.post("/api/tts-preview", async (req, res) => {

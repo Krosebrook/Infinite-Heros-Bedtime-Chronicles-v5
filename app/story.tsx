@@ -14,7 +14,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import { Audio } from "expo-av";
+import { Audio, Video, ResizeMode, AVPlaybackStatus } from "expo-av";
 import Animated, {
   FadeIn,
   FadeInDown,
@@ -33,6 +33,7 @@ import { StarField } from "@/components/StarField";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import { StoryFull } from "@/constants/types";
+import { getParentControls } from "@/lib/storage";
 
 type StoryState = "generating" | "ready" | "error";
 
@@ -174,6 +175,93 @@ function LoadingDot({ delay, color }: { delay: number; color: string }) {
   );
 }
 
+function SceneVideoPlayer({
+  jobId,
+  accent,
+}: {
+  jobId: string;
+  accent: string;
+}) {
+  const [status, setStatus] = useState<"queued" | "in_progress" | "completed" | "failed">("queued");
+  const [progress, setProgress] = useState(0);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const videoRef = useRef<Video>(null);
+
+  useEffect(() => {
+    const baseUrl = getApiUrl();
+
+    pollRef.current = setInterval(async () => {
+      try {
+        const res = await globalThis.fetch(
+          new URL(`/api/video-status/${jobId}`, baseUrl).toString()
+        );
+        if (!res.ok) return;
+        const data = await res.json();
+        setStatus(data.status);
+        setProgress(data.progress || 0);
+
+        if (data.status === "completed" && data.videoUrl) {
+          setVideoUrl(new URL(data.videoUrl, baseUrl).toString());
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+        if (data.status === "failed") {
+          setError(data.error || "Video generation failed");
+          if (pollRef.current) clearInterval(pollRef.current);
+        }
+      } catch {}
+    }, 5000);
+
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [jobId]);
+
+  if (error || status === "failed") {
+    return null;
+  }
+
+  if (!videoUrl) {
+    return (
+      <Animated.View entering={FadeIn.duration(400)} style={styles.videoLoadingWrap}>
+        <View style={styles.videoLoadingRow}>
+          <ActivityIndicator size="small" color={accent} />
+          <Text style={styles.videoLoadingText}>
+            {status === "queued" ? "Preparing video..." : `Creating scene video... ${progress}%`}
+          </Text>
+        </View>
+        <View style={styles.videoProgressBg}>
+          <View style={[styles.videoProgressFill, { width: `${Math.max(progress, 5)}%`, backgroundColor: accent }]} />
+        </View>
+      </Animated.View>
+    );
+  }
+
+  return (
+    <Animated.View entering={FadeIn.duration(600)} style={styles.videoPlayerWrap}>
+      <Video
+        ref={videoRef}
+        source={{ uri: videoUrl }}
+        style={styles.videoPlayer}
+        resizeMode={ResizeMode.COVER}
+        shouldPlay
+        isLooping
+        isMuted={false}
+        volume={0.5}
+      />
+      <LinearGradient
+        colors={["transparent", "rgba(0,0,0,0.3)"]}
+        style={styles.sceneImageOverlay}
+      />
+      <View style={styles.videoTag}>
+        <Ionicons name="videocam" size={10} color="rgba(255,255,255,0.7)" />
+        <Text style={styles.videoTagText}>AI Scene</Text>
+      </View>
+    </Animated.View>
+  );
+}
+
 function ChoiceButton({
   label,
   index,
@@ -252,6 +340,8 @@ export default function StoryScreen() {
   const [musicMuted, setMusicMuted] = useState(false);
   const [musicLoading, setMusicLoading] = useState(false);
   const [musicPlaying, setMusicPlaying] = useState(false);
+  const [videoEnabled, setVideoEnabled] = useState(false);
+  const [videoJobId, setVideoJobId] = useState<string | null>(null);
   const scrollRef = useRef<ScrollView>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -418,6 +508,8 @@ export default function StoryScreen() {
   }, [hero]);
 
   useEffect(() => {
+    getParentControls().then((pc) => setVideoEnabled(pc.videoEnabled));
+
     if (replayJson) {
       try {
         const replayed = JSON.parse(replayJson) as StoryFull;
@@ -445,9 +537,39 @@ export default function StoryScreen() {
     }
   }, [storyState]);
 
+  const triggerVideoGeneration = useCallback(async (partText: string) => {
+    if (!hero || !videoEnabled) return;
+    setVideoJobId(null);
+    try {
+      const baseUrl = getApiUrl();
+      const res = await globalThis.fetch(
+        new URL("/api/generate-video", baseUrl).toString(),
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            sceneText: partText,
+            heroName: hero.name,
+            heroDescription: hero.description,
+          }),
+        }
+      );
+      if (res.ok) {
+        const data = await res.json();
+        if (data.jobId) setVideoJobId(data.jobId);
+      }
+    } catch (e) {
+      console.log("Video generation request failed:", e);
+    }
+  }, [hero, videoEnabled]);
+
   useEffect(() => {
     if (storyState === "ready" && storyData && storyData.parts[currentPartIndex]) {
-      loadSceneImage(storyData.parts[currentPartIndex].text);
+      const partText = storyData.parts[currentPartIndex].text;
+      loadSceneImage(partText);
+      if (videoEnabled) {
+        triggerVideoGeneration(partText);
+      }
     }
   }, [currentPartIndex, storyState]);
 
@@ -735,6 +857,10 @@ export default function StoryScreen() {
                   style={styles.sceneImageOverlay}
                 />
               </Animated.View>
+            )}
+
+            {videoEnabled && videoJobId && (
+              <SceneVideoPlayer jobId={videoJobId} accent={theme.accent} />
             )}
 
             {paragraphs.map((paragraph, index) => (
@@ -1061,5 +1187,65 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: Colors.accent,
     marginTop: 16,
+  },
+  videoLoadingWrap: {
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    gap: 10,
+  },
+  videoLoadingRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+  },
+  videoLoadingText: {
+    fontFamily: "Nunito_400Regular",
+    fontSize: 12,
+    color: Colors.textMuted,
+  },
+  videoProgressBg: {
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.08)",
+  },
+  videoProgressFill: {
+    height: 3,
+    borderRadius: 2,
+  },
+  videoPlayerWrap: {
+    borderRadius: 20,
+    overflow: "hidden",
+    marginBottom: 24,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
+    position: "relative",
+  },
+  videoPlayer: {
+    width: "100%",
+    height: 200,
+    borderRadius: 20,
+    backgroundColor: "#000",
+  },
+  videoTag: {
+    position: "absolute",
+    top: 10,
+    right: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: 10,
+  },
+  videoTagText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 9,
+    color: "rgba(255,255,255,0.7)",
+    letterSpacing: 0.3,
   },
 });

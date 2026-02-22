@@ -231,6 +231,20 @@ export function ParentControlsModal({ visible, onClose }: Props) {
               })}
             </View>
 
+            <Text style={styles.sectionTitle}>AI VIDEO CLIPS</Text>
+            <View style={styles.toggleRow}>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.toggleLabel}>Enable Video Scenes</Text>
+                <Text style={styles.toggleDesc}>Generate short animated clips during stories (uses OpenAI Sora 2, costs apply)</Text>
+              </View>
+              <Switch
+                value={controls.videoEnabled}
+                onValueChange={(val) => update("videoEnabled", val)}
+                trackColor={{ false: "rgba(255,255,255,0.1)", true: Colors.accent }}
+                thumbColor="#FFF"
+              />
+            </View>
+
             <Text style={styles.sectionTitle}>PIN PROTECTION</Text>
             {controls.pinCode ? (
               <View style={styles.pinStatus}>

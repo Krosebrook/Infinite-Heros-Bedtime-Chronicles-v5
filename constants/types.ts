@@ -63,6 +63,7 @@ export interface ParentControls {
   bedtimeEnabled: boolean;
   allowedThemes: string[];
   pinCode: string;
+  videoEnabled: boolean;
 }
 
 export const DEFAULT_PARENT_CONTROLS: ParentControls = {
@@ -72,6 +73,7 @@ export const DEFAULT_PARENT_CONTROLS: ParentControls = {
   bedtimeEnabled: false,
   allowedThemes: ['courage', 'kindness', 'friendship', 'wonder', 'imagination', 'comfort'],
   pinCode: '',
+  videoEnabled: false,
 };
 
 export interface UserPreferences {

@@ -323,7 +323,7 @@ export default function HomeScreen() {
     } finally {
       setSuggestionLoading(false);
     }
-  }, []);
+  }, [activeProfile]);
 
   useEffect(() => {
     if (lastFetchedHeroRef.current !== heroIndex) {

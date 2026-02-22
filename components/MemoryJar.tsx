@@ -13,12 +13,13 @@ import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import { router } from "expo-router";
 import Colors from "@/constants/colors";
 import { HEROES } from "@/constants/heroes";
 import { CachedStory } from "@/constants/types";
 import { getAllStories, deleteStory } from "@/lib/storage";
 
-function StoryCard({ item, onDelete }: { item: CachedStory; onDelete: (id: string) => void }) {
+function StoryCard({ item, onDelete, onReread }: { item: CachedStory; onDelete: (id: string) => void; onReread: (item: CachedStory) => void }) {
   const hero = HEROES.find((h) => h.id === item.heroId);
   const date = new Date(item.timestamp);
   const dateStr = date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
@@ -43,7 +44,7 @@ function StoryCard({ item, onDelete }: { item: CachedStory; onDelete: (id: strin
   };
 
   return (
-    <View style={jarStyles.storyCard}>
+    <Pressable onPress={() => onReread(item)} style={jarStyles.storyCard}>
       <View style={jarStyles.storyCardTop}>
         {badge && <Text style={jarStyles.storyBadgeEmoji}>{badge.emoji}</Text>}
         <View style={jarStyles.storyCardInfo}>
@@ -63,9 +64,14 @@ function StoryCard({ item, onDelete }: { item: CachedStory; onDelete: (id: strin
             <Text style={jarStyles.storyDate}>{dateStr}</Text>
           </View>
         </View>
-        <Pressable onPress={handleDelete} hitSlop={12} style={jarStyles.deleteBtn}>
-          <Ionicons name="trash-outline" size={16} color="rgba(255,255,255,0.3)" />
-        </Pressable>
+        <View style={jarStyles.cardActions}>
+          <Pressable onPress={() => { Haptics.selectionAsync(); onReread(item); }} hitSlop={12} style={jarStyles.rereadBtn}>
+            <Ionicons name="book-outline" size={16} color={Colors.accent} />
+          </Pressable>
+          <Pressable onPress={handleDelete} hitSlop={12} style={jarStyles.deleteBtn}>
+            <Ionicons name="trash-outline" size={16} color="rgba(255,255,255,0.3)" />
+          </Pressable>
+        </View>
       </View>
 
       {item.story.lesson && (
@@ -73,7 +79,7 @@ function StoryCard({ item, onDelete }: { item: CachedStory; onDelete: (id: strin
           {item.story.lesson}
         </Text>
       )}
-    </View>
+    </Pressable>
   );
 }
 
@@ -104,6 +110,19 @@ export function MemoryJar({ visible, onClose }: MemoryJarProps) {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     await deleteStory(id);
     setStories((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const handleReread = (item: CachedStory) => {
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    onClose();
+    router.push({
+      pathname: "/story",
+      params: {
+        heroId: item.heroId,
+        mode: item.mode,
+        replayJson: JSON.stringify(item.story),
+      },
+    });
   };
 
   return (
@@ -137,7 +156,7 @@ export function MemoryJar({ visible, onClose }: MemoryJarProps) {
             keyExtractor={(item) => item.id}
             renderItem={({ item, index }) => (
               <Animated.View entering={FadeInDown.duration(400).delay(index * 60)}>
-                <StoryCard item={item} onDelete={handleDelete} />
+                <StoryCard item={item} onDelete={handleDelete} onReread={handleReread} />
               </Animated.View>
             )}
             contentContainerStyle={[jarStyles.listContent, { paddingBottom: bottomInset + 20 }]}
@@ -193,6 +212,11 @@ const jarStyles = StyleSheet.create({
     fontFamily: "Nunito_600SemiBold", fontSize: 11, color: Colors.textSecondary,
   },
   storyDate: { fontFamily: "Nunito_400Regular", fontSize: 11, color: Colors.textMuted },
+  cardActions: { flexDirection: "row", alignItems: "center", gap: 4 },
+  rereadBtn: {
+    width: 32, height: 32, borderRadius: 16,
+    alignItems: "center", justifyContent: "center",
+  },
   deleteBtn: {
     width: 32, height: 32, borderRadius: 16,
     alignItems: "center", justifyContent: "center",

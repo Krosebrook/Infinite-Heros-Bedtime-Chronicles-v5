@@ -215,7 +215,7 @@ function ChoiceButton({
 }
 
 export default function StoryScreen() {
-  const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer, speed: initialSpeed } =
+  const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer, speed: initialSpeed, replayJson } =
     useLocalSearchParams<{
       heroId: string;
       duration: string;
@@ -225,6 +225,7 @@ export default function StoryScreen() {
       soundscape: string;
       sleepTimer: string;
       speed: string;
+      replayJson: string;
     }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -417,7 +418,18 @@ export default function StoryScreen() {
   }, [hero]);
 
   useEffect(() => {
-    generateStory();
+    if (replayJson) {
+      try {
+        const replayed = JSON.parse(replayJson) as StoryFull;
+        setStoryData(replayed);
+        setStoryState("ready");
+        setCurrentPartIndex(0);
+      } catch {
+        generateStory();
+      }
+    } else {
+      generateStory();
+    }
     startBgMusic();
     return () => {
       stopAudio();

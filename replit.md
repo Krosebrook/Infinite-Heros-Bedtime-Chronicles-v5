@@ -15,14 +15,15 @@ Preferred communication style: Simple, everyday language.
 ### Frontend (Expo / React Native)
 - **Framework**: Expo SDK 54 with React Native 0.81, using the new architecture
 - **Routing**: Expo Router v6 with file-based routing (`app/` directory). Single-page combined layout:
-  - `index.tsx` — Combined single-page with dark "INFINITY HEROES" header, AI suggestion card (contextual recommendations based on time of day and hero), mode tabs (Classic/Mad Libs/Sleepy), hero picker (circular avatar + prev/next arrows), duration timeline (5 connected nodes), narrator voice chips, narration speed presets (Gentle 0.8x/Medium 0.9x/Normal 1.0x), and "BEGIN ADVENTURE" button
+  - `index.tsx` — Combined single-page with dark "INFINITY HEROES" header, profile selector, AI suggestion card (contextual recommendations based on time of day, hero, and child age), mode tabs (Classic/Mad Libs/Sleepy), hero picker (circular avatar + prev/next arrows), duration timeline (5 connected nodes), narrator voice chips, narration speed presets (Gentle 0.8x/Medium 0.9x/Normal 1.0x), and "BEGIN ADVENTURE" button. Navigation to trophies, parent controls, and Memory Jar.
   - `madlibs.tsx` — Mad Libs word input screen
   - `sleep-setup.tsx` — Sleep mode soundscape and timer setup
-  - `story.tsx` — Story generation and display with streaming text
-  - `completion.tsx` — Post-story celebration screen
+  - `story.tsx` — Story generation and display with streaming text; also supports re-reading saved stories via `replayJson` param
+  - `completion.tsx` — Post-story celebration screen with badge awarding and streak tracking
+  - `trophies.tsx` — Trophy Shelf screen showing earned badges, current/longest streaks, and locked badge previews
   - `options.tsx` — Legacy screen (no longer used in main flow)
-- **State Management**: TanStack React Query for server state, local component state with useState
-- **Local Storage**: AsyncStorage for favorites and read story tracking (`lib/storage.ts`)
+- **State Management**: TanStack React Query for server state, React Context for profile state (`lib/ProfileContext.tsx`), local component state with useState
+- **Local Storage**: AsyncStorage for profiles, badges, streaks, parent controls, favorites, and read story tracking (`lib/storage.ts`)
 - **Styling**: React Native StyleSheet with a dark cosmic color theme defined in `constants/colors.ts`
 - **Animations**: React Native Reanimated for entrance animations, pulsing effects, and star twinkling
 - **Fonts**: Nunito (Google Fonts) in multiple weights via `@expo-google-fonts/nunito`
@@ -41,7 +42,7 @@ Preferred communication style: Simple, everyday language.
   - `POST /api/tts` — Text-to-speech via ElevenLabs (max 5000 chars)
   - `GET /api/tts-audio/:file` — Serves cached TTS audio (hex hash filenames only)
   - `GET /api/music/:mode` — Serves static background music files (classic, sleep, madlibs)
-  - `POST /api/suggest-settings` — AI-powered story setting suggestions via Gemini (mode, duration, speed, voice, tip based on time of day and hero)
+  - `POST /api/suggest-settings` — AI-powered story setting suggestions via Gemini (mode, duration, speed, voice, tip based on time of day, hero, and child age/name)
   - `GET /api/voices` — Lists available narrator voices
 - **AI Integration**: Google Gemini AI via Replit AI Integrations (`AI_INTEGRATIONS_GEMINI_API_KEY`, `AI_INTEGRATIONS_GEMINI_BASE_URL`), using `gemini-2.5-flash` for text and `gemini-2.5-flash-image` for images
 - **CORS**: Dynamic origin handling supporting Replit dev domains and localhost for Expo web development
@@ -95,6 +96,11 @@ Pre-built integration modules available but not all actively used by the main ap
 
 ## Recent Changes
 
+- **Feb 2026 — Child Profiles & Personalization**: Added ProfileContext (`lib/ProfileContext.tsx`) with AsyncStorage persistence, ProfileModal for creating/editing/deleting child profiles (name, age, avatar emoji, favorite hero). Personalized "Welcome back" greeting on home screen. AI suggestions now accept `childAge` and `childName` for age-tailored recommendations.
+- **Feb 2026 — Badge & Streak System**: 12 collectible badges (first_story, night_story, morning_story, all_heroes, madlibs_3, sleep_3, classic_5, streak_3, streak_7, total_10, total_25, vocab_5) with persistent storage. Daily streak tracking with automatic reset. Badges awarded on story completion in `completion.tsx` with animated celebration display.
+- **Feb 2026 — Trophy Shelf**: New `trophies.tsx` screen showing earned badges with glow effects, current/longest streak counters, and locked badge previews with requirements.
+- **Feb 2026 — Parent Controls**: PIN-protected parent controls modal with bedtime hour/minute settings, max story length limits (short/medium-short/medium/long/epic), and content theme filtering (6 themes).
+- **Feb 2026 — Continue Story from Memory Jar**: Tapping a saved story in the Memory Jar opens it in the story screen for re-reading via `replayJson` param, with re-read button and card tap navigation.
 - **Feb 2026 — AI-Powered Setting Suggestions**: Added `POST /api/suggest-settings` endpoint using Gemini 2.5 Flash (with `thinkingBudget: 0` to prevent token truncation). Frontend AI suggestion card auto-fetches on page load and hero change, shows contextual tip and setting chips (mode, duration, speed, voice), with Apply/Refresh/Dismiss controls.
 - **Feb 2026 — Narration Speed Control**: Added adjustable narration speed presets (Gentle 0.8x, Medium 0.9x, Normal 1.0x) on setup screen and mid-playback on story screen via expo-av rate control with pitch correction. Sleepy mode defaults to Gentle, others to Medium.
 - **Feb 2026 — ElevenLabs TTS Integration**: Replaced basic speech with ElevenLabs `eleven_multilingual_v2` model via Replit connector, 7 natural voice options, cached audio serving with 24h TTL and hourly cleanup.
@@ -104,20 +110,19 @@ Pre-built integration modules available but not all actively used by the main ap
 
 ## Roadmap
 
-### Phase 1: Personalization & Profiles
+### Completed
 - Child profiles (name, age, favorite heroes) stored locally via AsyncStorage
-- AI suggestions tailored to the child's age (simpler stories for ages 3-5, more adventurous for ages 6-9)
-- Story history per child — track which heroes and modes they've used
+- AI suggestions tailored to the child's age
+- Story history per child
 - "Welcome back, [name]!" greeting on the setup screen
-
-### Phase 2: Reward System & Engagement
-- Collectible badges earned after completing stories (e.g. "First Adventure," "Night Owl," "All Heroes")
-- Badge gallery / trophy shelf screen
+- Collectible badges (12 achievements) earned after completing stories
+- Badge gallery / trophy shelf screen with streak display
 - Streak tracking — consecutive nights of bedtime stories
-- Animated celebration effects when earning a badge
+- Animated celebration effects when earning badges
+- "Continue the story" — re-read saved stories from Memory Jar
+- Parent controls — bedtime reminder settings, story length limits, content theme filtering with PIN protection
 
-### Phase 3: Enhanced Story Experience
-- AI-generated scene illustrations during the story (using existing Gemini image endpoint)
+### Future Enhancements
 - Ambient sound effects layered on background music (rain, crickets, ocean waves)
-- "Continue the story" — pick up where you left off with a saved story from Memory Jar
-- Parent controls — set bedtime reminder, limit story length, choose content themes
+- Multi-language story generation
+- Collaborative story mode (parent + child)

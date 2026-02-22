@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
 } from "react-native";
+import { Audio } from "expo-av";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -92,15 +93,31 @@ const DURATIONS = [
   { id: "epic", label: "15+ min", icon: "infinite" as const },
 ];
 
-const VOICES = [
-  { id: "kore", label: "Kore", desc: "Soothing", icon: "flower-outline" as const },
-  { id: "aoede", label: "Aoede", desc: "Melodic", icon: "musical-notes-outline" as const },
-  { id: "zephyr", label: "Zephyr", desc: "Gentle", icon: "leaf-outline" as const },
-  { id: "leda", label: "Leda", desc: "Ethereal", icon: "sparkles-outline" as const },
-  { id: "puck", label: "Puck", desc: "Playful", icon: "happy-outline" as const },
-  { id: "charon", label: "Charon", desc: "Deep", icon: "moon-outline" as const },
-  { id: "fenrir", label: "Fenrir", desc: "Bold", icon: "flame-outline" as const },
+type VoiceCategory = "sleep" | "classic" | "fun";
+
+const VOICES: { id: string; label: string; desc: string; accent: string; icon: any; category: VoiceCategory }[] = [
+  { id: "moonbeam", label: "Moonbeam", desc: "Warm lullaby", accent: "American", icon: "moon-outline", category: "sleep" },
+  { id: "whisper", label: "Whisper", desc: "Soft & dreamy", accent: "American", icon: "cloud-outline", category: "sleep" },
+  { id: "stardust", label: "Stardust", desc: "Magical guide", accent: "American", icon: "sparkles-outline", category: "sleep" },
+  { id: "captain", label: "Captain Story", desc: "Dramatic narrator", accent: "British", icon: "book-outline", category: "classic" },
+  { id: "professor", label: "Prof. Nova", desc: "Wise & warm", accent: "British", icon: "school-outline", category: "classic" },
+  { id: "aurora", label: "Aurora", desc: "Expressive weaver", accent: "American", icon: "sunny-outline", category: "classic" },
+  { id: "giggles", label: "Giggles", desc: "Playful & silly", accent: "American", icon: "happy-outline", category: "fun" },
+  { id: "blaze", label: "Blaze", desc: "Bold & exciting", accent: "American", icon: "flame-outline", category: "fun" },
+  { id: "ziggy", label: "Ziggy", desc: "Animated & cheery", accent: "British", icon: "star-outline", category: "fun" },
 ];
+
+const MODE_DEFAULT_VOICE: Record<ModeId, string> = {
+  classic: "captain",
+  madlibs: "giggles",
+  sleep: "moonbeam",
+};
+
+const MODE_VOICE_CATEGORY: Record<ModeId, VoiceCategory> = {
+  classic: "classic",
+  madlibs: "fun",
+  sleep: "sleep",
+};
 
 const SPEED_PRESETS = [
   { id: "gentle", label: "Gentle", desc: "0.8×", rate: 0.8, icon: "moon-outline" as const },
@@ -287,7 +304,9 @@ export default function HomeScreen() {
   const [heroIndex, setHeroIndex] = useState(0);
   const [mode, setMode] = useState<ModeId>("classic");
   const [duration, setDuration] = useState("medium");
-  const [voice, setVoice] = useState("kore");
+  const [voice, setVoice] = useState("captain");
+  const [previewLoading, setPreviewLoading] = useState<string | null>(null);
+  const previewSoundRef = useRef<Audio.Sound | null>(null);
   const [speed, setSpeed] = useState(MODE_DEFAULT_SPEED["classic"]);
   const [jarVisible, setJarVisible] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
@@ -353,7 +372,44 @@ export default function HomeScreen() {
   const handleModeChange = (newMode: ModeId) => {
     setMode(newMode);
     setSpeed(MODE_DEFAULT_SPEED[newMode]);
+    setVoice(MODE_DEFAULT_VOICE[newMode]);
   };
+
+  const playVoicePreview = useCallback(async (voiceId: string) => {
+    if (previewLoading) return;
+    setPreviewLoading(voiceId);
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      if (previewSoundRef.current) {
+        await previewSoundRef.current.stopAsync();
+        await previewSoundRef.current.unloadAsync();
+        previewSoundRef.current = null;
+      }
+      const res = await apiRequest("POST", "/api/tts-preview", { voice: voiceId });
+      const data = await res.json();
+      if (data.audioUrl) {
+        const { getApiUrl } = await import("@/lib/query-client");
+        const baseUrl = getApiUrl();
+        const fullUrl = `${baseUrl}${data.audioUrl}`;
+        const { sound } = await Audio.Sound.createAsync(
+          { uri: fullUrl },
+          { shouldPlay: true }
+        );
+        previewSoundRef.current = sound;
+        sound.setOnPlaybackStatusUpdate((status: any) => {
+          if (status.didJustFinish) {
+            setPreviewLoading(null);
+            sound.unloadAsync();
+            previewSoundRef.current = null;
+          }
+        });
+      }
+    } catch (e) {
+      console.log("Preview failed:", e);
+    } finally {
+      setTimeout(() => setPreviewLoading(null), 8000);
+    }
+  }, [previewLoading]);
 
   const prevHero = () => {
     Haptics.selectionAsync();
@@ -603,14 +659,18 @@ export default function HomeScreen() {
           <View style={s.sectionHeader}>
             <Ionicons name="mic" size={14} color={theme.accent} />
             <Text style={s.sectionLabel}>NARRATOR VOICE</Text>
+            <Text style={s.sectionHint}>
+              {MODE_VOICE_CATEGORY[mode] === "sleep" ? "Calm & Soothing" : MODE_VOICE_CATEGORY[mode] === "fun" ? "Fun & Energetic" : "Storytellers"}
+            </Text>
           </View>
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={s.voiceScrollContent}
           >
-            {VOICES.map((v) => {
+            {VOICES.filter((v) => v.category === MODE_VOICE_CATEGORY[mode]).map((v) => {
               const isActive = voice === v.id;
+              const isPreviewing = previewLoading === v.id;
               return (
                 <Pressable
                   key={v.id}
@@ -624,21 +684,38 @@ export default function HomeScreen() {
                   ]}
                   testID={`voice-${v.id}`}
                 >
-                  <View
-                    style={[
-                      s.voiceChipDot,
-                      isActive && { backgroundColor: theme.accent },
-                    ]}
-                  >
-                    <Ionicons
-                      name={v.icon as any}
-                      size={13}
-                      color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
-                    />
+                  <View style={s.voiceChipTop}>
+                    <View
+                      style={[
+                        s.voiceChipDot,
+                        isActive && { backgroundColor: theme.accent },
+                      ]}
+                    >
+                      <Ionicons
+                        name={v.icon as any}
+                        size={13}
+                        color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
+                      />
+                    </View>
+                    <Pressable
+                      onPress={(e) => {
+                        e.stopPropagation?.();
+                        playVoicePreview(v.id);
+                      }}
+                      hitSlop={8}
+                      style={[s.previewBtn, isPreviewing && { backgroundColor: `${theme.accent}30` }]}
+                    >
+                      {isPreviewing ? (
+                        <ActivityIndicator size={10} color={theme.accent} />
+                      ) : (
+                        <Ionicons name="volume-medium-outline" size={12} color={isActive ? theme.accent : "rgba(255,255,255,0.35)"} />
+                      )}
+                    </Pressable>
                   </View>
                   <View>
                     <Text style={[s.voiceChipName, isActive && { color: "#FFF" }]}>{v.label}</Text>
                     <Text style={[s.voiceChipDesc, isActive && { color: theme.accent }]}>{v.desc}</Text>
+                    <Text style={s.voiceChipAccent}>{v.accent}</Text>
                   </View>
                 </Pressable>
               );
@@ -819,6 +896,13 @@ const s = StyleSheet.create({
     color: "rgba(255,255,255,0.5)",
     letterSpacing: 2,
   },
+  sectionHint: {
+    fontFamily: "Nunito_500Medium",
+    fontSize: 10,
+    color: "rgba(255,255,255,0.3)",
+    marginLeft: "auto",
+    letterSpacing: 0.5,
+  },
   heroCarousel: {
     flexDirection: "row",
     alignItems: "center",
@@ -946,10 +1030,8 @@ const s = StyleSheet.create({
     paddingBottom: 4,
   },
   voiceChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    paddingVertical: 8,
+    width: 100,
+    paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 16,
     backgroundColor: "rgba(255,255,255,0.04)",
@@ -969,10 +1051,30 @@ const s = StyleSheet.create({
     fontSize: 12,
     color: "rgba(255,255,255,0.5)",
   },
+  voiceChipTop: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 4,
+  },
+  previewBtn: {
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: "rgba(255,255,255,0.06)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   voiceChipDesc: {
     fontFamily: "Nunito_400Regular",
     fontSize: 9,
     color: "rgba(255,255,255,0.3)",
+  },
+  voiceChipAccent: {
+    fontFamily: "Nunito_400Regular",
+    fontSize: 8,
+    color: "rgba(255,255,255,0.2)",
+    marginTop: 2,
   },
   speedRow: {
     flexDirection: "row",

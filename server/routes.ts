@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { GoogleGenAI, Modality } from "@google/genai";
-import { generateSpeech, VOICE_MAP } from "./elevenlabs";
+import { generateSpeech, VOICE_MAP, MODE_DEFAULT_VOICES, getVoicesForMode, type VoiceConfig } from "./elevenlabs";
 import { getMusicFilePath, getMusicFileName } from "./suno";
 import crypto from "node:crypto";
 import fs from "node:fs";
@@ -365,7 +365,7 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
     }
 
     try {
-      const { text, voice } = req.body;
+      const { text, voice, mode } = req.body;
       if (!text || typeof text !== "string") {
         return res.status(400).json({ error: "Text is required" });
       }
@@ -374,13 +374,14 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
         return res.status(400).json({ error: `Text too long. Maximum ${MAX_TTS_TEXT_LENGTH} characters.` });
       }
 
-      const voiceKey = sanitizeString(voice || "kore", 20).toLowerCase();
-      const hash = crypto.createHash("md5").update(`${voiceKey}:${text}`).digest("hex");
+      const voiceKey = sanitizeString(voice || "moonbeam", 20).toLowerCase();
+      const storyMode = mode && typeof mode === "string" ? sanitizeString(mode, 20) : undefined;
+      const hash = crypto.createHash("md5").update(`${voiceKey}:${storyMode || ""}:${text}`).digest("hex");
       const fileName = `${hash}.mp3`;
       const filePath = path.join(TTS_CACHE_DIR, fileName);
 
       if (!fs.existsSync(filePath)) {
-        const audioBuffer = await generateSpeech(text, voiceKey);
+        const audioBuffer = await generateSpeech(text, voiceKey, storyMode);
         fs.writeFileSync(filePath, audioBuffer);
       }
 
@@ -446,12 +447,14 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
       const timeOfDay = hour >= 19 || hour < 6 ? "nighttime/bedtime" : hour >= 17 ? "evening" : hour >= 12 ? "afternoon" : "morning";
 
       const voiceKeys = Object.keys(VOICE_MAP);
-      const voiceDescriptions = Object.entries(VOICE_MAP).map(([k, v]) => `${k} (${v.description})`).join(", ");
+      const sleepVoices = getVoicesForMode("sleep").join(", ");
+      const classicVoices = getVoicesForMode("classic").join(", ");
+      const funVoices = getVoicesForMode("madlibs").join(", ");
 
       const ageContext = childAge ? ` Child age: ${childAge} years old.${childAge <= 5 ? " For younger kids, prefer shorter, gentler stories with sleep mode." : " For older kids, classic and madlibs modes with longer stories work great."}` : "";
       const nameContext = childName ? ` Child name: ${childName}.` : "";
 
-      const prompt = `Suggest bedtime story settings as JSON. Time: ${timeOfDay}.${ageContext}${nameContext} Hero: ${heroName} (${heroPower}). Modes: classic, madlibs, sleep. Durations: short, medium-short, medium, long, epic. Speeds: gentle, medium, normal. Voices: ${voiceKeys.join(", ")}. Night=sleep+gentle+short. Afternoon=classic/madlibs+medium/normal. Reply ONLY with: {"mode":"...","duration":"...","speed":"...","voice":"...","tip":"short parent-friendly reason"}`;
+      const prompt = `Suggest bedtime story settings as JSON. Time: ${timeOfDay}.${ageContext}${nameContext} Hero: ${heroName} (${heroPower}). Modes: classic, madlibs, sleep. Durations: short, medium-short, medium, long, epic. Speeds: gentle, medium, normal. Voice categories - Sleep voices: ${sleepVoices}. Classic voices: ${classicVoices}. Fun/madlibs voices: ${funVoices}. IMPORTANT: Match voice to mode (sleep voices for sleep, classic voices for classic, fun voices for madlibs). Night=sleep+gentle+short. Afternoon=classic/madlibs+medium/normal. Reply ONLY with: {"mode":"...","duration":"...","speed":"...","voice":"...","tip":"short parent-friendly reason"}`;
 
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
@@ -478,7 +481,7 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
       if (!VALID_MODES.includes(suggestion.mode)) suggestion.mode = "classic";
       if (!VALID_DURATIONS.includes(suggestion.duration)) suggestion.duration = "medium";
       if (!["gentle", "medium", "normal"].includes(suggestion.speed)) suggestion.speed = "medium";
-      if (!voiceKeys.includes(suggestion.voice)) suggestion.voice = "kore";
+      if (!voiceKeys.includes(suggestion.voice)) suggestion.voice = MODE_DEFAULT_VOICES[suggestion.mode] || "moonbeam";
       if (typeof suggestion.tip !== "string") suggestion.tip = "A great story awaits!";
       suggestion.tip = suggestion.tip.slice(0, 120);
 
@@ -493,9 +496,43 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
     const voices = Object.entries(VOICE_MAP).map(([key, val]) => ({
       id: key,
       name: val.name,
+      characterName: val.characterName,
       description: val.description,
+      accent: val.accent,
+      personality: val.personality,
+      category: val.category,
     }));
-    res.json({ voices });
+    res.json({ voices, defaults: MODE_DEFAULT_VOICES });
+  });
+
+  app.post("/api/tts-preview", async (req, res) => {
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+    if (!checkRateLimit(clientIp)) {
+      return res.status(429).json({ error: "Too many requests" });
+    }
+
+    try {
+      const voiceKey = sanitizeString(req.body.voice || "moonbeam", 20).toLowerCase();
+      const voiceInfo = VOICE_MAP[voiceKey];
+      if (!voiceInfo) {
+        return res.status(400).json({ error: "Invalid voice" });
+      }
+
+      const previewText = voiceInfo.previewText;
+      const hash = crypto.createHash("md5").update(`preview:${voiceKey}:${previewText}`).digest("hex");
+      const fileName = `${hash}.mp3`;
+      const filePath = path.join(TTS_CACHE_DIR, fileName);
+
+      if (!fs.existsSync(filePath)) {
+        const audioBuffer = await generateSpeech(previewText, voiceKey);
+        fs.writeFileSync(filePath, audioBuffer);
+      }
+
+      res.json({ audioUrl: `/api/tts-audio/${fileName}` });
+    } catch (error: any) {
+      console.error("TTS preview error:", error?.message || error);
+      res.status(500).json({ error: "Failed to generate preview" });
+    }
   });
 
   const httpServer = createServer(app);

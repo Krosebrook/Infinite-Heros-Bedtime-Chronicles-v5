@@ -489,7 +489,8 @@ export default function StoryScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: currentPart.text,
-          voice: voice || "kore",
+          voice: voice || "moonbeam",
+          mode: storyMode,
         }),
       });
 

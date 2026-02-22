@@ -92,3 +92,32 @@ Pre-built integration modules available but not all actively used by the main ap
 - **Backend**: express, @google/genai, drizzle-orm, pg, http-proxy-middleware
 - **Shared**: drizzle-zod, zod
 - **Build**: drizzle-kit, esbuild, tsx, patch-package
+
+## Recent Changes
+
+- **Feb 2026 — AI-Powered Setting Suggestions**: Added `POST /api/suggest-settings` endpoint using Gemini 2.5 Flash (with `thinkingBudget: 0` to prevent token truncation). Frontend AI suggestion card auto-fetches on page load and hero change, shows contextual tip and setting chips (mode, duration, speed, voice), with Apply/Refresh/Dismiss controls.
+- **Feb 2026 — Narration Speed Control**: Added adjustable narration speed presets (Gentle 0.8x, Medium 0.9x, Normal 1.0x) on setup screen and mid-playback on story screen via expo-av rate control with pitch correction. Sleepy mode defaults to Gentle, others to Medium.
+- **Feb 2026 — ElevenLabs TTS Integration**: Replaced basic speech with ElevenLabs `eleven_multilingual_v2` model via Replit connector, 7 natural voice options, cached audio serving with 24h TTL and hourly cleanup.
+- **Feb 2026 — Background Music**: Added royalty-free static MP3 tracks served from Express backend — Gymnopedie No. 1 (classic), Dreamy Flashback (sleep), Merry Go (madlibs), all CC-BY Kevin MacLeod.
+- **Feb 2026 — Security Hardening**: Input sanitization (string length caps), rate limiting (10 req/min/IP on AI endpoints), path traversal protection on TTS audio, 100KB body size limit, graceful shutdown on SIGTERM/SIGINT.
+- **Feb 2026 — AI Provider Migration**: Migrated from OpenAI GPT-4o-mini to Google Gemini 2.5 Flash for story generation, setting suggestions, and image generation.
+
+## Roadmap
+
+### Phase 1: Personalization & Profiles
+- Child profiles (name, age, favorite heroes) stored locally via AsyncStorage
+- AI suggestions tailored to the child's age (simpler stories for ages 3-5, more adventurous for ages 6-9)
+- Story history per child — track which heroes and modes they've used
+- "Welcome back, [name]!" greeting on the setup screen
+
+### Phase 2: Reward System & Engagement
+- Collectible badges earned after completing stories (e.g. "First Adventure," "Night Owl," "All Heroes")
+- Badge gallery / trophy shelf screen
+- Streak tracking — consecutive nights of bedtime stories
+- Animated celebration effects when earning a badge
+
+### Phase 3: Enhanced Story Experience
+- AI-generated scene illustrations during the story (using existing Gemini image endpoint)
+- Ambient sound effects layered on background music (rain, crickets, ocean waves)
+- "Continue the story" — pick up where you left off with a saved story from Memory Jar
+- Parent controls — set bedtime reminder, limit story length, choose content themes

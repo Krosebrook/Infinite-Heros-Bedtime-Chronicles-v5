@@ -84,7 +84,10 @@ Pre-built integration modules available but not all actively used by the main ap
 ### Services & APIs
 - **Google Gemini AI** (via Replit AI Integrations): Story generation and setting suggestions with `gemini-2.5-flash`, image generation with `gemini-2.5-flash-image`
   - Configured through `AI_INTEGRATIONS_GEMINI_API_KEY` and `AI_INTEGRATIONS_GEMINI_BASE_URL`
-- **ElevenLabs** (via Replit connector): Text-to-speech narration with `eleven_multilingual_v2` model, 7 voice options
+- **OpenAI** (direct API key): Video generation with Sora 2 (`sora-2-2025-12-08`), fallback image generation with `gpt-image-1`
+  - Configured through `OPENAI_API_KEY` (required for video and image fallback features)
+  - Note: Replit AI integrations proxy does NOT support video outputs — requires direct API key
+- **ElevenLabs** (via Replit connector): Text-to-speech narration with `eleven_multilingual_v2` model, 9 voice options in 3 categories
   - Configured through `ELEVENLABS_API_KEY`
 - **PostgreSQL**: Database provisioned through Replit, connected via `DATABASE_URL`
 
@@ -107,6 +110,9 @@ Pre-built integration modules available but not all actively used by the main ap
 - **Feb 2026 — Background Music**: Added royalty-free static MP3 tracks served from Express backend — Gymnopedie No. 1 (classic), Dreamy Flashback (sleep), Merry Go (madlibs), all CC-BY Kevin MacLeod.
 - **Feb 2026 — Security Hardening**: Input sanitization (string length caps), rate limiting (10 req/min/IP on AI endpoints), path traversal protection on TTS audio, 100KB body size limit, graceful shutdown on SIGTERM/SIGINT.
 - **Feb 2026 — AI Provider Migration**: Migrated from OpenAI GPT-4o-mini to Google Gemini 2.5 Flash for story generation, setting suggestions, and image generation.
+- **Feb 2026 — AI Video Scenes (Sora 2)**: Added optional AI-generated video clips (4 seconds, 1280x720) between story scenes using OpenAI Sora 2 (`sora-2-2025-12-08`). Toggleable via Parent Controls (`videoEnabled`, default off). Backend async job system with polling, cached in `/tmp/video-cache` with 24h expiry. Endpoints: `POST /api/generate-video`, `GET /api/video-status/:id`, `GET /api/video/:id`, `GET /api/video-available`. Frontend `SceneVideoPlayer` component with progress bar and inline `expo-av Video` playback. Requires direct `OPENAI_API_KEY` (Replit AI integrations proxy doesn't support video outputs).
+- **Feb 2026 — OpenAI Image Fallback**: Added `gpt-image-1` as fallback image provider for avatar and scene generation. If Gemini image generation fails, automatically falls back to OpenAI (requires `OPENAI_API_KEY`). Used for both `POST /api/generate-avatar` and `POST /api/generate-scene`.
+- **Feb 2026 — 9-Voice System**: Redesigned voice system with 9 voices in 3 categories — Sleep (moonbeam/whisper/stardust), Classic (captain/professor/aurora), Fun (giggles/blaze/ziggy). Per-voice ElevenLabs settings (stability, style, similarity), mode-aware suggestions, voice preview endpoint.
 
 ## Roadmap
 

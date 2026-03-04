@@ -128,6 +128,9 @@ Pre-built integration modules available but not all actively used by the main ap
 - "Continue the story" — re-read saved stories from Memory Jar
 - Parent controls — bedtime reminder settings, story length limits, content theme filtering with PIN protection
 
+### Security Notes
+- **PIN Storage**: The parent controls PIN is stored in plaintext via AsyncStorage. This is acceptable for the child-proofing use case — the PIN is not a security credential but a simple deterrent to prevent young children from changing settings. It never leaves the device and is not transmitted to any server.
+
 ### Future Enhancements
 - Ambient sound effects layered on background music (rain, crickets, ocean waves)
 - Multi-language story generation

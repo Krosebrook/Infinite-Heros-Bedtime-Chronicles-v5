@@ -65,7 +65,7 @@ export function SettingsModal({ visible, onClose }: Props) {
 
   useEffect(() => {
     if (visible) {
-      getPreferences().then(setPrefs);
+      getPreferences().then(setPrefs).catch((e) => console.error("Failed to load preferences:", e));
     }
   }, [visible]);
 

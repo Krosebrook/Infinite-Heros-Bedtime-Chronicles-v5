@@ -70,6 +70,9 @@ export const queryClient = new QueryClient({
       queryFn: getQueryFn({ on401: "throw" }),
       refetchInterval: false,
       refetchOnWindowFocus: false,
+      // staleTime: Infinity is intentional — the app's server-state queries are all
+      // user-initiated mutations that manually invalidate the cache after changes.
+      // No background refetching is needed since data only changes via explicit user actions.
       staleTime: Infinity,
       retry: false,
     },

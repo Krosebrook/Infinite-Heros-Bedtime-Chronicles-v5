@@ -1,0 +1,5 @@
+export const MS_PER_WORD = 300;
+export const MIN_READING_TIME_MS = 8000;
+export const LOADING_MESSAGE_INTERVAL_MS = 2500;
+export const VIDEO_POLL_INTERVAL_MS = 5000;
+export const TTS_PREVIEW_TIMEOUT_MS = 8000;

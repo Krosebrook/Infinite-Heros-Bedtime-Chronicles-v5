@@ -32,10 +32,6 @@ function RootLayoutNav() {
     >
       <Stack.Screen name="index" />
       <Stack.Screen
-        name="options"
-        options={{ animation: "slide_from_right" }}
-      />
-      <Stack.Screen
         name="madlibs"
         options={{ animation: "slide_from_right" }}
       />

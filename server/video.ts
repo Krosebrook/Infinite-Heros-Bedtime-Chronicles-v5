@@ -10,16 +10,16 @@ if (!fs.existsSync(VIDEO_CACHE_DIR)) {
 
 const VIDEO_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
 
-export function cleanVideoCache() {
+export async function cleanVideoCache() {
   try {
-    const files = fs.readdirSync(VIDEO_CACHE_DIR);
+    const files = await fs.promises.readdir(VIDEO_CACHE_DIR);
     const now = Date.now();
     let removed = 0;
     for (const file of files) {
       const filePath = path.join(VIDEO_CACHE_DIR, file);
-      const stat = fs.statSync(filePath);
+      const stat = await fs.promises.stat(filePath);
       if (now - stat.mtimeMs > VIDEO_CACHE_MAX_AGE_MS) {
-        fs.unlinkSync(filePath);
+        await fs.promises.unlink(filePath);
         removed++;
       }
     }
@@ -82,14 +82,12 @@ export async function createVideoJob(
   const prompt = `A gentle, child-friendly animated scene for a bedtime story. The hero "${heroName}" (${heroDescription?.substring(0, 80) || "a friendly superhero"}) is shown in this scene: ${summary}. Style: Soft, dreamy animation with warm pastel colors, magical sparkles, gentle movement, cozy atmosphere. Suitable for children ages 3-9. No scary elements, no violence. Camera slowly pans across the scene. Soft lighting, like moonlight or warm firelight.`;
 
   try {
-    const createParams: any = {
+    const video = await client.videos.create({
       model: "sora-2-2025-12-08",
       prompt,
       size: "1280x720",
       seconds: 4,
-    };
-
-    const video = await client.videos.create(createParams);
+    } as unknown as Parameters<typeof client.videos.create>[0]);
 
     const jobId = crypto.randomBytes(8).toString("hex");
     const job: VideoJob = {

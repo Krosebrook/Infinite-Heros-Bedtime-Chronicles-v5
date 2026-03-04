@@ -7,6 +7,28 @@ import * as path from "path";
 const app = express();
 const log = console.log;
 
+function validateEnvironment() {
+  const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
+  const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
+  const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
+  const openaiKey = process.env.OPENAI_API_KEY;
+
+  if (!geminiKey) {
+    log("[Env] WARNING: AI_INTEGRATIONS_GEMINI_API_KEY is not set — story generation will fail");
+  }
+  if (!geminiBaseUrl) {
+    log("[Env] WARNING: AI_INTEGRATIONS_GEMINI_BASE_URL is not set — story generation may fail");
+  }
+  if (!elevenLabsKey) {
+    log("[Env] WARNING: ELEVENLABS_API_KEY is not set — TTS will be unavailable");
+  }
+  if (!openaiKey) {
+    log("[Env] INFO: OPENAI_API_KEY is not set — image fallback and video generation will be unavailable");
+  }
+
+  log("[Env] Environment validation complete");
+}
+
 declare module "http" {
   interface IncomingMessage {
     rawBody: unknown;
@@ -148,8 +170,10 @@ function serveLandingPage({
   const baseUrl = `${protocol}://${host}`;
   const expsUrl = `${host}`;
 
-  log(`baseUrl`, baseUrl);
-  log(`expsUrl`, expsUrl);
+  if (process.env.NODE_ENV !== "production") {
+    log(`baseUrl`, baseUrl);
+    log(`expsUrl`, expsUrl);
+  }
 
   const html = landingPageTemplate
     .replace(/BASE_URL_PLACEHOLDER/g, baseUrl)
@@ -226,6 +250,7 @@ function setupErrorHandler(app: express.Application) {
 }
 
 (async () => {
+  validateEnvironment();
   setupCors(app);
   setupBodyParsing(app);
   setupRequestLogging(app);

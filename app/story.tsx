@@ -30,10 +30,13 @@ import Animated, {
 import Colors from "@/constants/colors";
 import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
+import { LoadingOrb } from "@/components/PulsingOrb";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import { StoryFull } from "@/constants/types";
 import { getParentControls } from "@/lib/storage";
+import { MS_PER_WORD, MIN_READING_TIME_MS, LOADING_MESSAGE_INTERVAL_MS, VIDEO_POLL_INTERVAL_MS } from "@/constants/timing";
+import { ErrorBoundary } from "@/components/ErrorBoundary";
 
 type StoryState = "generating" | "ready" | "error";
 
@@ -97,49 +100,6 @@ const MODE_THEME = {
   },
 };
 
-function LoadingOrb({ color }: { color: string }) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0.3);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withSequence(
-        withTiming(1.4, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        withTiming(1, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      false
-    );
-    opacity.value = withRepeat(
-      withSequence(
-        withTiming(0.6, { duration: 1500, easing: Easing.inOut(Easing.ease) }),
-        withTiming(0.15, { duration: 1500, easing: Easing.inOut(Easing.ease) })
-      ),
-      -1,
-      false
-    );
-  }, []);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        {
-          position: "absolute",
-          width: 180,
-          height: 180,
-          borderRadius: 90,
-          backgroundColor: color,
-        },
-        animStyle,
-      ]}
-    />
-  );
-}
 
 function LoadingDot({ delay, color }: { delay: number; color: string }) {
   const opacity = useSharedValue(0.2);
@@ -210,8 +170,12 @@ function SceneVideoPlayer({
           setError(data.error || "Video generation failed");
           if (pollRef.current) clearInterval(pollRef.current);
         }
-      } catch {}
-    }, 5000);
+      } catch (e) {
+        console.error("Video polling error:", e);
+        setError("Failed to check video status");
+        if (pollRef.current) clearInterval(pollRef.current);
+      }
+    }, VIDEO_POLL_INTERVAL_MS);
 
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
@@ -335,6 +299,7 @@ export default function StoryScreen() {
   const [playbackSpeed, setPlaybackSpeed] = useState(defaultSpeed);
   const [sceneImage, setSceneImage] = useState<string | null>(null);
   const [sceneLoading, setSceneLoading] = useState(false);
+  const [sceneError, setSceneError] = useState(false);
   const [timerRemaining, setTimerRemaining] = useState<number | null>(null);
   const [loadingMsg, setLoadingMsg] = useState(0);
   const [musicMuted, setMusicMuted] = useState(false);
@@ -381,7 +346,7 @@ export default function StoryScreen() {
       setMusicPlaying(true);
       setMusicLoading(false);
     } catch (err) {
-      console.log("Background music failed:", err);
+      if (__DEV__) console.log("Background music failed:", err);
       setMusicLoading(false);
     }
   }, [storyMode, MUSIC_VOLUME]);
@@ -416,7 +381,7 @@ export default function StoryScreen() {
     const messages = LOADING_MESSAGES[storyMode] || LOADING_MESSAGES.classic;
     loadingMsgRef.current = setInterval(() => {
       setLoadingMsg((prev) => (prev + 1) % messages.length);
-    }, 2500);
+    }, LOADING_MESSAGE_INTERVAL_MS);
     return () => {
       if (loadingMsgRef.current) clearInterval(loadingMsgRef.current);
     };
@@ -451,7 +416,7 @@ export default function StoryScreen() {
       const baseUrl = getApiUrl();
       const url = new URL("/api/generate-story", baseUrl);
 
-      const bodyData: any = {
+      const bodyData: Record<string, unknown> = {
         heroName: hero.name,
         heroTitle: hero.title,
         heroPower: hero.power,
@@ -485,6 +450,7 @@ export default function StoryScreen() {
     if (!hero) return;
     setSceneLoading(true);
     setSceneImage(null);
+    setSceneError(false);
     try {
       const baseUrl = getApiUrl();
       const url = new URL("/api/generate-scene", baseUrl);
@@ -500,15 +466,18 @@ export default function StoryScreen() {
       if (res.ok) {
         const data = await res.json();
         setSceneImage(data.image);
+      } else {
+        setSceneError(true);
       }
     } catch (e) {
-      console.log("Scene generation failed:", e);
+      console.error("Scene generation failed:", e);
+      setSceneError(true);
     }
     setSceneLoading(false);
   }, [hero]);
 
   useEffect(() => {
-    getParentControls().then((pc) => setVideoEnabled(pc.videoEnabled));
+    getParentControls().then((pc) => setVideoEnabled(pc.videoEnabled)).catch((e) => console.error("Failed to load parent controls:", e));
 
     if (replayJson) {
       try {
@@ -559,7 +528,7 @@ export default function StoryScreen() {
         if (data.jobId) setVideoJobId(data.jobId);
       }
     } catch (e) {
-      console.log("Video generation request failed:", e);
+      if (__DEV__) console.log("Video generation request failed:", e);
     }
   }, [hero, videoEnabled]);
 
@@ -578,7 +547,7 @@ export default function StoryScreen() {
       const currentPart = storyData.parts[currentPartIndex];
       if (currentPart && currentPartIndex < storyData.parts.length - 1) {
         const wordCount = currentPart.text.split(/\s+/).length;
-        const readingTimeMs = Math.max(wordCount * 300, 8000);
+        const readingTimeMs = Math.max(wordCount * MS_PER_WORD, MIN_READING_TIME_MS);
         autoAdvanceRef.current = setTimeout(() => {
           setCurrentPartIndex((prev) => prev + 1);
           scrollRef.current?.scrollTo({ y: 0, animated: true });
@@ -647,7 +616,7 @@ export default function StoryScreen() {
       setIsSpeaking(true);
       setAudioLoading(false);
     } catch (err) {
-      console.log("TTS error:", err);
+      if (__DEV__) console.log("TTS error:", err);
       setAudioLoading(false);
       setIsSpeaking(false);
     }
@@ -859,8 +828,35 @@ export default function StoryScreen() {
               </Animated.View>
             )}
 
+            {sceneError && !sceneLoading && !sceneImage && (
+              <Animated.View entering={FadeIn.duration(400)} style={styles.sceneErrorWrap}>
+                <Ionicons name="image-outline" size={28} color="rgba(255,255,255,0.2)" />
+                <Text style={styles.sceneErrorText}>Scene unavailable</Text>
+                <Pressable
+                  onPress={() => {
+                    if (currentPart) loadSceneImage(currentPart.text);
+                  }}
+                  style={[styles.sceneRetryBtn, { borderColor: `${theme.accent}40` }]}
+                >
+                  <Ionicons name="refresh" size={14} color={theme.accent} />
+                  <Text style={[styles.sceneRetryText, { color: theme.accent }]}>Retry</Text>
+                </Pressable>
+              </Animated.View>
+            )}
+
             {videoEnabled && videoJobId && (
-              <SceneVideoPlayer jobId={videoJobId} accent={theme.accent} />
+              <ErrorBoundary FallbackComponent={({ resetError }) => (
+                <View style={styles.sceneErrorWrap}>
+                  <Ionicons name="videocam-off-outline" size={28} color="rgba(255,255,255,0.2)" />
+                  <Text style={styles.sceneErrorText}>Video unavailable</Text>
+                  <Pressable onPress={resetError} style={[styles.sceneRetryBtn, { borderColor: `${theme.accent}40` }]}>
+                    <Ionicons name="refresh" size={14} color={theme.accent} />
+                    <Text style={[styles.sceneRetryText, { color: theme.accent }]}>Retry</Text>
+                  </Pressable>
+                </View>
+              )}>
+                <SceneVideoPlayer jobId={videoJobId} accent={theme.accent} />
+              </ErrorBoundary>
             )}
 
             {paragraphs.map((paragraph, index) => (
@@ -1247,5 +1243,35 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: "rgba(255,255,255,0.7)",
     letterSpacing: 0.3,
+  },
+  sceneErrorWrap: {
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 8,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderRadius: 20,
+    paddingVertical: 24,
+    marginBottom: 20,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+  },
+  sceneErrorText: {
+    fontFamily: "Nunito_400Regular",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.3)",
+  },
+  sceneRetryBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 14,
+    paddingVertical: 8,
+    borderRadius: 16,
+    borderWidth: 1,
+    marginTop: 4,
+  },
+  sceneRetryText: {
+    fontFamily: "Nunito_600SemiBold",
+    fontSize: 12,
   },
 });

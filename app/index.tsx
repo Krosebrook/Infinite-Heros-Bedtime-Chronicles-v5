@@ -7,8 +7,9 @@ import {
   Platform,
   ScrollView,
   ActivityIndicator,
+  Alert,
 } from "react-native";
-import { Audio } from "expo-av";
+import { Audio, AVPlaybackStatus } from "expo-av";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -20,20 +21,19 @@ import Animated, {
   FadeInUp,
   useSharedValue,
   useAnimatedStyle,
-  withTiming,
   withSpring,
-  withRepeat,
-  Easing,
 } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { HEROES, Hero } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
+import { PulsingOrb } from "@/components/PulsingOrb";
 import { MemoryJar } from "@/components/MemoryJar";
 import { SettingsModal } from "@/components/SettingsModal";
 import { ProfileModal } from "@/components/ProfileModal";
 import { ParentControlsModal } from "@/components/ParentControlsModal";
 import { useProfile } from "@/lib/ProfileContext";
 import { apiRequest } from "@/lib/query-client";
+import { TTS_PREVIEW_TIMEOUT_MS } from "@/constants/timing";
 
 interface AISuggestion {
   mode: string;
@@ -95,7 +95,7 @@ const DURATIONS = [
 
 type VoiceCategory = "sleep" | "classic" | "fun";
 
-const VOICES: { id: string; label: string; desc: string; accent: string; icon: any; category: VoiceCategory }[] = [
+const VOICES: { id: string; label: string; desc: string; accent: string; icon: string; category: VoiceCategory }[] = [
   { id: "moonbeam", label: "Moonbeam", desc: "Warm lullaby", accent: "American", icon: "moon-outline", category: "sleep" },
   { id: "whisper", label: "Whisper", desc: "Soft & dreamy", accent: "American", icon: "cloud-outline", category: "sleep" },
   { id: "stardust", label: "Stardust", desc: "Magical guide", accent: "American", icon: "sparkles-outline", category: "sleep" },
@@ -131,45 +131,6 @@ const MODE_DEFAULT_SPEED: Record<ModeId, string> = {
   sleep: "gentle",
 };
 
-function PulsingOrb({ color, size, style }: { color: string; size: number; style?: any }) {
-  const scale = useSharedValue(1);
-  const opacity = useSharedValue(0.4);
-
-  useEffect(() => {
-    scale.value = withRepeat(
-      withTiming(1.3, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-    opacity.value = withRepeat(
-      withTiming(0.1, { duration: 2500, easing: Easing.inOut(Easing.ease) }),
-      -1,
-      true
-    );
-  }, []);
-
-  const animStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: scale.value }],
-    opacity: opacity.value,
-  }));
-
-  return (
-    <Animated.View
-      style={[
-        {
-          position: "absolute",
-          width: size,
-          height: size,
-          borderRadius: size / 2,
-          backgroundColor: color,
-        },
-        style,
-        animStyle,
-      ]}
-      pointerEvents="none"
-    />
-  );
-}
 
 function HeroCard({ hero, isActive }: { hero: Hero; isActive: boolean }) {
   const cardScale = useSharedValue(isActive ? 1 : 0.88);
@@ -338,7 +299,7 @@ export default function HomeScreen() {
       const data: AISuggestion = await res.json();
       setSuggestion(data);
     } catch (e) {
-      console.log("Suggestion fetch failed:", e);
+      if (__DEV__) console.log("Suggestion fetch failed:", e);
     } finally {
       setSuggestionLoading(false);
     }
@@ -396,8 +357,8 @@ export default function HomeScreen() {
           { shouldPlay: true }
         );
         previewSoundRef.current = sound;
-        sound.setOnPlaybackStatusUpdate((status: any) => {
-          if (status.didJustFinish) {
+        sound.setOnPlaybackStatusUpdate((status: AVPlaybackStatus) => {
+          if (status.isLoaded && status.didJustFinish) {
             setPreviewLoading(null);
             sound.unloadAsync();
             previewSoundRef.current = null;
@@ -405,9 +366,10 @@ export default function HomeScreen() {
         });
       }
     } catch (e) {
-      console.log("Preview failed:", e);
+      console.error("Voice preview failed:", e);
+      Alert.alert("Preview Unavailable", "Could not play voice preview. Please try again later.");
     } finally {
-      setTimeout(() => setPreviewLoading(null), 8000);
+      setTimeout(() => setPreviewLoading(null), TTS_PREVIEW_TIMEOUT_MS);
     }
   }, [previewLoading]);
 
@@ -803,9 +765,9 @@ export default function HomeScreen() {
       </View>
 
       <MemoryJar visible={jarVisible} onClose={() => setJarVisible(false)} />
-      <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />
-      <ProfileModal visible={profileVisible} onClose={() => setProfileVisible(false)} />
-      <ParentControlsModal visible={parentControlsVisible} onClose={() => setParentControlsVisible(false)} />
+      {settingsVisible && <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />}
+      {profileVisible && <ProfileModal visible={profileVisible} onClose={() => setProfileVisible(false)} />}
+      {parentControlsVisible && <ParentControlsModal visible={parentControlsVisible} onClose={() => setParentControlsVisible(false)} />}
     </View>
   );
 }

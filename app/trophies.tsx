@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Platform,
   ScrollView,
+  ActivityIndicator,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
@@ -28,12 +29,20 @@ export default function TrophiesScreen() {
   const [badges, setBadges] = useState<EarnedBadge[]>([]);
   const [streak, setStreak] = useState<StreakData | null>(null);
   const [totalStories, setTotalStories] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     if (activeProfile) {
-      getBadges(activeProfile.id).then(setBadges);
-      getStreak(activeProfile.id).then(setStreak);
-      getStoriesForProfile(activeProfile.id).then((s) => setTotalStories(s.length));
+      setIsLoading(true);
+      Promise.all([
+        getBadges(activeProfile.id).then(setBadges),
+        getStreak(activeProfile.id).then(setStreak),
+        getStoriesForProfile(activeProfile.id).then((s) => setTotalStories(s.length)),
+      ])
+        .catch((e) => console.error("Failed to load trophy data:", e))
+        .finally(() => setIsLoading(false));
+    } else {
+      setIsLoading(false);
     }
   }, [activeProfile]);
 
@@ -61,7 +70,11 @@ export default function TrophiesScreen() {
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 40 }]}
         showsVerticalScrollIndicator={false}
       >
-        {!activeProfile ? (
+        {isLoading ? (
+          <View style={styles.loadingWrap}>
+            <ActivityIndicator size="large" color="#FFD54F" />
+          </View>
+        ) : !activeProfile ? (
           <Animated.View entering={FadeIn.duration(400)} style={styles.noProfile}>
             <Ionicons name="person-outline" size={48} color="rgba(255,255,255,0.15)" />
             <Text style={styles.noProfileTitle}>No Profile Selected</Text>
@@ -226,6 +239,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,255,255,0.05)", marginBottom: 20,
   },
   emptyBadgeText: { fontFamily: "Nunito_500Medium", fontSize: 13, color: "rgba(255,255,255,0.3)" },
+  loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
   badgeCard: {
     width: "47%" as any, alignItems: "center", gap: 4,

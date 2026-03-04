@@ -176,7 +176,7 @@ export default function CompletionScreen() {
           Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
         }
       } catch (e) {
-        console.log("Error tracking completion:", e);
+        if (__DEV__) console.log("Error tracking completion:", e);
       }
     };
     trackCompletion();

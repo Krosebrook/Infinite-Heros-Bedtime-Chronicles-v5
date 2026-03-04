@@ -14,18 +14,18 @@ if (!fs.existsSync(TTS_CACHE_DIR)) {
   fs.mkdirSync(TTS_CACHE_DIR, { recursive: true });
 }
 
-const TTS_CACHE_MAX_AGE_MS = 24 * 60 * 60 * 1000;
+const TTS_CACHE_MAX_AGE_MS = parseInt(process.env.TTS_CACHE_MAX_AGE_MS || String(24 * 60 * 60 * 1000), 10);
 
-function cleanTtsCache() {
+async function cleanTtsCache() {
   try {
-    const files = fs.readdirSync(TTS_CACHE_DIR);
+    const files = await fs.promises.readdir(TTS_CACHE_DIR);
     const now = Date.now();
     let removed = 0;
     for (const file of files) {
       const filePath = path.join(TTS_CACHE_DIR, file);
-      const stat = fs.statSync(filePath);
+      const stat = await fs.promises.stat(filePath);
       if (now - stat.mtimeMs > TTS_CACHE_MAX_AGE_MS) {
-        fs.unlinkSync(filePath);
+        await fs.promises.unlink(filePath);
         removed++;
       }
     }
@@ -46,8 +46,8 @@ const VALID_MODES = ["classic", "madlibs", "sleep"];
 const VALID_DURATIONS = ["short", "medium-short", "medium", "long", "epic"];
 
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
-const RATE_LIMIT_WINDOW_MS = 60 * 1000;
-const RATE_LIMIT_MAX = 10;
+const RATE_LIMIT_WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS || String(60 * 1000), 10);
+const RATE_LIMIT_MAX = parseInt(process.env.RATE_LIMIT_MAX || "10", 10);
 
 function checkRateLimit(ip: string): boolean {
   const now = Date.now();
@@ -102,8 +102,9 @@ async function generateImageWithOpenAI(prompt: string): Promise<string | null> {
     const imageData = response.data?.[0];
     if (!imageData) return null;
 
-    if ((imageData as any).b64_json) {
-      return `data:image/png;base64,${(imageData as any).b64_json}`;
+    const imageRecord = imageData as Record<string, unknown>;
+    if (imageRecord.b64_json) {
+      return `data:image/png;base64,${imageRecord.b64_json}`;
     }
     if (imageData.url) {
       return imageData.url;
@@ -289,7 +290,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(500).json({ error: "Invalid story structure" });
       }
 
-      story.parts = story.parts.map((part: any, i: number) => ({
+      story.parts = story.parts.map((part: { text?: string; choices?: string[] }, i: number) => ({
         text: part.text || "",
         choices: storyMode === "sleep" ? undefined : (part.choices || undefined),
         partIndex: i,
@@ -335,7 +336,7 @@ Style: Adorable Pixar/Disney-inspired character design, round friendly features,
 
       const candidate = response.candidates?.[0];
       const imagePart = candidate?.content?.parts?.find(
-        (part: any) => part.inlineData
+        (part) => part.inlineData
       );
 
       if (imagePart?.inlineData?.data) {
@@ -392,7 +393,7 @@ Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magi
 
       const candidate = response.candidates?.[0];
       const imagePart = candidate?.content?.parts?.find(
-        (part: any) => part.inlineData
+        (part) => part.inlineData
       );
 
       if (imagePart?.inlineData?.data) {

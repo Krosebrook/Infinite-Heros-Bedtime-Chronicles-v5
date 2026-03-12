@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#A855F7",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#02021a",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.5rem",
+                        "lg": "1rem",
+                        "xl": "1.5rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(168, 85, 247, 0.1);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+        }
+        .star-field {
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 50px 160px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 160px 120px, #fff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+        }
+        .glow-orb {
+            filter: blur(80px);
+            z-index: -1;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative overflow-x-hidden">
+<!-- Background Elements -->
+<div class="fixed inset-0 star-field opacity-30 pointer-events-none"></div>
+<div class="fixed top-[-10%] left-[-10%] w-64 h-64 bg-primary/20 rounded-full glow-orb"></div>
+<div class="fixed bottom-[20%] right-[-5%] w-80 h-80 bg-primary/10 rounded-full glow-orb"></div>
+<!-- Top App Bar -->
+<div class="sticky top-0 z-50 flex items-center bg-background-dark/80 backdrop-blur-md p-4 justify-between">
+<div class="text-slate-100 flex size-10 shrink-0 items-center justify-center rounded-full hover:bg-primary/20 transition-colors cursor-pointer" data-icon="CaretLeft">
+<span class="material-symbols-outlined">chevron_left</span>
+</div>
+<h2 class="text-slate-100 text-lg font-bold leading-tight tracking-tight flex-1 text-center pr-10">Sleep Setup</h2>
+</div>
+<!-- Main Content -->
+<main class="p-4 pb-32">
+<!-- Soundscape Section -->
+<div class="mb-8">
+<h3 class="text-slate-100 text-xl font-bold leading-tight tracking-tight px-1 pb-4">Ambient Soundscape</h3>
+<div class="grid grid-cols-3 gap-3">
+<!-- Rain -->
+<div class="glass-card flex flex-col items-center justify-center gap-3 rounded-xl p-4 aspect-square border-primary/40 ring-2 ring-primary/20">
+<span class="material-symbols-outlined text-primary text-3xl">rainy</span>
+<p class="text-slate-100 text-sm font-semibold">Rain</p>
+</div>
+<!-- Ocean -->
+<div class="glass-card flex flex-col items-center justify-center gap-3 rounded-xl p-4 aspect-square">
+<span class="material-symbols-outlined text-slate-400 text-3xl">tsunami</span>
+<p class="text-slate-100 text-sm font-semibold">Ocean</p>
+</div>
+<!-- Crickets -->
+<div class="glass-card flex flex-col items-center justify-center gap-3 rounded-xl p-4 aspect-square">
+<span class="material-symbols-outlined text-slate-400 text-3xl">pest_control_rodent</span>
+<p class="text-slate-100 text-sm font-semibold">Crickets</p>
+</div>
+<!-- Wind -->
+<div class="glass-card flex flex-col items-center justify-center gap-3 rounded-xl p-4 aspect-square">
+<span class="material-symbols-outlined text-slate-400 text-3xl">air</span>
+<p class="text-slate-100 text-sm font-semibold">Wind</p>
+</div>
+<!-- Fire -->
+<div class="glass-card flex flex-col items-center justify-center gap-3 rounded-xl p-4 aspect-square">
+<span class="material-symbols-outlined text-slate-400 text-3xl">local_fire_department</span>
+<p class="text-slate-100 text-sm font-semibold">Fire</p>
+</div>
+<!-- Forest -->
+<div class="glass-card flex flex-col items-center justify-center gap-3 rounded-xl p-4 aspect-square">
+<span class="material-symbols-outlined text-slate-400 text-3xl">forest</span>
+<p class="text-slate-100 text-sm font-semibold">Forest</p>
+</div>
+</div>
+</div>
+<!-- Timer Section -->
+<div class="mb-8">
+<h3 class="text-slate-100 text-xl font-bold leading-tight tracking-tight px-1 pb-4">Sleep Timer</h3>
+<div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+<div class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-xl glass-card px-6 border-primary/50 bg-primary/20">
+<p class="text-primary text-base font-bold">5 min</p>
+</div>
+<div class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-xl glass-card px-6">
+<p class="text-slate-300 text-base font-medium">10 min</p>
+</div>
+<div class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-xl glass-card px-6">
+<p class="text-slate-300 text-base font-medium">15 min</p>
+</div>
+<div class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-xl glass-card px-6">
+<p class="text-slate-300 text-base font-medium">20 min</p>
+</div>
+<div class="flex h-12 shrink-0 items-center justify-center gap-x-2 rounded-xl glass-card px-6">
+<p class="text-slate-300 text-base font-medium">30 min</p>
+</div>
+</div>
+</div>
+<!-- Hero Card Hint -->
+<div class="relative overflow-hidden rounded-xl h-32 flex items-center p-6 glass-card mt-4 border-dashed border-primary/30">
+<div class="z-10">
+<p class="text-primary font-bold text-sm uppercase tracking-widest mb-1">Tonight's Hero</p>
+<h4 class="text-slate-100 text-lg font-bold">The Star Guardian</h4>
+</div>
+<div class="absolute right-[-20px] bottom-[-20px] opacity-20">
+<span class="material-symbols-outlined text-[120px] text-primary">auto_awesome</span>
+</div>
+</div>
+</main>
+<!-- Fixed Bottom Button -->
+<div class="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-background-dark via-background-dark to-transparent">
+<button class="w-full bg-gradient-to-r from-primary to-[#8B5CF6] hover:opacity-90 text-white font-bold py-4 px-8 rounded-xl flex items-center justify-center gap-3 shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">
+<span class="material-symbols-outlined">auto_awesome</span>
+<span>Begin Sleep Story</span>
+</button>
+</div>
+</body></html>

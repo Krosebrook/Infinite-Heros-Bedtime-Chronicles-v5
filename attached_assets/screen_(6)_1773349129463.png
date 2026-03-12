@@ -1,0 +1,126 @@
+<html class="dark"><head>
+<meta charset="utf-8"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=Nunito:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "primary": "#6467f2",
+            "background-light": "#f6f6f8",
+            "background-dark": "#101122",
+          },
+          fontFamily: {
+            "display": ["Plus Jakarta Sans"],
+            "body": ["Nunito"]
+          },
+          borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+        },
+      },
+    }
+  </script>
+<style>
+    .star-bg {
+      background-image: 
+        radial-gradient(circle at 20% 30%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        radial-gradient(circle at 70% 60%, rgba(255, 255, 255, 0.08) 1.5px, transparent 1px),
+        radial-gradient(circle at 40% 80%, rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        radial-gradient(circle at 90% 10%, rgba(255, 255, 255, 0.07) 1.2px, transparent 1px);
+      background-size: 200px 200px;
+    }
+    .glass {
+      background: rgba(255, 255, 255, 0.05);
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .gradient-fade {
+      background: linear-gradient(to top, #101122 0%, transparent 100%);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 star-bg">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<div class="relative w-full h-[420px]">
+<div class="absolute inset-0 bg-cover bg-center" data-alt="Mystical purple galaxy with twinkling stars and nebulae" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuA7jzQIH42EkjuFU-CqKF3SqG0IiQwXR_y84SGYy_Gbs7Lgb-U4goNkF0f2vbgBOx5tBAafE_tlrRChAoGqux4RUyWU2vfBuFgk7JEvvazAcn71Yq-wEwN4LCaa2op4vQKOCrmS-habc8oEEqLgVwjLktKrs9XV5JIV-n3LxEMwunadXgtTflNO5GiOGylu-ZWu7nDh4_43cNI2guBtAjOBRlvDN8uxcoaj_eVFopXoIUOJg6wtlT1IuU9M2YyUUXy1KZ7YghJ85Q')">
+<div class="absolute inset-0 gradient-fade"></div>
+</div>
+<div class="absolute top-4 left-4">
+<button class="flex items-center justify-center w-10 h-10 rounded-full glass text-white">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+</div>
+<div class="absolute bottom-0 left-0 w-full p-6">
+<h1 class="text-white text-4xl font-extrabold leading-tight tracking-tight mb-2">
+          Infinity Heroes:<br/>Bedtime Chronicles
+        </h1>
+<div class="flex items-center space-x-3 text-slate-300/90 text-sm font-medium">
+<span class="flex items-center"><span class="material-symbols-outlined text-sm mr-1">schedule</span> 15 min</span>
+<span class="w-1 h-1 rounded-full bg-slate-500"></span>
+<span class="flex items-center"><span class="material-symbols-outlined text-sm mr-1">auto_awesome</span> Fantasy Adventure</span>
+</div>
+</div>
+</div>
+<div class="px-6 pb-32">
+<p class="font-body text-slate-400 dark:text-slate-300 text-lg leading-relaxed mt-4">
+        Embark on an epic journey where your child becomes the hero of their own bedtime story, exploring mystical realms and discovering the magic within.
+      </p>
+<div class="mt-10">
+<h2 class="text-xl font-bold mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">magic_button</span>
+          Personalize the Magic
+        </h2>
+<div class="space-y-8">
+<div>
+<label class="block text-sm font-semibold text-slate-400 mb-3 ml-1 uppercase tracking-wider">Child's Name</label>
+<input class="w-full glass rounded-xl px-4 py-4 text-lg focus:outline-none focus:ring-2 focus:ring-primary/50 text-white placeholder:text-slate-500" placeholder="Who is the hero tonight?" type="text"/>
+</div>
+<div>
+<label class="block text-sm font-semibold text-slate-400 mb-4 ml-1 uppercase tracking-wider">Adventure Setting</label>
+<div class="grid grid-cols-2 gap-4">
+<button class="flex flex-col items-center justify-center p-4 rounded-xl glass border-primary ring-2 ring-primary bg-primary/10">
+<span class="material-symbols-outlined text-3xl mb-2 text-primary">forest</span>
+<span class="text-sm font-bold">Whispering Forest</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl glass border-transparent hover:border-primary/30 transition-all">
+<span class="material-symbols-outlined text-3xl mb-2 text-slate-400">diamond</span>
+<span class="text-sm font-bold text-slate-400">Crystal Cave</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl glass border-transparent hover:border-primary/30 transition-all">
+<span class="material-symbols-outlined text-3xl mb-2 text-slate-400">rocket_launch</span>
+<span class="text-sm font-bold text-slate-400">Starship Neo</span>
+</button>
+<button class="flex flex-col items-center justify-center p-4 rounded-xl glass border-transparent hover:border-primary/30 transition-all">
+<span class="material-symbols-outlined text-3xl mb-2 text-slate-400">water_drop</span>
+<span class="text-sm font-bold text-slate-400">Underwater City</span>
+</button>
+</div>
+</div>
+<div>
+<label class="block text-sm font-semibold text-slate-400 mb-4 ml-1 uppercase tracking-wider">Narration Tone</label>
+<div class="flex flex-wrap gap-2">
+<button class="px-5 py-2 rounded-full glass bg-primary/20 text-primary border-primary/40 text-sm font-bold">Calm &amp; Soothing</button>
+<button class="px-5 py-2 rounded-full glass text-slate-400 text-sm font-medium">Energetic</button>
+<button class="px-5 py-2 rounded-full glass text-slate-400 text-sm font-medium">Mysterious</button>
+<button class="px-5 py-2 rounded-full glass text-slate-400 text-sm font-medium">Funny</button>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="fixed bottom-0 left-0 w-full p-6 bg-gradient-to-t from-background-dark via-background-dark/90 to-transparent">
+<button class="w-full bg-gradient-to-r from-primary to-[#8b5cf6] text-white font-bold py-5 rounded-xl text-lg shadow-xl shadow-primary/20 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">play_circle</span>
+        Start Journey
+      </button>
+</div>
+</div>
+</body></html>

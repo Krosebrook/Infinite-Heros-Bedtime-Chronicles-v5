@@ -778,54 +778,20 @@ export default function StoryScreen() {
           <Ionicons name="arrow-back" size={22} color="rgba(255,255,255,0.8)" />
         </Pressable>
 
-        {(musicPlaying || musicLoading) && (
-          <Pressable onPress={toggleBgMusic} hitSlop={12} style={styles.iconBtn} disabled={musicLoading}>
-            {musicLoading ? (
-              <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
-            ) : (
-              <Ionicons
-                name={musicMuted ? "musical-note-outline" : "musical-notes"}
-                size={20}
-                color={musicMuted ? "rgba(255,255,255,0.4)" : theme.accent}
-              />
-            )}
-          </Pressable>
-        )}
-
         <View style={styles.topBarCenter}>
-          <Text style={styles.brandingText}>INFINITY BEDTIME CHRONICLES</Text>
-          {storyState === "ready" && storyData && (
-            <Text style={[styles.chapterSubtitle, { color: theme.accentLight }]}>
-              Chapter {currentPartIndex + 1}
-            </Text>
-          )}
+          <Text style={[styles.brandingText, { color: theme.accent }]}>INFINITY HEROES</Text>
+          <Text style={styles.brandingSubtext}>Bedtime Chronicles</Text>
         </View>
 
-        {storyState === "ready" && (
-          <View style={styles.audioControls}>
-            <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.speedBtn} testID="speed-cycle-btn">
-              <Ionicons name={SPEED_ICONS[playbackSpeed]} size={14} color={theme.accent} />
-              <Text style={[styles.speedBtnLabel, { color: theme.accent }]}>
-                {SPEED_LABELS[playbackSpeed]}
-              </Text>
-            </Pressable>
-            <Pressable onPress={speakCurrentPart} hitSlop={12} style={styles.iconBtn} disabled={audioLoading}>
-              {audioLoading ? (
-                <ActivityIndicator size="small" color={theme.accent} />
-              ) : (
-                <Ionicons
-                  name={isSpeaking ? "volume-high" : "volume-medium-outline"}
-                  size={22}
-                  color={isSpeaking ? theme.accent : "rgba(255,255,255,0.7)"}
-                />
-              )}
-            </Pressable>
+        {storyState === "ready" && storyData && (
+          <View style={[styles.chapterBadge, { backgroundColor: `${theme.accent}33`, borderColor: `${theme.accent}4D` }]}>
+            <Ionicons name="book" size={12} color={theme.accent} />
+            <Text style={[styles.chapterBadgeText, { color: theme.accent }]}>
+              Chapter {currentPartIndex + 1}
+            </Text>
           </View>
         )}
         {storyState !== "ready" && <View style={{ width: 40 }} />}
-        <Pressable hitSlop={12} style={styles.iconBtn} testID="story-settings-gear">
-          <Ionicons name="settings-outline" size={20} color="rgba(255,255,255,0.6)" />
-        </Pressable>
       </View>
 
       {timerRemaining !== null && timerRemaining > 0 && (
@@ -895,6 +861,14 @@ export default function StoryScreen() {
                   colors={["transparent", "rgba(0,0,0,0.5)"]}
                   style={styles.sceneImageOverlay}
                 />
+                <View style={styles.sceneProgressOverlay}>
+                  <View style={styles.sceneProgressRow}>
+                    <View style={styles.sceneProgressBg}>
+                      <View style={[styles.sceneProgressFill, { width: `${progressPct}%`, backgroundColor: theme.accent }]} />
+                    </View>
+                    <Text style={styles.sceneProgressLabel}>{Math.round(progressPct)}% READ</Text>
+                  </View>
+                </View>
               </Animated.View>
             )}
 
@@ -969,69 +943,96 @@ export default function StoryScreen() {
             )}
           </ScrollView>
 
-          <LinearGradient
-            colors={["transparent", "rgba(5,5,30,0.95)", Colors.primary]}
-            style={[styles.bottomGradient, { paddingBottom: bottomInset + 16 }]}
-            pointerEvents="box-none"
-          >
-            {storyState === "ready" && storyData && (
-              <Animated.View entering={FadeInUp.duration(400)}>
-                {isLastPart ? (
-                  <Pressable
-                    onPress={handleStoryComplete}
-                    style={({ pressed }) => [
-                      styles.finishButton,
-                      { transform: [{ scale: pressed ? 0.95 : 1 }] },
-                    ]}
-                    testID="finish-story-button"
+          {storyState === "ready" && storyData && (
+            <Animated.View
+              entering={FadeInUp.duration(400)}
+              style={[styles.floatingControlsWrap, { bottom: bottomInset + 24 }]}
+            >
+              {isLastPart ? (
+                <Pressable
+                  onPress={handleStoryComplete}
+                  style={({ pressed }) => [
+                    styles.finishButton,
+                    { transform: [{ scale: pressed ? 0.95 : 1 }] },
+                  ]}
+                  testID="finish-story-button"
+                >
+                  <LinearGradient
+                    colors={[theme.accent, theme.choiceColors[0][1]]}
+                    style={styles.finishButtonGradient}
                   >
-                    <LinearGradient
-                      colors={[theme.accent, theme.choiceColors[0][1]]}
-                      style={styles.finishButtonGradient}
-                    >
-                      <Ionicons name="sparkles" size={20} color="#FFF" />
-                      <Text style={styles.finishButtonText}>
-                        {isSleep ? "Sweet Dreams" : storyMode === "madlibs" ? "That Was Hilarious!" : "Complete Story"}
-                      </Text>
-                    </LinearGradient>
+                    <Ionicons name="sparkles" size={20} color="#FFF" />
+                    <Text style={styles.finishButtonText}>
+                      {isSleep ? "Sweet Dreams" : storyMode === "madlibs" ? "That Was Hilarious!" : "Complete Story"}
+                    </Text>
+                  </LinearGradient>
+                </Pressable>
+              ) : (
+                <View style={styles.floatingPill}>
+                  <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.pillSpeedBtn} testID="speed-cycle-btn">
+                    <Text style={[styles.pillSpeedText, { color: theme.accent }]}>
+                      {SPEED_LABELS[playbackSpeed]}
+                    </Text>
+                    <Ionicons name={SPEED_ICONS[playbackSpeed]} size={16} color={theme.accent} />
                   </Pressable>
-                ) : (
-                  <View style={styles.navRow}>
-                    <Pressable
-                      onPress={handlePrevPart}
-                      style={[styles.navBtn, currentPartIndex === 0 && { opacity: 0.3 }]}
-                      disabled={currentPartIndex === 0}
-                    >
-                      <Ionicons name="chevron-back" size={20} color="#FFF" />
-                      <Text style={styles.navBtnText}>Previous</Text>
+
+                  <View style={[styles.pillDivider, { backgroundColor: `${theme.accent}1A` }]} />
+
+                  <View style={styles.pillCenterControls}>
+                    <Pressable onPress={handlePrevPart} hitSlop={8} style={styles.pillNavBtn} disabled={currentPartIndex === 0}>
+                      <Ionicons name="play-back" size={20} color={currentPartIndex === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.5)"} />
                     </Pressable>
 
-                    <View style={styles.navCenter}>
-                      <Text style={[styles.navCounter, { color: theme.accent }]}>
-                        {String(currentPartIndex + 1).padStart(2, "0")} / {String(storyData.parts.length).padStart(2, "0")}
-                      </Text>
-                      <View style={styles.navProgressBg}>
-                        <View
-                          style={[
-                            styles.navProgressFill,
-                            { width: `${progressPct}%`, backgroundColor: theme.accent },
-                          ]}
-                        />
-                      </View>
-                    </View>
-
                     <Pressable
-                      onPress={handleNextPart}
-                      style={styles.navBtn}
+                      onPress={speakCurrentPart}
+                      hitSlop={8}
+                      style={[styles.pillPlayBtn, { backgroundColor: theme.accent }]}
+                      disabled={audioLoading}
                     >
-                      <Text style={styles.navBtnText}>Next</Text>
-                      <Ionicons name="chevron-forward" size={20} color="#FFF" />
+                      {audioLoading ? (
+                        <ActivityIndicator size="small" color="#FFF" />
+                      ) : (
+                        <Ionicons
+                          name={isSpeaking ? "pause" : "play"}
+                          size={28}
+                          color="#FFF"
+                          style={!isSpeaking ? { marginLeft: 3 } : undefined}
+                        />
+                      )}
+                    </Pressable>
+
+                    <Pressable onPress={handleNextPart} hitSlop={8} style={styles.pillNavBtn}>
+                      <Ionicons name="play-forward" size={20} color="rgba(255,255,255,0.5)" />
                     </Pressable>
                   </View>
-                )}
-              </Animated.View>
-            )}
-          </LinearGradient>
+
+                  <View style={[styles.pillDivider, { backgroundColor: `${theme.accent}1A` }]} />
+
+                  <Pressable
+                    onPress={toggleBgMusic}
+                    hitSlop={8}
+                    style={styles.pillMusicBtn}
+                    disabled={musicLoading}
+                  >
+                    {musicLoading ? (
+                      <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name={musicMuted ? "musical-note-outline" : "musical-notes"}
+                          size={18}
+                          color={musicMuted ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.6)"}
+                        />
+                        {musicPlaying && !musicMuted && (
+                          <View style={styles.musicDot} />
+                        )}
+                      </>
+                    )}
+                  </Pressable>
+                </View>
+              )}
+            </Animated.View>
+          )}
         </>
       )}
     </View>
@@ -1062,14 +1063,29 @@ const styles = StyleSheet.create({
   topBarCenter: { flex: 1, alignItems: "center" },
   brandingText: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 9,
-    color: "rgba(255,255,255,0.4)",
-    letterSpacing: 3,
+    fontSize: 13,
+    letterSpacing: 0.5,
   },
-  chapterSubtitle: {
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 12,
-    marginTop: 2,
+  brandingSubtext: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.4)",
+    marginTop: 1,
+  },
+  chapterBadge: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    borderWidth: 1,
+  },
+  chapterBadgeText: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 10,
+    letterSpacing: 2,
+    textTransform: "uppercase",
   },
   timerBar: {
     flexDirection: "row",
@@ -1167,6 +1183,40 @@ const styles = StyleSheet.create({
     right: 0,
     height: 60,
   },
+  sceneProgressOverlay: {
+    position: "absolute",
+    bottom: 12,
+    left: 12,
+    right: 12,
+  },
+  sceneProgressRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    backgroundColor: "rgba(2, 2, 26, 0.6)",
+    borderRadius: 10,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.1)",
+  },
+  sceneProgressBg: {
+    flex: 1,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: "rgba(255,255,255,0.2)",
+    overflow: "hidden",
+  },
+  sceneProgressFill: {
+    height: 5,
+    borderRadius: 3,
+  },
+  sceneProgressLabel: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 9,
+    color: "rgba(255,255,255,0.7)",
+    letterSpacing: 0.5,
+  },
   parchmentCard: {
     backgroundColor: Colors.cardBg,
     borderRadius: 20,
@@ -1227,53 +1277,78 @@ const styles = StyleSheet.create({
     color: "#FFF",
     flex: 1,
   },
-  bottomGradient: {
+  floatingControlsWrap: {
     position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    paddingTop: 40,
-    paddingHorizontal: 20,
+    left: 16,
+    right: 16,
+    zIndex: 50,
   },
-  navRow: {
+  floatingPill: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    backgroundColor: "rgba(16, 17, 34, 0.92)",
+    borderRadius: 999,
+    paddingVertical: 8,
+    paddingHorizontal: 8,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.15)",
+    elevation: 10,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 6 },
+    shadowOpacity: 0.4,
+    shadowRadius: 16,
   },
-  navBtn: {
+  pillSpeedBtn: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
     borderRadius: 20,
-    backgroundColor: Colors.cardBg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
   },
-  navBtnText: {
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 13,
-    color: "#FFF",
-  },
-  navCenter: {
-    alignItems: "center",
-    gap: 6,
-  },
-  navCounter: {
+  pillSpeedText: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 14,
-    letterSpacing: 1,
+    fontSize: 11,
   },
-  navProgressBg: {
-    width: 80,
-    height: 3,
-    borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.1)",
+  pillDivider: {
+    width: 1,
+    height: 28,
   },
-  navProgressFill: {
-    height: 3,
-    borderRadius: 2,
+  pillCenterControls: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 4,
+    paddingHorizontal: 8,
+  },
+  pillNavBtn: {
+    padding: 8,
+  },
+  pillPlayBtn: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    alignItems: "center",
+    justifyContent: "center",
+    elevation: 6,
+    shadowColor: "#6366f1",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.4,
+    shadowRadius: 10,
+  },
+  pillMusicBtn: {
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+  },
+  musicDot: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: "#22C55E",
   },
   finishButton: {
     borderRadius: 28,
@@ -1314,27 +1389,6 @@ const styles = StyleSheet.create({
     fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 18,
     color: Colors.textMuted,
-  },
-  audioControls: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-  },
-  speedBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 3,
-    paddingVertical: 4,
-    paddingHorizontal: 8,
-    borderRadius: 12,
-    backgroundColor: Colors.cardBg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  speedBtnLabel: {
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 10,
-    letterSpacing: 0.3,
   },
   errorLink: {
     fontFamily: "PlusJakartaSans_700Bold",

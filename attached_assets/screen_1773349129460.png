@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Parental Controls - Infinity Heroes</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6467f2",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#0a0a16",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0a0a16;
+            overflow-x: hidden;
+        }
+        .cosmic-bg {
+            background: radial-gradient(circle at 50% 50%, #1a1b3a 0%, #0a0a16 100%);
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            opacity: 0.4;
+            z-index: -1;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .glow-shadow:hover {
+            box-shadow: 0 0 20px rgba(100, 103, 242, 0.4);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display min-h-screen">
+<div class="cosmic-bg"></div>
+<!-- Animated Orbs -->
+<div class="orb bg-primary w-64 h-64 top-[-50px] left-[-50px]"></div>
+<div class="orb bg-purple-600 w-80 h-80 bottom-[-100px] right-[-50px]"></div>
+<div class="max-w-md mx-auto min-h-screen flex flex-col pb-24">
+<!-- Header -->
+<header class="sticky top-0 z-50 px-6 py-6 flex items-center justify-between glass-card border-b-0 rounded-b-xl mb-4">
+<button class="flex items-center justify-center size-10 rounded-full bg-white/5 hover:bg-white/10 transition-colors">
+<span class="material-symbols-outlined text-slate-100">arrow_back_ios_new</span>
+</button>
+<h1 class="text-xl font-bold tracking-tight text-slate-100">Parental Controls</h1>
+<div class="flex items-center justify-center size-10 rounded-full bg-primary/20">
+<span class="material-symbols-outlined text-primary">shield_person</span>
+</div>
+</header>
+<main class="px-6 space-y-6">
+<!-- PIN Verification Alert -->
+<div class="glass-card rounded-xl p-5 border-primary/30 bg-primary/5">
+<div class="flex items-start gap-4">
+<div class="mt-1">
+<span class="material-symbols-outlined text-primary">lock</span>
+</div>
+<div>
+<h3 class="font-bold text-slate-100">Access Gated</h3>
+<p class="text-sm text-slate-400 mt-1">Changes are protected by your 4-digit master PIN. Enter PIN to unlock full settings.</p>
+<div class="flex gap-3 mt-4">
+<input class="w-10 h-12 bg-white/5 border border-white/10 rounded-lg text-center text-xl focus:ring-primary focus:border-primary text-white" maxlength="1" type="password" value="•"/>
+<input class="w-10 h-12 bg-white/5 border border-white/10 rounded-lg text-center text-xl focus:ring-primary focus:border-primary text-white" maxlength="1" placeholder="-" type="password"/>
+<input class="w-10 h-12 bg-white/5 border border-white/10 rounded-lg text-center text-xl focus:ring-primary focus:border-primary text-white" maxlength="1" placeholder="-" type="password"/>
+<input class="w-10 h-12 bg-white/5 border border-white/10 rounded-lg text-center text-xl focus:ring-primary focus:border-primary text-white" maxlength="1" placeholder="-" type="password"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Usage Limits -->
+<section class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">timer</span>
+<h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Usage Limits</h2>
+</div>
+<div class="glass-card rounded-xl p-5">
+<div class="flex justify-between items-end mb-4">
+<label class="text-base font-medium text-slate-100">Max Story Length</label>
+<span class="text-primary font-bold text-lg">15 mins</span>
+</div>
+<input class="w-full h-2 bg-white/10 rounded-lg appearance-none cursor-pointer accent-primary" max="30" min="5" step="5" type="range" value="15"/>
+<div class="flex justify-between mt-2 text-xs text-slate-500">
+<span>5m</span>
+<span>10m</span>
+<span>15m</span>
+<span>20m</span>
+<span>25m</span>
+<span>30m</span>
+</div>
+</div>
+</section>
+<!-- Bedtime Reminders -->
+<section class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">bedtime</span>
+<h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Bedtime Reminders</h2>
+</div>
+<div class="glass-card rounded-xl p-5 flex items-center justify-between">
+<div class="flex items-center gap-4">
+<div class="bg-primary/10 p-3 rounded-lg">
+<span class="material-symbols-outlined text-primary">schedule</span>
+</div>
+<div>
+<p class="text-base font-medium text-slate-100">Daily Reminder</p>
+<p class="text-sm text-slate-400">8:30 PM</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</section>
+<!-- Content Filters -->
+<section class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">filter_alt</span>
+<h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">Content Filters</h2>
+</div>
+<div class="glass-card rounded-xl p-5">
+<p class="text-sm text-slate-400 mb-4">Select allowed themes for bedtime chronicles:</p>
+<div class="flex flex-wrap gap-2">
+<button class="px-4 py-2 rounded-full border border-primary bg-primary/20 text-primary text-sm font-medium">Magic</button>
+<button class="px-4 py-2 rounded-full border border-primary bg-primary/20 text-primary text-sm font-medium">Space</button>
+<button class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-slate-300 text-sm font-medium hover:bg-white/10 transition-colors">Animals</button>
+<button class="px-4 py-2 rounded-full border border-primary bg-primary/20 text-primary text-sm font-medium">History</button>
+<button class="px-4 py-2 rounded-full border border-white/10 bg-white/5 text-slate-300 text-sm font-medium hover:bg-white/10 transition-colors">Nature</button>
+</div>
+</div>
+</section>
+<!-- Advanced Features -->
+<section class="space-y-4">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-sm">auto_awesome</span>
+<h2 class="text-sm font-semibold uppercase tracking-wider text-slate-400">AI Features</h2>
+</div>
+<div class="glass-card rounded-xl p-5 flex items-center justify-between border-primary/20">
+<div class="flex items-center gap-4">
+<div class="bg-gradient-to-br from-purple-500 to-primary p-3 rounded-lg shadow-lg shadow-primary/20">
+<span class="material-symbols-outlined text-white">movie_filter</span>
+</div>
+<div>
+<div class="flex items-center gap-2">
+<p class="text-base font-medium text-slate-100">AI Video Clips</p>
+<span class="text-[10px] bg-white/10 text-white/60 px-1.5 py-0.5 rounded border border-white/5">SORA</span>
+</div>
+<p class="text-xs text-slate-400">Generated visuals for stories</p>
+</div>
+</div>
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox"/>
+<div class="w-11 h-6 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</section>
+<!-- Save Button -->
+<div class="pt-4">
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl transition-all glow-shadow flex items-center justify-center gap-2">
+<span class="material-symbols-outlined">save</span>
+                    Save Settings
+                </button>
+<p class="text-center text-xs text-slate-500 mt-4">Last updated: Today at 2:45 PM</p>
+</div>
+</main>
+<!-- Navigation Bar -->
+<nav class="fixed bottom-0 left-0 right-0 max-w-md mx-auto glass-card rounded-t-2xl border-x-0 border-b-0 px-6 py-4 flex justify-between items-center z-50">
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="text-[10px] font-medium uppercase tracking-tight">Stories</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">library_books</span>
+<span class="text-[10px] font-medium uppercase tracking-tight">Library</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-primary" href="#">
+<div class="bg-primary/10 p-2 rounded-full mb-[-4px]">
+<span class="material-symbols-outlined fill-1">family_restroom</span>
+</div>
+<span class="text-[10px] font-medium uppercase tracking-tight">Parents</span>
+</a>
+<a class="flex flex-col items-center gap-1 text-slate-500" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<span class="text-[10px] font-medium uppercase tracking-tight">Profile</span>
+</a>
+</nav>
+</div>
+</body></html>

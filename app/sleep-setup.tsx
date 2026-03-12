@@ -18,21 +18,26 @@ import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 
 const SOUNDSCAPES = [
-  { id: "rain", label: "Gentle Rain", icon: "rainy-outline" as const, color: "#64B5F6" },
-  { id: "ocean", label: "Ocean Waves", icon: "water-outline" as const, color: "#4DD0E1" },
-  { id: "crickets", label: "Night Crickets", icon: "bug-outline" as const, color: "#AED581" },
-  { id: "wind", label: "Soft Wind", icon: "leaf-outline" as const, color: "#A1887F" },
-  { id: "fire", label: "Crackling Fire", icon: "flame-outline" as const, color: "#FFB74D" },
-  { id: "none", label: "No Sound", icon: "volume-mute-outline" as const, color: "#90A4AE" },
+  { id: "rain", label: "Rain", icon: "rainy" as const, color: "#A855F7" },
+  { id: "ocean", label: "Ocean", icon: "water" as const, color: "#A855F7" },
+  { id: "crickets", label: "Crickets", icon: "bug" as const, color: "#A855F7" },
+  { id: "wind", label: "Wind", icon: "leaf" as const, color: "#A855F7" },
+  { id: "fire", label: "Fire", icon: "flame" as const, color: "#A855F7" },
+  { id: "forest", label: "Forest", icon: "tree" as const, color: "#A855F7" },
 ];
 
 const SLEEP_TIMERS = [
-  { id: "5", label: "5 min", desc: "Quick nap" },
-  { id: "10", label: "10 min", desc: "Short rest" },
-  { id: "15", label: "15 min", desc: "Standard" },
-  { id: "30", label: "30 min", desc: "Deep sleep" },
-  { id: "none", label: "Off", desc: "No timer" },
+  { id: "5", label: "5 min" },
+  { id: "10", label: "10 min" },
+  { id: "15", label: "15 min" },
+  { id: "20", label: "20 min" },
+  { id: "30", label: "30 min" },
 ];
+
+const PURPLE = "#A855F7";
+const PURPLE_BG = "rgba(168, 85, 247, 0.1)";
+const PURPLE_BORDER = "rgba(168, 85, 247, 0.2)";
+const PURPLE_ACTIVE_BORDER = "rgba(168, 85, 247, 0.4)";
 
 export default function SleepSetupScreen() {
   const { heroId, duration, voice, speed } = useLocalSearchParams<{
@@ -79,29 +84,23 @@ export default function SleepSetupScreen() {
       />
       <StarField />
 
+      <View style={[styles.glowOrb, styles.glowOrbTop]} />
+      <View style={[styles.glowOrb, styles.glowOrbBottom]} />
+
       <View style={[styles.topBar, { paddingTop: topInset + 8 }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
           <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.8)" />
         </Pressable>
+        <Text style={styles.topBarTitle}>Sleep Setup</Text>
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 100 }]}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 120 }]}
         showsVerticalScrollIndicator={false}
       >
-        <Animated.View entering={FadeIn.duration(800)} style={styles.headerArea}>
-          <View style={styles.sleepBadge}>
-            <Ionicons name="moon" size={20} color="#CE93D8" />
-            <Text style={styles.sleepBadgeText}>Sleep Mode</Text>
-          </View>
-          <Text style={styles.headerTitle}>Prepare for Dreamland</Text>
-          <Text style={styles.headerSubtitle}>
-            Choose your soundscape and {hero.name} will guide you to sleep
-          </Text>
-        </Animated.View>
-
         <Animated.View entering={FadeInDown.duration(500).delay(100)}>
-          <Text style={styles.sectionLabel}>AMBIENT SOUNDS</Text>
+          <Text style={styles.sectionTitle}>Ambient Soundscape</Text>
           <View style={styles.soundGrid}>
             {SOUNDSCAPES.map((s) => {
               const isActive = soundscape === s.id;
@@ -114,18 +113,16 @@ export default function SleepSetupScreen() {
                   }}
                   style={[
                     styles.soundCard,
-                    isActive && [styles.soundCardActive, { borderColor: s.color }],
+                    isActive && styles.soundCardActive,
                   ]}
                   testID={`sound-${s.id}`}
                 >
-                  <View style={[styles.soundIconWrap, isActive && { backgroundColor: s.color + "20" }]}>
-                    <Ionicons
-                      name={s.icon}
-                      size={24}
-                      color={isActive ? s.color : Colors.textSecondary}
-                    />
-                  </View>
-                  <Text style={[styles.soundLabel, isActive && { color: s.color }]}>
+                  <Ionicons
+                    name={s.icon as any}
+                    size={28}
+                    color={isActive ? PURPLE : "rgba(255,255,255,0.4)"}
+                  />
+                  <Text style={[styles.soundLabel, isActive && styles.soundLabelActive]}>
                     {s.label}
                   </Text>
                 </Pressable>
@@ -135,9 +132,12 @@ export default function SleepSetupScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(200)}>
-          <Text style={styles.sectionLabel}>SLEEP TIMER</Text>
-          <Text style={styles.sectionHint}>Auto-stops narration and sounds</Text>
-          <View style={styles.timerGrid}>
+          <Text style={styles.sectionTitle}>Sleep Timer</Text>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.timerRow}
+          >
             {SLEEP_TIMERS.map((t) => {
               const isActive = sleepTimer === t.id;
               return (
@@ -147,22 +147,36 @@ export default function SleepSetupScreen() {
                     Haptics.selectionAsync();
                     setSleepTimer(t.id);
                   }}
-                  style={[styles.timerCard, isActive && styles.timerCardActive]}
+                  style={[
+                    styles.timerPill,
+                    isActive && styles.timerPillActive,
+                  ]}
                   testID={`timer-${t.id}`}
                 >
                   <Text style={[styles.timerLabel, isActive && styles.timerLabelActive]}>
                     {t.label}
                   </Text>
-                  <Text style={styles.timerDesc}>{t.desc}</Text>
                 </Pressable>
               );
             })}
+          </ScrollView>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(500).delay(300)}>
+          <View style={styles.heroCard}>
+            <View style={styles.heroCardContent}>
+              <Text style={styles.heroCardLabel}>TONIGHT'S HERO</Text>
+              <Text style={styles.heroCardName}>{hero.name}</Text>
+            </View>
+            <View style={styles.heroCardIconWrap}>
+              <Ionicons name="sparkles" size={80} color={PURPLE} style={{ opacity: 0.2 }} />
+            </View>
           </View>
         </Animated.View>
       </ScrollView>
 
       <Animated.View
-        entering={FadeInDown.duration(500).delay(300)}
+        entering={FadeInDown.duration(500).delay(400)}
         style={[styles.bottomBar, { paddingBottom: bottomInset + 20 }]}
       >
         <Pressable
@@ -174,15 +188,13 @@ export default function SleepSetupScreen() {
           testID="sleep-start-button"
         >
           <LinearGradient
-            colors={["#CE93D8", "#7B1FA2"]}
+            colors={[PURPLE, "#8B5CF6"]}
             start={{ x: 0, y: 0 }}
             end={{ x: 1, y: 0 }}
             style={styles.startButtonGradient}
           >
-            <Ionicons name="moon" size={20} color="#FFF" />
-            <Text style={[styles.startButtonText, { color: "#FFF" }]}>
-              Begin Bedtime Story
-            </Text>
+            <Ionicons name="sparkles" size={20} color="#FFF" />
+            <Text style={styles.startButtonText}>Begin Sleep Story</Text>
           </LinearGradient>
         </Pressable>
       </Animated.View>
@@ -193,9 +205,32 @@ export default function SleepSetupScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.primary,
+    backgroundColor: "#02021a",
+  },
+  glowOrb: {
+    position: "absolute",
+    borderRadius: 999,
+  },
+  glowOrbTop: {
+    top: "-10%",
+    left: "-10%",
+    width: 256,
+    height: 256,
+    backgroundColor: "rgba(168, 85, 247, 0.15)",
+    ...(Platform.OS === "web" ? { filter: "blur(80px)" } : { opacity: 0.6 }),
+  },
+  glowOrbBottom: {
+    bottom: "20%",
+    right: "-5%",
+    width: 320,
+    height: 320,
+    backgroundColor: "rgba(168, 85, 247, 0.08)",
+    ...(Platform.OS === "web" ? { filter: "blur(80px)" } : { opacity: 0.5 }),
   },
   topBar: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingHorizontal: 16,
     paddingBottom: 8,
     zIndex: 10,
@@ -204,144 +239,135 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.cardBg,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
-  scrollContent: {
-    paddingHorizontal: 20,
-  },
-  headerArea: {
-    alignItems: "center",
-    marginBottom: 28,
-  },
-  sleepBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "rgba(206, 147, 216, 0.12)",
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-    marginBottom: 14,
-  },
-  sleepBadgeText: {
+  topBarTitle: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 14,
-    color: "#CE93D8",
-  },
-  headerTitle: {
-    fontFamily: "PlusJakartaSans_800ExtraBold",
-    fontSize: 28,
+    fontSize: 18,
     color: Colors.textPrimary,
-    textAlign: "center",
-    marginBottom: 6,
+    letterSpacing: -0.3,
   },
-  headerSubtitle: {
-    fontFamily: "PlusJakartaSans_400Regular",
-    fontSize: 14,
-    color: Colors.textSecondary,
-    textAlign: "center",
+  scrollContent: {
+    paddingHorizontal: 16,
+    paddingTop: 8,
   },
-  sectionLabel: {
+  sectionTitle: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 12,
-    color: "#CE93D8",
-    letterSpacing: 2,
-    marginBottom: 6,
-  },
-  sectionHint: {
-    fontFamily: "PlusJakartaSans_400Regular",
-    fontSize: 12,
-    color: Colors.textMuted,
-    marginBottom: 14,
+    fontSize: 20,
+    color: Colors.textPrimary,
+    marginBottom: 16,
+    paddingHorizontal: 4,
   },
   soundGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     gap: 12,
-    marginBottom: 28,
+    marginBottom: 32,
   },
   soundCard: {
-    width: "30%" as `${number}%`,
-    backgroundColor: Colors.cardBg,
-    borderRadius: 18,
-    padding: 14,
-    alignItems: "center",
-    gap: 8,
-    borderWidth: 2,
-    borderColor: Colors.cardBorder,
-  },
-  soundCardActive: {
-    backgroundColor: "rgba(255,255,255,0.03)",
-  },
-  soundIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    width: "30.5%" as any,
+    aspectRatio: 1,
+    backgroundColor: PURPLE_BG,
+    borderRadius: 16,
     alignItems: "center",
     justifyContent: "center",
+    gap: 12,
+    borderWidth: 1,
+    borderColor: PURPLE_BORDER,
+  },
+  soundCardActive: {
+    borderColor: PURPLE_ACTIVE_BORDER,
+    borderWidth: 2,
+    backgroundColor: "rgba(168, 85, 247, 0.15)",
   },
   soundLabel: {
     fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 11,
-    color: Colors.textSecondary,
-    textAlign: "center",
+    fontSize: 13,
+    color: Colors.textPrimary,
   },
-  timerGrid: {
+  soundLabelActive: {
+    color: "#FFF",
+  },
+  timerRow: {
     flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 10,
-    marginBottom: 20,
+    gap: 12,
+    paddingBottom: 8,
+    marginBottom: 32,
   },
-  timerCard: {
-    backgroundColor: Colors.cardBg,
+  timerPill: {
+    height: 48,
+    paddingHorizontal: 24,
     borderRadius: 16,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
+    backgroundColor: PURPLE_BG,
+    borderWidth: 1,
+    borderColor: PURPLE_BORDER,
     alignItems: "center",
-    borderWidth: 2,
-    borderColor: Colors.cardBorder,
-    minWidth: 70,
+    justifyContent: "center",
   },
-  timerCardActive: {
-    borderColor: "#CE93D8",
-    backgroundColor: "rgba(206, 147, 216, 0.08)",
+  timerPillActive: {
+    borderColor: PURPLE_ACTIVE_BORDER,
+    backgroundColor: "rgba(168, 85, 247, 0.2)",
   },
   timerLabel: {
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 16,
-    color: Colors.textSecondary,
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 15,
+    color: "rgba(203, 213, 225, 0.8)",
   },
   timerLabelActive: {
-    color: "#CE93D8",
+    fontFamily: "PlusJakartaSans_700Bold",
+    color: PURPLE,
   },
-  timerDesc: {
-    fontFamily: "PlusJakartaSans_400Regular",
-    fontSize: 10,
-    color: Colors.textMuted,
-    marginTop: 2,
+  heroCard: {
+    borderRadius: 16,
+    backgroundColor: PURPLE_BG,
+    borderWidth: 1,
+    borderColor: PURPLE_BORDER,
+    borderStyle: "dashed",
+    padding: 24,
+    overflow: "hidden",
+    flexDirection: "row",
+    alignItems: "center",
+    minHeight: 128,
+    marginTop: 4,
+  },
+  heroCardContent: {
+    flex: 1,
+    zIndex: 2,
+  },
+  heroCardLabel: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 11,
+    color: PURPLE,
+    letterSpacing: 3,
+    marginBottom: 6,
+  },
+  heroCardName: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 18,
+    color: Colors.textPrimary,
+  },
+  heroCardIconWrap: {
+    position: "absolute",
+    right: -20,
+    bottom: -20,
   },
   bottomBar: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    paddingHorizontal: 20,
-    paddingTop: 12,
-    backgroundColor: "rgba(5, 5, 30, 0.9)",
+    paddingHorizontal: 24,
+    paddingTop: 16,
   },
   startButton: {
-    borderRadius: 28,
+    borderRadius: 16,
     overflow: "hidden",
-    elevation: 6,
-    shadowColor: "#CE93D8",
+    elevation: 8,
+    shadowColor: PURPLE,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.4,
-    shadowRadius: 12,
+    shadowOpacity: 0.35,
+    shadowRadius: 16,
   },
   startButtonGradient: {
     flexDirection: "row",
@@ -353,7 +379,7 @@ const styles = StyleSheet.create({
   },
   startButtonText: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 18,
-    color: Colors.primary,
+    fontSize: 17,
+    color: "#FFF",
   },
 });

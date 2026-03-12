@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Infinity Heroes: Bedtime Chronicles</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Nunito:wght@400;600;700&amp;family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6467f2",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101122",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"],
+                        "story": ["Nunito"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .starfield {
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 50px 160px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 90px 40px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 130px 80px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 160px 120px, #fff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative overflow-x-hidden">
+<!-- Twinkling Starfield Background Layer -->
+<div class="fixed inset-0 starfield opacity-20 pointer-events-none"></div>
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-primary/10">
+<div class="max-w-4xl mx-auto flex items-center justify-between p-4">
+<div class="flex items-center gap-3">
+<button class="p-2 hover:bg-primary/10 rounded-full transition-colors">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">arrow_back</span>
+</button>
+<div>
+<h1 class="text-sm font-bold tracking-tight text-primary">INFINITY HEROES</h1>
+<p class="text-xs text-slate-500 dark:text-slate-400">Bedtime Chronicles</p>
+</div>
+</div>
+<div class="flex items-center gap-2 bg-primary/20 px-3 py-1 rounded-full border border-primary/30">
+<span class="material-symbols-outlined text-sm text-primary">menu_book</span>
+<span class="text-xs font-bold text-primary uppercase tracking-widest">Chapter 4</span>
+</div>
+</div>
+</header>
+<main class="max-w-4xl mx-auto pb-48">
+<!-- Hero Visual Media -->
+<div class="px-4 py-6">
+<div class="relative group">
+<div class="aspect-video w-full rounded-xl overflow-hidden shadow-2xl shadow-primary/20 bg-primary/5">
+<div class="w-full h-full bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="A magical forest at night with glowing blue mushrooms and a floating hero" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDS5wv5rGIbGZChP-5UpTDTth6cRTY1vjtEuEwYOYMao79_nqAfPKpiQ0lpI86hkpQGJCRi6SWhXE5CAIqnJkGXYlTQRWTXt5OBr57rWUX3HP0vM4BRahBjQd0AU4i9qa5XbOCulhu0x51wizQzaX2h8X31lkRUmBKfh8cjkt0-9VcaiJGbeYpQMhR_0J7N826FKlIbPWIOC2ZjMNf2QHSfDoZ2HMd8pqoaTuBSc4cSYHtjX9WJZUBXfi4NsFXy5AtLMO3dSByYFQ');">
+</div>
+</div>
+<!-- Progress Indicator Overlay -->
+<div class="absolute bottom-4 left-4 right-4">
+<div class="flex items-center gap-3 bg-background-dark/60 backdrop-blur-md p-3 rounded-lg border border-white/10">
+<div class="flex-1 h-1.5 bg-white/20 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-[65%] rounded-full shadow-[0_0_10px_rgba(100,103,242,0.8)]"></div>
+</div>
+<span class="text-[10px] font-bold text-white/80">65% READ</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Story Content -->
+<article class="px-6 py-4 space-y-6 font-story">
+<h2 class="text-3xl font-bold font-display text-slate-900 dark:text-slate-100 tracking-tight">The Whisper of the Azure Grove</h2>
+<p class="text-lg md:text-xl leading-relaxed text-slate-700 dark:text-slate-300">
+                The air in the Azure Grove was thick with the scent of stardust and ancient cedar. Leo stepped cautiously over a moss-covered root that pulsed with a faint, rhythmic indigo light. Every time his boot touched the ground, small motes of light danced upward like startled fireflies.
+            </p>
+<p class="text-lg md:text-xl leading-relaxed text-slate-700 dark:text-slate-300">
+                "We aren't supposed to be here after the moon peaks," whispered Mochi, his robotic companion, whose sensors were whirring in rhythmic clicks. "The elders say the trees start to dream, and their dreams can be... heavy."
+            </p>
+<p class="text-lg md:text-xl leading-relaxed text-slate-700 dark:text-slate-300 italic border-l-4 border-primary/40 pl-4 py-2 bg-primary/5 rounded-r-lg">
+                Leo ignored the warning. He could see it now—the Star-Core, resting atop the Crystal Spire just beyond the clearing. It flickered like a dying candle, gasping for the energy it had lost during the Great Eclipse.
+            </p>
+<p class="text-lg md:text-xl leading-relaxed text-slate-700 dark:text-slate-300">
+                Suddenly, three paths revealed themselves through the dense fog. One path led toward the singing stream, another toward the shadowed hollow, and the third directly up the jagged rocks of the Spire.
+            </p>
+</article>
+<!-- Branching Choices -->
+<div class="px-6 mt-12 mb-20">
+<div class="grid grid-cols-1 gap-4">
+<button class="w-full p-4 rounded-xl bg-gradient-to-r from-primary to-indigo-600 text-white font-bold text-left shadow-lg shadow-primary/25 hover:scale-[1.02] transition-transform flex items-center justify-between group">
+<span class="flex items-center gap-4">
+<span class="size-8 rounded-lg bg-white/20 flex items-center justify-center text-sm">A</span>
+<span>Follow the Singing Stream</span>
+</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+<button class="w-full p-4 rounded-xl bg-gradient-to-r from-purple-600 to-primary text-white font-bold text-left shadow-lg shadow-primary/25 hover:scale-[1.02] transition-transform flex items-center justify-between group">
+<span class="flex items-center gap-4">
+<span class="size-8 rounded-lg bg-white/20 flex items-center justify-center text-sm">B</span>
+<span>Investigate the Shadowed Hollow</span>
+</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+<button class="w-full p-4 rounded-xl bg-gradient-to-r from-slate-700 to-slate-900 text-white font-bold text-left shadow-lg shadow-slate-900/40 hover:scale-[1.02] transition-transform flex items-center justify-between group">
+<span class="flex items-center gap-4">
+<span class="size-8 rounded-lg bg-white/10 flex items-center justify-center text-sm">C</span>
+<span>Climb the Jagged Spire Directly</span>
+</span>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+</div>
+</div>
+</main>
+<!-- Floating Bottom Controls -->
+<div class="fixed bottom-6 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50">
+<div class="bg-background-light/90 dark:bg-slate-900/90 backdrop-blur-xl border border-primary/20 rounded-full p-2 shadow-2xl flex items-center justify-between gap-2">
+<!-- Speed Toggle -->
+<button class="flex items-center gap-1 px-4 py-2 hover:bg-primary/10 rounded-full transition-colors">
+<span class="text-[10px] font-bold text-primary">1.5x</span>
+<span class="material-symbols-outlined text-primary text-xl">speed</span>
+</button>
+<!-- Main Audio Control -->
+<div class="flex items-center gap-1 flex-1 justify-center border-x border-primary/10 px-4">
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">replay_10</span>
+</button>
+<button class="size-14 rounded-full bg-primary text-white flex items-center justify-center shadow-lg shadow-primary/40 hover:scale-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-4xl" style="font-variation-settings: 'FILL' 1">play_arrow</span>
+</button>
+<button class="p-2 text-slate-400 hover:text-primary transition-colors">
+<span class="material-symbols-outlined">forward_10</span>
+</button>
+</div>
+<!-- Mute/Music Toggle -->
+<button class="flex items-center gap-1 px-4 py-2 hover:bg-primary/10 rounded-full transition-colors group">
+<span class="material-symbols-outlined text-slate-500 group-hover:text-primary">music_note</span>
+<div class="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+</button>
+</div>
+</div>
+</body></html>

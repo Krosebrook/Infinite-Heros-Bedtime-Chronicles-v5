@@ -33,7 +33,7 @@ export function HeroCard({ hero, onPress }: HeroCardProps) {
         style={styles.gradient}
       >
         <View style={styles.iconWrap}>
-          <Ionicons name={hero.iconName as any} size={36} color={hero.color} />
+          <Ionicons name={hero.iconName} size={36} color={hero.color} />
         </View>
         <Text style={styles.name}>{hero.name}</Text>
         <Text style={styles.title}>{hero.title}</Text>

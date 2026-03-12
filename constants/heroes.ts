@@ -1,10 +1,15 @@
+import type { ComponentProps } from "react";
+import type { Ionicons } from "@expo/vector-icons";
+
+export type IoniconsName = ComponentProps<typeof Ionicons>["name"];
+
 export interface Hero {
   id: string;
   name: string;
   title: string;
   power: string;
   description: string;
-  iconName: string;
+  iconName: IoniconsName;
   color: string;
   gradient: [string, string];
   constellation: string;

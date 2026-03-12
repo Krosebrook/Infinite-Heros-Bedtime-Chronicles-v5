@@ -19,10 +19,10 @@ import { getPreferences, savePreferences } from "@/lib/storage";
 
 type Tab = "general" | "voice" | "accessibility";
 
-const TABS: { id: Tab; label: string; icon: string }[] = [
-  { id: "general", label: "General", icon: "settings-outline" },
-  { id: "voice", label: "Voice", icon: "mic-outline" },
-  { id: "accessibility", label: "Access", icon: "accessibility-outline" },
+const TABS = [
+  { id: "general" as Tab, label: "General", icon: "settings-outline" as const },
+  { id: "voice" as Tab, label: "Voice", icon: "mic-outline" as const },
+  { id: "accessibility" as Tab, label: "Access", icon: "accessibility-outline" as const },
 ];
 
 const STORY_LENGTHS = [
@@ -104,7 +104,7 @@ export function SettingsModal({ visible, onClose }: Props) {
                 style={[styles.tabItem, isActive && styles.tabItemActive]}
               >
                 <Ionicons
-                  name={t.icon as any}
+                  name={t.icon}
                   size={18}
                   color={isActive ? Colors.accent : "rgba(255,255,255,0.4)"}
                 />

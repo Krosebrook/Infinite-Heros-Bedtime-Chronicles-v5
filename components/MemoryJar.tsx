@@ -54,7 +54,7 @@ function StoryCard({ item, onDelete, onReread }: { item: CachedStory; onDelete: 
           <View style={jarStyles.storyMeta}>
             {hero && (
               <View style={jarStyles.storyMetaChip}>
-                <Ionicons name={hero.iconName as any} size={12} color={hero.color} />
+                <Ionicons name={hero.iconName} size={12} color={hero.color} />
                 <Text style={jarStyles.storyMetaText}>{hero.name}</Text>
               </View>
             )}

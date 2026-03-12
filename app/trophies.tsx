@@ -244,7 +244,7 @@ const styles = StyleSheet.create({
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
   badgeCard: {
-    width: "47%" as any, alignItems: "center", gap: 4,
+    width: "47%" as `${number}%`, alignItems: "center" as const, gap: 4,
     paddingVertical: 16, paddingHorizontal: 12,
     borderRadius: 16, backgroundColor: "rgba(255,255,255,0.04)",
     borderWidth: 1.5, borderColor: "rgba(255,215,79,0.15)",

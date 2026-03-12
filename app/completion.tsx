@@ -81,7 +81,7 @@ function FloatingStar({ delay, x, y, color }: { delay: number; x: number; y: num
   }));
 
   return (
-    <Animated.View style={[{ position: "absolute", left: `${x}%` as any, top: `${y}%` as any }, animStyle]}>
+    <Animated.View style={[{ position: "absolute", left: `${x}%`, top: `${y}%` } as Record<string, string | number>, animStyle]}>
       <Ionicons name="star" size={16} color={color} />
     </Animated.View>
   );

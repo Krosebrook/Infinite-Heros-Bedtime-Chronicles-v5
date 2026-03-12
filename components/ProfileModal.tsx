@@ -162,7 +162,7 @@ export function ProfileModal({ visible, onClose }: Props) {
               onPress={() => { Haptics.selectionAsync(); setHeroId(h.id); }}
               style={[styles.heroCard, isActive && { borderColor: h.color }]}
             >
-              <Ionicons name={h.iconName as any} size={22} color={isActive ? h.color : "rgba(255,255,255,0.4)"} />
+              <Ionicons name={h.iconName} size={22} color={isActive ? h.color : "rgba(255,255,255,0.4)"} />
               <Text style={[styles.heroCardName, isActive && { color: h.color }]}>{h.name}</Text>
             </Pressable>
           );

@@ -340,7 +340,7 @@ export default function StoryScreen() {
 
   const SPEED_RATES: Record<string, number> = { gentle: 0.8, medium: 0.9, normal: 1.0 };
   const SPEED_LABELS: Record<string, string> = { gentle: "Gentle", medium: "Medium", normal: "Normal" };
-  const SPEED_ICONS: Record<string, string> = { gentle: "moon-outline", medium: "cloudy-night-outline", normal: "sunny-outline" };
+  const SPEED_ICONS: Record<string, "moon-outline" | "cloudy-night-outline" | "sunny-outline"> = { gentle: "moon-outline", medium: "cloudy-night-outline", normal: "sunny-outline" };
   const defaultSpeed = initialSpeed || (storyMode === "sleep" ? "gentle" : "medium");
 
   const [storyData, setStoryData] = useState<StoryFull | null>(null);
@@ -804,7 +804,7 @@ export default function StoryScreen() {
         {storyState === "ready" && (
           <View style={styles.audioControls}>
             <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.speedBtn} testID="speed-cycle-btn">
-              <Ionicons name={SPEED_ICONS[playbackSpeed] as any} size={14} color={theme.accent} />
+              <Ionicons name={SPEED_ICONS[playbackSpeed]} size={14} color={theme.accent} />
               <Text style={[styles.speedBtnLabel, { color: theme.accent }]}>
                 {SPEED_LABELS[playbackSpeed]}
               </Text>
@@ -836,7 +836,7 @@ export default function StoryScreen() {
         <Animated.View entering={FadeIn.duration(600)} style={styles.loadingContainer}>
           <LoadingOrb color={theme.orbColor} />
           <View style={[styles.loadingIconWrap, { borderColor: `${theme.accent}30` }]}>
-            <Ionicons name={hero.iconName as any} size={44} color={hero.color} />
+            <Ionicons name={hero.iconName} size={44} color={hero.color} />
           </View>
 
           <Text style={styles.loadingTitle}>

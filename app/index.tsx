@@ -11,8 +11,12 @@ import {
 } from "react-native";
 import { Audio, AVPlaybackStatus } from "expo-av";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
+import type { ComponentProps } from "react";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
+
+type IoniconsName = ComponentProps<typeof Ionicons>["name"];
+type MCIName = ComponentProps<typeof MaterialCommunityIcons>["name"];
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
 import Animated, {
@@ -79,7 +83,7 @@ const MODE_THEMES = {
 type ModeId = keyof typeof MODE_THEMES;
 const VALID_MODES_LIST: ModeId[] = ["classic", "madlibs", "sleep"];
 
-const MODES: { id: ModeId; icon: string; iconSet: "mci" | "ion" }[] = [
+const MODES: { id: ModeId; icon: MCIName; iconSet: "mci" | "ion" }[] = [
   { id: "classic", icon: "sword-cross", iconSet: "mci" },
   { id: "madlibs", icon: "emoticon-tongue-outline", iconSet: "mci" },
   { id: "sleep", icon: "moon-waning-crescent", iconSet: "mci" },
@@ -95,7 +99,7 @@ const DURATIONS = [
 
 type VoiceCategory = "sleep" | "classic" | "fun";
 
-const VOICES: { id: string; label: string; desc: string; accent: string; icon: string; category: VoiceCategory }[] = [
+const VOICES: { id: string; label: string; desc: string; accent: string; icon: IoniconsName; category: VoiceCategory }[] = [
   { id: "moonbeam", label: "Moonbeam", desc: "Warm lullaby", accent: "American", icon: "moon-outline", category: "sleep" },
   { id: "whisper", label: "Whisper", desc: "Soft & dreamy", accent: "American", icon: "cloud-outline", category: "sleep" },
   { id: "stardust", label: "Stardust", desc: "Magical guide", accent: "American", icon: "sparkles-outline", category: "sleep" },
@@ -387,13 +391,13 @@ export default function HomeScreen() {
                 >
                   {m.iconSet === "mci" ? (
                     <MaterialCommunityIcons
-                      name={m.icon as any}
+                      name={m.icon}
                       size={16}
                       color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
                     />
                   ) : (
                     <Ionicons
-                      name={m.icon as any}
+                      name={m.icon}
                       size={16}
                       color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
                     />
@@ -502,7 +506,7 @@ export default function HomeScreen() {
                   testID={`hero-${h.id}`}
                 >
                   <View style={[s.heroChipIcon, isActive && { backgroundColor: theme.accent }]}>
-                    <Ionicons name={h.iconName as any} size={18} color={isActive ? "#FFF" : h.color} />
+                    <Ionicons name={h.iconName} size={18} color={isActive ? "#FFF" : h.color} />
                   </View>
                   <View>
                     <Text style={[s.heroChipName, isActive && { color: "#FFF" }]}>{h.name}</Text>
@@ -517,7 +521,7 @@ export default function HomeScreen() {
             <View style={s.glassCard}>
               <View style={s.heroDetailRow}>
                 <View style={[s.heroDetailIcon, { backgroundColor: `${hero.color}20` }]}>
-                  <Ionicons name={hero.iconName as any} size={28} color={hero.color} />
+                  <Ionicons name={hero.iconName} size={28} color={hero.color} />
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.heroDetailName}>{hero.name}</Text>
@@ -555,7 +559,7 @@ export default function HomeScreen() {
                   testID={`duration-${d.id}`}
                 >
                   <Ionicons
-                    name={d.icon as any}
+                    name={d.icon}
                     size={14}
                     color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
                   />
@@ -610,7 +614,7 @@ export default function HomeScreen() {
                       ]}
                     >
                       <Ionicons
-                        name={v.icon as any}
+                        name={v.icon}
                         size={13}
                         color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
                       />
@@ -669,7 +673,7 @@ export default function HomeScreen() {
                     ]}
                   >
                     <Ionicons
-                      name={sp.icon as any}
+                      name={sp.icon}
                       size={13}
                       color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
                     />
@@ -724,7 +728,7 @@ export default function HomeScreen() {
               >
                 <View style={[s.bottomTabIconWrap, isActive && { backgroundColor: `${theme.accent}20` }]}>
                   <Ionicons
-                    name={tab.icon as any}
+                    name={tab.icon}
                     size={22}
                     color={isActive ? theme.accent : "rgba(255,255,255,0.35)"}
                   />

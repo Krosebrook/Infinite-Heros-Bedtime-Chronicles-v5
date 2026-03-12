@@ -9,6 +9,14 @@ import { queryClient } from "@/lib/query-client";
 import { ProfileProvider } from "@/lib/ProfileContext";
 import { StatusBar } from "expo-status-bar";
 import {
+  Nunito_400Regular,
+  Nunito_500Medium,
+  Nunito_600SemiBold,
+  Nunito_700Bold,
+  Nunito_800ExtraBold,
+} from "@expo-google-fonts/nunito";
+import { Bangers_400Regular } from "@expo-google-fonts/bangers";
+import {
   useFonts,
   PlusJakartaSans_400Regular,
   PlusJakartaSans_500Medium,
@@ -62,6 +70,12 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [fontsLoaded, fontError] = useFonts({
+    Nunito_400Regular,
+    Nunito_500Medium,
+    Nunito_600SemiBold,
+    Nunito_700Bold,
+    Nunito_800ExtraBold,
+    Bangers_400Regular,
     PlusJakartaSans_400Regular,
     PlusJakartaSans_500Medium,
     PlusJakartaSans_600SemiBold,

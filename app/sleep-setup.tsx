@@ -265,7 +265,7 @@ const styles = StyleSheet.create({
     marginBottom: 28,
   },
   soundCard: {
-    width: "30%" as any,
+    width: "30%" as `${number}%`,
     backgroundColor: Colors.cardBg,
     borderRadius: 18,
     padding: 14,

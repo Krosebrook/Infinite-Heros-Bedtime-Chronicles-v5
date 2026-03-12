@@ -110,7 +110,7 @@ export class AIRouter {
       try {
         const stream = provider.generateTextStream(req);
         for await (const chunk of stream) {
-          yield { ...chunk, provider: provider.name, model: provider.displayName };
+          yield { ...chunk, provider: provider.name, model: provider.name };
         }
         return;
       } catch (err) {

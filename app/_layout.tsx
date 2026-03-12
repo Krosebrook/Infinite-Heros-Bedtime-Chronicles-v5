@@ -37,7 +37,11 @@ function RootLayoutNav() {
         animation: "fade",
       }}
     >
-      <Stack.Screen name="index" />
+      <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="story-details"
+        options={{ animation: "slide_from_right" }}
+      />
       <Stack.Screen
         name="madlibs"
         options={{ animation: "slide_from_right" }}

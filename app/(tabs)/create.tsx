@@ -135,14 +135,8 @@ const MODE_DEFAULT_SPEED: Record<ModeId, string> = {
   sleep: "gentle",
 };
 
-const TAB_ITEMS = [
-  { id: "create", label: "Create", icon: "add-circle" as const },
-  { id: "stories", label: "My Stories", icon: "library" as const },
-  { id: "favorites", label: "Favorites", icon: "heart" as const },
-  { id: "settings", label: "Settings", icon: "settings" as const },
-];
 
-export default function HomeScreen() {
+export default function CreateScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
@@ -159,7 +153,6 @@ export default function HomeScreen() {
   const [profileVisible, setProfileVisible] = useState(false);
   const [parentControlsVisible, setParentControlsVisible] = useState(false);
   const { activeProfile } = useProfile();
-  const [activeTab, setActiveTab] = useState("create");
 
   const [suggestion, setSuggestion] = useState<AISuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
@@ -277,18 +270,6 @@ export default function HomeScreen() {
         pathname: "/story",
         params: { heroId: hero.id, duration, voice, mode: "classic", speed },
       });
-    }
-  };
-
-  const handleTabPress = (tabId: string) => {
-    Haptics.selectionAsync();
-    setActiveTab(tabId);
-    if (tabId === "stories") {
-      setJarVisible(true);
-    } else if (tabId === "favorites") {
-      router.push("/trophies");
-    } else if (tabId === "settings") {
-      setSettingsVisible(true);
     }
   };
 
@@ -704,37 +685,6 @@ export default function HomeScreen() {
         </Animated.View>
       </ScrollView>
 
-      <View style={[s.bottomTabWrap, { paddingBottom: bottomInset + 4 }]}>
-        <LinearGradient
-          colors={["transparent", "rgba(5,5,30,0.9)", "rgba(5,5,30,0.98)"]}
-          style={s.bottomTabGradient}
-        />
-        <View style={s.bottomTabBar}>
-          {TAB_ITEMS.map((tab) => {
-            const isActive = tab.id === activeTab;
-            return (
-              <Pressable
-                key={tab.id}
-                onPress={() => handleTabPress(tab.id)}
-                style={s.bottomTabItem}
-                testID={`tab-${tab.id}`}
-              >
-                <View style={[s.bottomTabIconWrap, isActive && { backgroundColor: `${theme.accent}20` }]}>
-                  <Ionicons
-                    name={tab.icon}
-                    size={22}
-                    color={isActive ? theme.accent : "rgba(255,255,255,0.35)"}
-                  />
-                </View>
-                <Text style={[s.bottomTabLabel, isActive && { color: theme.accent }]}>
-                  {tab.label}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-
       <MemoryJar visible={jarVisible} onClose={() => setJarVisible(false)} />
       {settingsVisible && <SettingsModal visible={settingsVisible} onClose={() => setSettingsVisible(false)} />}
       {profileVisible && <ProfileModal visible={profileVisible} onClose={() => setProfileVisible(false)} />}
@@ -1060,44 +1010,6 @@ const s = StyleSheet.create({
     fontSize: 16,
     color: "#FFF",
     letterSpacing: 2,
-  },
-  bottomTabWrap: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-  },
-  bottomTabGradient: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 120,
-  },
-  bottomTabBar: {
-    flexDirection: "row",
-    justifyContent: "space-around",
-    paddingHorizontal: 16,
-    paddingTop: 8,
-  },
-  bottomTabItem: {
-    alignItems: "center",
-    gap: 4,
-    paddingVertical: 6,
-    paddingHorizontal: 14,
-  },
-  bottomTabIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  bottomTabLabel: {
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 10,
-    color: "rgba(255,255,255,0.35)",
-    letterSpacing: 0.5,
   },
   suggestionCard: {
     marginHorizontal: 20,

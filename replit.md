@@ -10,7 +10,7 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend (Expo / React Native)
 - **Framework**: Expo SDK 54 with React Native 0.81, new architecture.
-- **Routing**: Expo Router v6 with file-based routing. Key screens include `index.tsx` (main setup), `story.tsx` (story generation and display), `completion.tsx` (post-story celebration), and `trophies.tsx` (badge display).
+- **Routing**: Expo Router v6 with file-based routing and tab navigation. Uses `app/(tabs)/` group for 5-tab layout (Home, Library, Create, Saved, Profile). Key screens: `(tabs)/index.tsx` (library/browse home), `(tabs)/create.tsx` (story creation wizard), `story-details.tsx` (story personalization), `story.tsx` (story generation/reader), `completion.tsx` (post-story celebration), `trophies.tsx` (badge display).
 - **State Management**: TanStack React Query for server state, React Context for profile state, and local component state.
 - **Local Storage**: AsyncStorage for profiles, badges, streaks, parent controls, and saved stories.
 - **Typography**: Plus Jakarta Sans (400 Regular through 800 ExtraBold) via `@expo-google-fonts/plus-jakarta-sans`.

@@ -8,25 +8,47 @@ const app = express();
 const log = console.log;
 
 function validateEnvironment() {
-  const geminiKey = process.env.AI_INTEGRATIONS_GEMINI_API_KEY;
-  const geminiBaseUrl = process.env.AI_INTEGRATIONS_GEMINI_BASE_URL;
-  const elevenLabsKey = process.env.ELEVENLABS_API_KEY;
-  const openaiKey = process.env.OPENAI_API_KEY;
+  const providerPairs: [string, string, string][] = [
+    ["AI_INTEGRATIONS_GEMINI_API_KEY", "AI_INTEGRATIONS_GEMINI_BASE_URL", "Gemini"],
+    ["AI_INTEGRATIONS_OPENAI_API_KEY", "AI_INTEGRATIONS_OPENAI_BASE_URL", "OpenAI (integrations)"],
+    ["AI_INTEGRATIONS_ANTHROPIC_API_KEY", "AI_INTEGRATIONS_ANTHROPIC_BASE_URL", "Anthropic Claude"],
+    ["AI_INTEGRATIONS_OPENROUTER_API_KEY", "AI_INTEGRATIONS_OPENROUTER_BASE_URL", "OpenRouter (xAI, Mistral, Cohere, Meta Llama)"],
+  ];
 
-  if (!geminiKey) {
-    log("[Env] WARNING: AI_INTEGRATIONS_GEMINI_API_KEY is not set — story generation will fail");
-  }
-  if (!geminiBaseUrl) {
-    log("[Env] WARNING: AI_INTEGRATIONS_GEMINI_BASE_URL is not set — story generation may fail");
-  }
-  if (!elevenLabsKey) {
-    log("[Env] WARNING: ELEVENLABS_API_KEY is not set — TTS will be unavailable");
-  }
-  if (!openaiKey) {
-    log("[Env] INFO: OPENAI_API_KEY is not set — image fallback and video generation will be unavailable");
+  let textProviders = 0;
+  let imageProviders = 0;
+
+  for (const [keyVar, urlVar, name] of providerPairs) {
+    const hasKey = !!process.env[keyVar];
+    const hasUrl = !!process.env[urlVar];
+    if (hasKey && hasUrl) {
+      textProviders++;
+      if (name === "Gemini" || name === "OpenAI (integrations)") imageProviders++;
+    } else if (hasKey || hasUrl) {
+      log(`[Env] WARNING: ${name} partially configured (missing ${!hasKey ? keyVar : urlVar})`);
+    }
   }
 
-  log("[Env] Environment validation complete");
+  if (process.env.OPENAI_API_KEY) {
+    textProviders++;
+    imageProviders++;
+  }
+
+  if (!process.env.ELEVENLABS_API_KEY) {
+    log("[Env] INFO: ELEVENLABS_API_KEY is not set — TTS narration will be unavailable");
+  }
+  if (!process.env.OPENAI_API_KEY) {
+    log("[Env] INFO: OPENAI_API_KEY is not set — video generation (Sora) will be unavailable");
+  }
+
+  if (textProviders === 0) {
+    log("[Env] WARNING: No text AI providers configured — story generation will fail");
+  }
+  if (imageProviders === 0) {
+    log("[Env] WARNING: No image AI providers configured — avatar/scene generation will fail");
+  }
+
+  log(`[Env] Environment validation complete (${textProviders} text providers, ${imageProviders} image providers)`);
 }
 
 declare module "http" {

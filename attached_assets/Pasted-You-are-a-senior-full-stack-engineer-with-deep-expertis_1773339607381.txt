@@ -1,0 +1,36 @@
+You are a senior full-stack engineer with deep expertise in React component design, state management, and backend API architecture. I need you to design and implement a comprehensive SuggestionContainer component system with a supporting backend service for AI-powered contextual form field suggestions.
+
+Context: We're building this for a web application with many forms across different contexts. The system needs to be framework-agnostic enough to wrap any input field (text, textarea, select, date pickers) while being smart enough to understand form context, user history, and provide a seamless UX with keyboard navigation.
+
+Please design and implement:
+
+**Frontend (React/TypeScript):**
+1. A reusable SuggestionContainer component that wraps any form field and overlays AI suggestions
+2. State management for suggestion rotation (cycling through multiple suggestions with a hotkey)
+3. History tracking (recently accepted/dismissed suggestions per field)
+4. Keyboard shortcut system (accept suggestion, dismiss, rotate, open history panel)
+5. Context providers for sharing suggestion state across form fields
+6. Animation and accessibility considerations
+
+**Backend Architecture:**
+1. RESTful API endpoints for fetching contextual suggestions
+2. Suggestion request/response schema design
+3. Caching strategy for frequently requested contexts
+4. User preference and history storage
+5. Rate limiting and debouncing for AI API calls
+6. Fallback behavior when AI service is unavailable
+
+**Integration Features:**
+1. Auto-detection of field context (field type, label, surrounding fields, form purpose)
+2. Personalization based on user's past inputs and accepted suggestions
+3. Multi-language support considerations
+4. Performance optimization (lazy loading, memoization)
+
+Provide concrete code examples for:
+- The SuggestionContainer component with all hooks and context
+- API endpoint implementation with proper typing
+- Usage examples wrapping different form field types
+- Keyboard shortcut handler setup
+- State persistence for suggestion history
+
+Assume we're using React 18+, TypeScript, and a Node.js backend. Feel free to suggest library choices but justify them. The tone should be casual but the implementation should be production-ready with proper error handling, TypeScript types, and documentation.

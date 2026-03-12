@@ -74,7 +74,7 @@ export default function SleepSetupScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#1A0533", "#0B1026", "#060810"]}
+        colors={["#05051e", "#0D0520", "#05051e"]}
         style={StyleSheet.absoluteFill}
       />
       <StarField />
@@ -204,7 +204,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -226,32 +228,32 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   sleepBadgeText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 14,
     color: "#CE93D8",
   },
   headerTitle: {
-    fontFamily: "Nunito_800ExtraBold",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
     fontSize: 28,
     color: Colors.textPrimary,
     textAlign: "center",
     marginBottom: 6,
   },
   headerSubtitle: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: "center",
   },
   sectionLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 12,
     color: "#CE93D8",
     letterSpacing: 2,
     marginBottom: 6,
   },
   sectionHint: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
     marginBottom: 14,
@@ -284,7 +286,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   soundLabel: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 11,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -310,7 +312,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(206, 147, 216, 0.08)",
   },
   timerLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 16,
     color: Colors.textSecondary,
   },
@@ -318,7 +320,7 @@ const styles = StyleSheet.create({
     color: "#CE93D8",
   },
   timerDesc: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 10,
     color: Colors.textMuted,
     marginTop: 2,
@@ -330,7 +332,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 20,
     paddingTop: 12,
-    backgroundColor: "rgba(11, 16, 38, 0.9)",
+    backgroundColor: "rgba(5, 5, 30, 0.9)",
   },
   startButton: {
     borderRadius: 28,
@@ -350,7 +352,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   startButtonText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 18,
     color: Colors.primary,
   },

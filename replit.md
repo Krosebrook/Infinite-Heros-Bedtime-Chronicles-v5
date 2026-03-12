@@ -13,7 +13,8 @@ Preferred communication style: Simple, everyday language.
 - **Routing**: Expo Router v6 with file-based routing. Key screens include `index.tsx` (main setup), `story.tsx` (story generation and display), `completion.tsx` (post-story celebration), and `trophies.tsx` (badge display).
 - **State Management**: TanStack React Query for server state, React Context for profile state, and local component state.
 - **Local Storage**: AsyncStorage for profiles, badges, streaks, parent controls, and saved stories.
-- **Styling**: React Native StyleSheet with a dark cosmic theme.
+- **Typography**: Plus Jakarta Sans (400 Regular through 800 ExtraBold) via `@expo-google-fonts/plus-jakarta-sans`.
+- **Styling**: React Native StyleSheet with midnight/indigo/purple glassmorphism theme (`constants/colors.ts`). Key colors: accent `#6366f1`, cardBg `rgba(255,255,255,0.05)`, cardBorder `rgba(255,255,255,0.1)`.
 - **Animations**: React Native Reanimated for various UI effects.
 - **Text-to-Speech**: ElevenLabs via Replit connector for natural narration, with adjustable speed via `expo-av` and pitch correction.
 - **Background Music**: Royalty-free MP3 files served from the Express backend, played via `expo-av`.

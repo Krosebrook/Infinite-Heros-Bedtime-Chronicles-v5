@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
-  headerTitle: { fontFamily: "Nunito_800ExtraBold", fontSize: 22, color: "#FFF" },
+  headerTitle: { fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 22, color: "#FFF" },
   closeBtn: {
     width: 36, height: 36, borderRadius: 18,
     backgroundColor: "rgba(255,255,255,0.08)",
@@ -319,9 +319,9 @@ const styles = StyleSheet.create({
   },
   listContent: { paddingHorizontal: 20, gap: 10 },
   emptyState: { alignItems: "center", paddingVertical: 48, gap: 12 },
-  emptyTitle: { fontFamily: "Nunito_700Bold", fontSize: 18, color: "rgba(255,255,255,0.5)" },
+  emptyTitle: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 18, color: "rgba(255,255,255,0.5)" },
   emptySubtitle: {
-    fontFamily: "Nunito_400Regular", fontSize: 13,
+    fontFamily: "PlusJakartaSans_400Regular", fontSize: 13,
     color: "rgba(255,255,255,0.3)", textAlign: "center", paddingHorizontal: 32,
   },
   profileRow: {
@@ -337,8 +337,8 @@ const styles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   profileAvatarText: { fontSize: 22 },
-  profileName: { fontFamily: "Nunito_700Bold", fontSize: 16, color: "#FFF" },
-  profileMeta: { fontFamily: "Nunito_400Regular", fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 },
+  profileName: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 16, color: "#FFF" },
+  profileMeta: { fontFamily: "PlusJakartaSans_400Regular", fontSize: 12, color: "rgba(255,255,255,0.4)", marginTop: 2 },
   activeBadge: { marginRight: 4 },
   editBtn: {
     width: 32, height: 32, borderRadius: 16,
@@ -350,24 +350,24 @@ const styles = StyleSheet.create({
     gap: 8, paddingVertical: 12, marginTop: 8,
     borderRadius: 12, borderWidth: 1, borderColor: "rgba(255,255,255,0.1)",
   },
-  guestBtnText: { fontFamily: "Nunito_600SemiBold", fontSize: 13, color: "rgba(255,255,255,0.5)" },
+  guestBtnText: { fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 13, color: "rgba(255,255,255,0.5)" },
   addBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 10, paddingVertical: 16, marginTop: 12,
     borderRadius: 16, borderWidth: 2, borderStyle: "dashed",
     borderColor: `${Colors.accent}40`,
   },
-  addBtnText: { fontFamily: "Nunito_700Bold", fontSize: 15, color: Colors.accent },
+  addBtnText: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 15, color: Colors.accent },
   formScroll: { paddingHorizontal: 20 },
   sectionTitle: {
-    fontFamily: "Nunito_700Bold", fontSize: 12,
+    fontFamily: "PlusJakartaSans_700Bold", fontSize: 12,
     color: "rgba(255,255,255,0.5)", letterSpacing: 2,
     marginBottom: 10, marginTop: 20,
   },
   nameInput: {
     backgroundColor: "rgba(255,255,255,0.06)",
     borderRadius: 14, paddingHorizontal: 16, paddingVertical: 14,
-    fontFamily: "Nunito_600SemiBold", fontSize: 16, color: "#FFF",
+    fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 16, color: "#FFF",
     borderWidth: 1.5, borderColor: "rgba(255,255,255,0.08)",
   },
   ageRow: { flexDirection: "row", gap: 8 },
@@ -377,7 +377,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: "rgba(255,255,255,0.06)",
   },
   agePillActive: { borderColor: Colors.accent, backgroundColor: `${Colors.accent}18` },
-  agePillText: { fontFamily: "Nunito_700Bold", fontSize: 16, color: "rgba(255,255,255,0.5)" },
+  agePillText: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 16, color: "rgba(255,255,255,0.5)" },
   agePillTextActive: { color: Colors.accent },
   emojiGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10 },
   emojiCell: {
@@ -397,11 +397,11 @@ const styles = StyleSheet.create({
     minWidth: 80,
   },
   heroCardEmoji: { fontSize: 24 },
-  heroCardName: { fontFamily: "Nunito_600SemiBold", fontSize: 11, color: "rgba(255,255,255,0.5)" },
+  heroCardName: { fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 11, color: "rgba(255,255,255,0.5)" },
   saveBtn: {
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 8, marginTop: 28, paddingVertical: 16,
     borderRadius: 24, backgroundColor: Colors.accent,
   },
-  saveBtnText: { fontFamily: "Nunito_700Bold", fontSize: 16, color: "#FFF" },
+  saveBtnText: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 16, color: "#FFF" },
 });

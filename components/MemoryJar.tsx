@@ -176,7 +176,7 @@ const jarStyles = StyleSheet.create({
     borderBottomWidth: 1, borderBottomColor: "rgba(255,255,255,0.06)",
   },
   headerLeft: { flexDirection: "row", alignItems: "center", gap: 10 },
-  headerTitle: { fontFamily: "Nunito_800ExtraBold", fontSize: 22, color: Colors.textPrimary },
+  headerTitle: { fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 22, color: Colors.textPrimary },
   closeBtn: {
     width: 36, height: 36, borderRadius: 18, backgroundColor: "rgba(255,255,255,0.06)",
     alignItems: "center", justifyContent: "center",
@@ -185,10 +185,10 @@ const jarStyles = StyleSheet.create({
     flex: 1, justifyContent: "center", alignItems: "center", paddingHorizontal: 40, gap: 12,
   },
   emptyTitle: {
-    fontFamily: "Nunito_700Bold", fontSize: 20, color: Colors.textPrimary, textAlign: "center",
+    fontFamily: "PlusJakartaSans_700Bold", fontSize: 20, color: Colors.textPrimary, textAlign: "center",
   },
   emptyText: {
-    fontFamily: "Nunito_400Regular", fontSize: 14, color: Colors.textMuted, textAlign: "center",
+    fontFamily: "PlusJakartaSans_400Regular", fontSize: 14, color: Colors.textMuted, textAlign: "center",
   },
   listContent: { paddingHorizontal: 16, paddingTop: 12 },
   storyCard: {
@@ -200,7 +200,7 @@ const jarStyles = StyleSheet.create({
   storyBadgeEmoji: { fontSize: 28 },
   storyCardInfo: { flex: 1 },
   storyTitle: {
-    fontFamily: "Nunito_700Bold", fontSize: 16, color: Colors.textPrimary, marginBottom: 4,
+    fontFamily: "PlusJakartaSans_700Bold", fontSize: 16, color: Colors.textPrimary, marginBottom: 4,
   },
   storyMeta: { flexDirection: "row", alignItems: "center", gap: 8 },
   storyMetaChip: {
@@ -209,9 +209,9 @@ const jarStyles = StyleSheet.create({
     paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
   },
   storyMetaText: {
-    fontFamily: "Nunito_600SemiBold", fontSize: 11, color: Colors.textSecondary,
+    fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 11, color: Colors.textSecondary,
   },
-  storyDate: { fontFamily: "Nunito_400Regular", fontSize: 11, color: Colors.textMuted },
+  storyDate: { fontFamily: "PlusJakartaSans_400Regular", fontSize: 11, color: Colors.textMuted },
   cardActions: { flexDirection: "row", alignItems: "center", gap: 4 },
   rereadBtn: {
     width: 32, height: 32, borderRadius: 16,
@@ -222,7 +222,7 @@ const jarStyles = StyleSheet.create({
     alignItems: "center", justifyContent: "center",
   },
   storyLesson: {
-    fontFamily: "Nunito_400Regular", fontSize: 13, color: Colors.textSecondary,
+    fontFamily: "PlusJakartaSans_400Regular", fontSize: 13, color: Colors.textSecondary,
     lineHeight: 20, marginTop: 10, fontStyle: "italic",
   },
 });

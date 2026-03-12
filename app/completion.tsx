@@ -34,23 +34,23 @@ import { useProfile } from "@/lib/ProfileContext";
 
 const MODE_THEMES = {
   classic: {
-    accent: "#3B82F6",
-    accentDark: "#2563EB",
-    gradient: ["#0B1A40", "#122050", "#0B1026"] as [string, string, string],
+    accent: "#6366f1",
+    accentDark: "#4f46e5",
+    gradient: ["#05051e", "#0a0a2e", "#05051e"] as [string, string, string],
     label: "STORY COMPLETE",
     sublabel: "A heroic tale well told",
   },
   madlibs: {
-    accent: "#F59E0B",
-    accentDark: "#D97706",
-    gradient: ["#1A1008", "#261A0A", "#0B1026"] as [string, string, string],
+    accent: "#F97316",
+    accentDark: "#EA580C",
+    gradient: ["#05051e", "#1A0A00", "#05051e"] as [string, string, string],
     label: "THAT WAS HILARIOUS!",
     sublabel: "Your wacky words made magic",
   },
   sleep: {
-    accent: "#A78BFA",
+    accent: "#A855F7",
     accentDark: "#7C3AED",
-    gradient: ["#0F0A2A", "#14103A", "#080D1E"] as [string, string, string],
+    gradient: ["#05051e", "#0D0520", "#05051e"] as [string, string, string],
     label: "SWEET DREAMS",
     sublabel: "Time to drift off to sleep",
   },
@@ -411,30 +411,30 @@ const styles = StyleSheet.create({
   },
   badgeEmoji: { fontSize: 44 },
   badgeTitle: {
-    fontFamily: "Nunito_800ExtraBold", fontSize: 20,
+    fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 20,
     textAlign: "center", marginBottom: 4,
   },
   badgeDescription: {
-    fontFamily: "Nunito_400Regular", fontSize: 14, color: Colors.textSecondary,
+    fontFamily: "PlusJakartaSans_400Regular", fontSize: 14, color: Colors.textSecondary,
     textAlign: "center",
   },
   textArea: { alignItems: "center", marginBottom: 24 },
   completionLabel: {
-    fontFamily: "Nunito_700Bold", fontSize: 12,
+    fontFamily: "PlusJakartaSans_700Bold", fontSize: 12,
     letterSpacing: 3, marginBottom: 8,
   },
   completionTitle: {
-    fontFamily: "Nunito_800ExtraBold", fontSize: 28, color: Colors.textPrimary,
+    fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 28, color: Colors.textPrimary,
     textAlign: "center", lineHeight: 36,
   },
   completionSublabel: {
-    fontFamily: "Nunito_400Regular", fontSize: 14, color: Colors.textSecondary,
+    fontFamily: "PlusJakartaSans_400Regular", fontSize: 14, color: Colors.textSecondary,
     marginTop: 6,
   },
   extrasArea: { gap: 12, marginBottom: 28 },
   extraCard: {
-    backgroundColor: "rgba(255,255,255,0.04)",
-    borderRadius: 16, borderWidth: 1, borderColor: "rgba(255,255,255,0.08)",
+    backgroundColor: Colors.cardBg,
+    borderRadius: 16, borderWidth: 1, borderColor: Colors.cardBorder,
     padding: 16,
   },
   extraCardHeader: { flexDirection: "row", alignItems: "center", gap: 12 },
@@ -442,10 +442,10 @@ const styles = StyleSheet.create({
     width: 36, height: 36, borderRadius: 18, alignItems: "center", justifyContent: "center",
   },
   extraCardHeaderText: { flex: 1 },
-  extraCardLabel: { fontFamily: "Nunito_600SemiBold", fontSize: 11, color: Colors.textMuted, letterSpacing: 1 },
-  extraCardTitle: { fontFamily: "Nunito_700Bold", fontSize: 15, color: Colors.textPrimary },
+  extraCardLabel: { fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 11, color: Colors.textMuted, letterSpacing: 1 },
+  extraCardTitle: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 15, color: Colors.textPrimary },
   extraCardBody: {
-    fontFamily: "Nunito_400Regular", fontSize: 15, color: Colors.textSecondary,
+    fontFamily: "PlusJakartaSans_400Regular", fontSize: 15, color: Colors.textSecondary,
     lineHeight: 24, marginTop: 12, paddingLeft: 48,
   },
   tomorrowCard: {
@@ -454,7 +454,7 @@ const styles = StyleSheet.create({
     padding: 16,
   },
   tomorrowText: {
-    fontFamily: "Nunito_500Medium", fontSize: 14,
+    fontFamily: "PlusJakartaSans_500Medium", fontSize: 14,
     flex: 1, lineHeight: 22, fontStyle: "italic",
   },
   actionsArea: { gap: 12 },
@@ -468,7 +468,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(16, 185, 129, 0.08)",
   },
   saveButtonText: {
-    fontFamily: "Nunito_700Bold", fontSize: 16,
+    fontFamily: "PlusJakartaSans_700Bold", fontSize: 16,
   },
   primaryButton: {
     borderRadius: 28, overflow: "hidden", elevation: 6,
@@ -479,8 +479,8 @@ const styles = StyleSheet.create({
     flexDirection: "row", alignItems: "center", justifyContent: "center",
     gap: 10, paddingVertical: 18, paddingHorizontal: 32,
   },
-  primaryButtonText: { fontFamily: "Nunito_700Bold", fontSize: 18, color: "#FFF" },
-  linkText: { fontFamily: "Nunito_700Bold", fontSize: 16 },
+  primaryButtonText: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 18, color: "#FFF" },
+  linkText: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 16 },
   newBadgesArea: {
     alignItems: "center", marginBottom: 20,
     paddingVertical: 16, paddingHorizontal: 20,
@@ -488,7 +488,7 @@ const styles = StyleSheet.create({
     borderWidth: 1.5, borderColor: "rgba(255,215,79,0.15)",
   },
   newBadgesTitle: {
-    fontFamily: "Nunito_800ExtraBold", fontSize: 16,
+    fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 16,
     letterSpacing: 1, marginBottom: 12,
   },
   newBadgesRow: {
@@ -497,7 +497,7 @@ const styles = StyleSheet.create({
   },
   newBadgeItem: { alignItems: "center", gap: 4 },
   newBadgeLabel: {
-    fontFamily: "Nunito_600SemiBold", fontSize: 11,
+    fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 11,
     color: "rgba(255,255,255,0.6)",
   },
 });

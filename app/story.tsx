@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Image,
+  Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -66,12 +67,12 @@ const LOADING_MESSAGES = {
 
 const MODE_THEME = {
   classic: {
-    accent: "#3B82F6",
-    accentLight: "#60A5FA",
-    gradient: ["#0B1A40", "#0E1528", "#080D1E"] as [string, string, string],
-    orbColor: "rgba(59, 130, 246, 0.08)",
+    accent: "#6366f1",
+    accentLight: "#818cf8",
+    gradient: ["#05051e", "#0a0a2e", "#05051e"] as [string, string, string],
+    orbColor: "rgba(99, 102, 241, 0.08)",
     choiceColors: [
-      ["#3B82F6", "#2563EB"] as [string, string],
+      ["#6366f1", "#4f46e5"] as [string, string],
       ["#8B5CF6", "#7C3AED"] as [string, string],
       ["#F59E0B", "#D97706"] as [string, string],
     ],
@@ -79,7 +80,7 @@ const MODE_THEME = {
   madlibs: {
     accent: "#F97316",
     accentLight: "#FB923C",
-    gradient: ["#1A0A00", "#0E1528", "#080D1E"] as [string, string, string],
+    gradient: ["#05051e", "#1A0A00", "#05051e"] as [string, string, string],
     orbColor: "rgba(249, 115, 22, 0.08)",
     choiceColors: [
       ["#F97316", "#EA580C"] as [string, string],
@@ -90,7 +91,7 @@ const MODE_THEME = {
   sleep: {
     accent: "#A855F7",
     accentLight: "#C084FC",
-    gradient: ["#1A0533", "#0B0D1E", "#060810"] as [string, string, string],
+    gradient: ["#05051e", "#0D0520", "#05051e"] as [string, string, string],
     orbColor: "rgba(168, 85, 247, 0.08)",
     choiceColors: [
       ["#A855F7", "#7C3AED"] as [string, string],
@@ -100,6 +101,57 @@ const MODE_THEME = {
   },
 };
 
+function FloatingParticle({ delay, accent }: { delay: number; accent: string }) {
+  const translateY = useSharedValue(0);
+  const opacity = useSharedValue(0);
+  const screenWidth = Dimensions.get("window").width;
+  const startX = Math.random() * screenWidth;
+  const size = 2 + Math.random() * 3;
+
+  useEffect(() => {
+    opacity.value = withDelay(
+      delay,
+      withRepeat(
+        withSequence(
+          withTiming(0.6, { duration: 2000, easing: Easing.inOut(Easing.ease) }),
+          withTiming(0, { duration: 2000, easing: Easing.inOut(Easing.ease) })
+        ),
+        -1,
+        false
+      )
+    );
+    translateY.value = withDelay(
+      delay,
+      withRepeat(
+        withTiming(-200, { duration: 4000, easing: Easing.inOut(Easing.ease) }),
+        -1,
+        false
+      )
+    );
+  }, []);
+
+  const animStyle = useAnimatedStyle(() => ({
+    opacity: opacity.value,
+    transform: [{ translateY: translateY.value }],
+  }));
+
+  return (
+    <Animated.View
+      style={[
+        {
+          position: "absolute",
+          left: startX,
+          bottom: 100,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: accent,
+        },
+        animStyle,
+      ]}
+    />
+  );
+}
 
 function LoadingDot({ delay, color }: { delay: number; color: string }) {
   const opacity = useSharedValue(0.2);
@@ -666,6 +718,24 @@ export default function StoryScreen() {
     router.dismissAll();
   };
 
+  const handlePrevPart = () => {
+    if (currentPartIndex > 0) {
+      Haptics.selectionAsync();
+      stopAudio();
+      setCurrentPartIndex((prev) => prev - 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  };
+
+  const handleNextPart = () => {
+    if (storyData && currentPartIndex < storyData.parts.length - 1) {
+      Haptics.selectionAsync();
+      stopAudio();
+      setCurrentPartIndex((prev) => prev + 1);
+      scrollRef.current?.scrollTo({ y: 0, animated: true });
+    }
+  };
+
   const formatTimer = (seconds: number) => {
     const m = Math.floor(seconds / 60);
     const sec = seconds % 60;
@@ -699,9 +769,13 @@ export default function StoryScreen() {
       <LinearGradient colors={theme.gradient} locations={[0, 0.4, 1]} style={StyleSheet.absoluteFill} />
       <StarField />
 
+      {[0, 1, 2, 3, 4, 5].map((i) => (
+        <FloatingParticle key={i} delay={i * 800} accent={theme.accent} />
+      ))}
+
       <View style={[styles.topBar, { paddingTop: topInset + 8 }]}>
         <Pressable onPress={handleClose} hitSlop={12} style={styles.iconBtn}>
-          <Ionicons name="close" size={24} color="rgba(255,255,255,0.8)" />
+          <Ionicons name="arrow-back" size={22} color="rgba(255,255,255,0.8)" />
         </Pressable>
 
         {(musicPlaying || musicLoading) && (
@@ -719,20 +793,11 @@ export default function StoryScreen() {
         )}
 
         <View style={styles.topBarCenter}>
+          <Text style={styles.brandingText}>INFINITY BEDTIME CHRONICLES</Text>
           {storyState === "ready" && storyData && (
-            <Animated.View entering={FadeIn.duration(400)} style={styles.progressArea}>
-              <Text style={[styles.progressLabel, { color: theme.accent }]}>
-                Part {currentPartIndex + 1} of {storyData.parts.length}
-              </Text>
-              <View style={styles.progressBarBg}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${progressPct}%`, backgroundColor: theme.accent },
-                  ]}
-                />
-              </View>
-            </Animated.View>
+            <Text style={[styles.chapterSubtitle, { color: theme.accentLight }]}>
+              Chapter {currentPartIndex + 1}
+            </Text>
           )}
         </View>
 
@@ -801,12 +866,14 @@ export default function StoryScreen() {
         <>
           <ScrollView
             ref={scrollRef}
-            contentContainerStyle={[styles.storyContent, { paddingBottom: bottomInset + 140 }]}
+            contentContainerStyle={[styles.storyContent, { paddingBottom: bottomInset + 160 }]}
             showsVerticalScrollIndicator={false}
           >
             {storyData && (
               <Animated.View entering={FadeInDown.duration(600)} style={styles.titleWrap}>
-                <Text style={styles.storyTitleText}>{storyData.title}</Text>
+                <Text style={[styles.storyTitleText, { textShadowColor: `${theme.accent}40` }]}>
+                  {storyData.title}
+                </Text>
                 <View style={[styles.titleUnderline, { backgroundColor: theme.accent }]} />
               </Animated.View>
             )}
@@ -822,7 +889,7 @@ export default function StoryScreen() {
               <Animated.View entering={FadeIn.duration(600)} style={styles.sceneImageWrap}>
                 <Image source={{ uri: sceneImage }} style={styles.sceneImage} resizeMode="cover" />
                 <LinearGradient
-                  colors={["transparent", "rgba(0,0,0,0.4)"]}
+                  colors={["transparent", "rgba(0,0,0,0.5)"]}
                   style={styles.sceneImageOverlay}
                 />
               </Animated.View>
@@ -859,15 +926,27 @@ export default function StoryScreen() {
               </ErrorBoundary>
             )}
 
-            {paragraphs.map((paragraph, index) => (
-              <Animated.Text
-                key={`${currentPartIndex}-${index}`}
-                entering={FadeInDown.duration(400).delay(index * 80)}
-                style={[styles.paragraphText, isSleep && styles.paragraphSleep]}
-              >
-                {paragraph}
-              </Animated.Text>
-            ))}
+            <View style={styles.parchmentCard}>
+              {paragraphs.map((paragraph, index) => (
+                <Animated.View
+                  key={`${currentPartIndex}-${index}`}
+                  entering={FadeInDown.duration(400).delay(index * 80)}
+                >
+                  {index === 0 ? (
+                    <Text style={[styles.paragraphText, isSleep && styles.paragraphSleep]}>
+                      <Text style={[styles.dropCap, { color: theme.accent }]}>
+                        {paragraph.charAt(0)}
+                      </Text>
+                      {paragraph.slice(1)}
+                    </Text>
+                  ) : (
+                    <Text style={[styles.paragraphText, isSleep && styles.paragraphSleep]}>
+                      {paragraph}
+                    </Text>
+                  )}
+                </Animated.View>
+              ))}
+            </View>
 
             {hasChoices && (
               <View style={styles.choicesSection}>
@@ -888,34 +967,65 @@ export default function StoryScreen() {
           </ScrollView>
 
           <LinearGradient
-            colors={
-              isSleep
-                ? ["transparent", "rgba(10, 5, 20, 0.95)", "#060810"]
-                : ["transparent", "rgba(11, 16, 38, 0.95)", Colors.primary]
-            }
-            style={[styles.bottomGradient, { paddingBottom: bottomInset + 20 }]}
+            colors={["transparent", "rgba(5,5,30,0.95)", Colors.primary]}
+            style={[styles.bottomGradient, { paddingBottom: bottomInset + 16 }]}
             pointerEvents="box-none"
           >
-            {storyState === "ready" && isLastPart && (
-              <Animated.View entering={FadeInUp.duration(400)} style={styles.controlsRow}>
-                <Pressable
-                  onPress={handleStoryComplete}
-                  style={({ pressed }) => [
-                    styles.finishButton,
-                    { transform: [{ scale: pressed ? 0.95 : 1 }] },
-                  ]}
-                  testID="finish-story-button"
-                >
-                  <LinearGradient
-                    colors={[theme.accent, theme.choiceColors[0][1]]}
-                    style={styles.finishButtonGradient}
+            {storyState === "ready" && storyData && (
+              <Animated.View entering={FadeInUp.duration(400)}>
+                {isLastPart ? (
+                  <Pressable
+                    onPress={handleStoryComplete}
+                    style={({ pressed }) => [
+                      styles.finishButton,
+                      { transform: [{ scale: pressed ? 0.95 : 1 }] },
+                    ]}
+                    testID="finish-story-button"
                   >
-                    <Ionicons name="sparkles" size={20} color="#FFF" />
-                    <Text style={styles.finishButtonText}>
-                      {isSleep ? "Sweet Dreams" : storyMode === "madlibs" ? "That Was Hilarious!" : "Complete Story"}
-                    </Text>
-                  </LinearGradient>
-                </Pressable>
+                    <LinearGradient
+                      colors={[theme.accent, theme.choiceColors[0][1]]}
+                      style={styles.finishButtonGradient}
+                    >
+                      <Ionicons name="sparkles" size={20} color="#FFF" />
+                      <Text style={styles.finishButtonText}>
+                        {isSleep ? "Sweet Dreams" : storyMode === "madlibs" ? "That Was Hilarious!" : "Complete Story"}
+                      </Text>
+                    </LinearGradient>
+                  </Pressable>
+                ) : (
+                  <View style={styles.navRow}>
+                    <Pressable
+                      onPress={handlePrevPart}
+                      style={[styles.navBtn, currentPartIndex === 0 && { opacity: 0.3 }]}
+                      disabled={currentPartIndex === 0}
+                    >
+                      <Ionicons name="chevron-back" size={20} color="#FFF" />
+                      <Text style={styles.navBtnText}>Previous</Text>
+                    </Pressable>
+
+                    <View style={styles.navCenter}>
+                      <Text style={[styles.navCounter, { color: theme.accent }]}>
+                        {String(currentPartIndex + 1).padStart(2, "0")} / {String(storyData.parts.length).padStart(2, "0")}
+                      </Text>
+                      <View style={styles.navProgressBg}>
+                        <View
+                          style={[
+                            styles.navProgressFill,
+                            { width: `${progressPct}%`, backgroundColor: theme.accent },
+                          ]}
+                        />
+                      </View>
+                    </View>
+
+                    <Pressable
+                      onPress={handleNextPart}
+                      style={styles.navBtn}
+                    >
+                      <Text style={styles.navBtnText}>Next</Text>
+                      <Ionicons name="chevron-forward" size={20} color="#FFF" />
+                    </Pressable>
+                  </View>
+                )}
               </Animated.View>
             )}
           </LinearGradient>
@@ -940,26 +1050,23 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
   topBarCenter: { flex: 1, alignItems: "center" },
-  progressArea: { alignItems: "center", gap: 6 },
-  progressLabel: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 11,
-    letterSpacing: 0.5,
+  brandingText: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 9,
+    color: "rgba(255,255,255,0.4)",
+    letterSpacing: 3,
   },
-  progressBarBg: {
-    width: 120,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  progressBarFill: {
-    height: 4,
-    borderRadius: 2,
+  chapterSubtitle: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 12,
+    marginTop: 2,
   },
   timerBar: {
     flexDirection: "row",
@@ -969,7 +1076,7 @@ const styles = StyleSheet.create({
     paddingVertical: 6,
   },
   timerText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 13,
   },
   loadingContainer: {
@@ -983,20 +1090,20 @@ const styles = StyleSheet.create({
     width: 88,
     height: 88,
     borderRadius: 44,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: Colors.cardBg,
     alignItems: "center",
     justifyContent: "center",
     marginBottom: 8,
     borderWidth: 2,
   },
   loadingTitle: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 20,
     color: Colors.textPrimary,
     textAlign: "center",
   },
   loadingSubtitle: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -1012,12 +1119,14 @@ const styles = StyleSheet.create({
     marginBottom: 24,
   },
   storyTitleText: {
-    fontFamily: "Nunito_800ExtraBold",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
     fontSize: 26,
     color: Colors.textPrimary,
     textAlign: "center",
     lineHeight: 34,
     marginBottom: 10,
+    textShadowOffset: { width: 0, height: 2 },
+    textShadowRadius: 20,
   },
   titleUnderline: {
     width: 40,
@@ -1028,15 +1137,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: Colors.cardBg,
     borderRadius: 20,
     paddingVertical: 30,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
+    borderColor: Colors.cardBorder,
   },
   sceneLoadingText: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
   },
@@ -1045,7 +1154,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: Colors.cardBorder,
   },
   sceneImage: { width: "100%", height: 220, borderRadius: 20 },
   sceneImageOverlay: {
@@ -1055,8 +1164,21 @@ const styles = StyleSheet.create({
     right: 0,
     height: 60,
   },
+  parchmentCard: {
+    backgroundColor: Colors.cardBg,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+    padding: 20,
+    marginBottom: 20,
+  },
+  dropCap: {
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontSize: 38,
+    lineHeight: 42,
+  },
   paragraphText: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 18,
     color: "rgba(255,255,255,0.88)",
     lineHeight: 32,
@@ -1070,7 +1192,7 @@ const styles = StyleSheet.create({
   },
   choicesSection: { marginTop: 12, gap: 12 },
   choicesLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 16,
     textAlign: "center",
     marginBottom: 4,
@@ -1092,12 +1214,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   choiceIndexText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 13,
     color: "#FFF",
   },
   choiceText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 15,
     color: "#FFF",
     flex: 1,
@@ -1110,14 +1232,47 @@ const styles = StyleSheet.create({
     paddingTop: 40,
     paddingHorizontal: 20,
   },
-  controlsRow: {
+  navRow: {
     flexDirection: "row",
-    justifyContent: "center",
     alignItems: "center",
-    gap: 12,
+    justifyContent: "space-between",
+  },
+  navBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  navBtnText: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 13,
+    color: "#FFF",
+  },
+  navCenter: {
+    alignItems: "center",
+    gap: 6,
+  },
+  navCounter: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 14,
+    letterSpacing: 1,
+  },
+  navProgressBg: {
+    width: 80,
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  navProgressFill: {
+    height: 3,
+    borderRadius: 2,
   },
   finishButton: {
-    flex: 1,
     borderRadius: 28,
     overflow: "hidden",
     elevation: 6,
@@ -1134,7 +1289,7 @@ const styles = StyleSheet.create({
     paddingVertical: 18,
   },
   finishButtonText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 18,
     color: "#FFF",
   },
@@ -1148,12 +1303,12 @@ const styles = StyleSheet.create({
     marginTop: 12,
   },
   retryText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 16,
     color: "#FFF",
   },
   errorText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 18,
     color: Colors.textMuted,
   },
@@ -1169,28 +1324,28 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     paddingHorizontal: 8,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: Colors.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: Colors.cardBorder,
   },
   speedBtnLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 10,
     letterSpacing: 0.3,
   },
   errorLink: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 16,
     color: Colors.accent,
     marginTop: 16,
   },
   videoLoadingWrap: {
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: Colors.cardBg,
     borderRadius: 16,
     padding: 16,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.06)",
+    borderColor: Colors.cardBorder,
     gap: 10,
   },
   videoLoadingRow: {
@@ -1199,7 +1354,7 @@ const styles = StyleSheet.create({
     gap: 10,
   },
   videoLoadingText: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
   },
@@ -1217,7 +1372,7 @@ const styles = StyleSheet.create({
     overflow: "hidden",
     marginBottom: 24,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: Colors.cardBorder,
     position: "relative",
   },
   videoPlayer: {
@@ -1239,7 +1394,7 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   videoTagText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 9,
     color: "rgba(255,255,255,0.7)",
     letterSpacing: 0.3,
@@ -1248,15 +1403,15 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     gap: 8,
-    backgroundColor: "rgba(255,255,255,0.03)",
+    backgroundColor: Colors.cardBg,
     borderRadius: 20,
     paddingVertical: 24,
     marginBottom: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.05)",
+    borderColor: Colors.cardBorder,
   },
   sceneErrorText: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 13,
     color: "rgba(255,255,255,0.3)",
   },
@@ -1271,7 +1426,29 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   sceneRetryText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 12,
+  },
+  controlsRow: {
+    flexDirection: "row",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 12,
+  },
+  progressArea: { alignItems: "center", gap: 6 },
+  progressLabel: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 11,
+    letterSpacing: 0.5,
+  },
+  progressBarBg: {
+    width: 120,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  progressBarFill: {
+    height: 4,
+    borderRadius: 2,
   },
 });

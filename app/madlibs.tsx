@@ -79,7 +79,7 @@ export default function MadLibsScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#BF360C", Colors.primary]}
+        colors={["#F97316", Colors.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 0.4 }}
         style={StyleSheet.absoluteFill}
@@ -198,7 +198,9 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -220,19 +222,19 @@ const styles = StyleSheet.create({
     marginBottom: 14,
   },
   madlibBadgeText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 14,
     color: "#FF8A65",
   },
   headerTitle: {
-    fontFamily: "Nunito_800ExtraBold",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
     fontSize: 28,
     color: Colors.textPrimary,
     textAlign: "center",
     marginBottom: 6,
   },
   headerSubtitle: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 14,
     color: Colors.textSecondary,
     textAlign: "center",
@@ -247,16 +249,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   fieldLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 14,
-    color: Colors.textPrimary,
+    color: "#FF8A65",
   },
   fieldInput: {
     backgroundColor: Colors.cardBg,
     borderRadius: 16,
     paddingHorizontal: 18,
     paddingVertical: 14,
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 16,
     color: Colors.textPrimary,
     borderWidth: 2,
@@ -274,12 +276,12 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   progressText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 13,
-    color: "#FF8A65",
+    color: "#F97316",
   },
   progressHint: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
   },
@@ -290,7 +292,7 @@ const styles = StyleSheet.create({
     right: 0,
     paddingHorizontal: 20,
     paddingTop: 12,
-    backgroundColor: "rgba(11, 16, 38, 0.9)",
+    backgroundColor: "rgba(5, 5, 30, 0.9)",
   },
   startButton: {
     borderRadius: 28,
@@ -313,7 +315,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 32,
   },
   startButtonText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 18,
     color: "#FFF",
   },

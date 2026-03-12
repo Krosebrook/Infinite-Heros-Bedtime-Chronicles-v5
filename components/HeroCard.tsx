@@ -73,13 +73,13 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   name: {
-    fontFamily: 'Nunito_800ExtraBold',
+    fontFamily: 'PlusJakartaSans_800ExtraBold',
     fontSize: 18,
     color: '#FFFFFF',
     textAlign: 'center',
   },
   title: {
-    fontFamily: 'Nunito_400Regular',
+    fontFamily: 'PlusJakartaSans_400Regular',
     fontSize: 12,
     color: 'rgba(255,255,255,0.7)',
     textAlign: 'center',
@@ -96,7 +96,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
   },
   powerText: {
-    fontFamily: 'Nunito_600SemiBold',
+    fontFamily: 'PlusJakartaSans_600SemiBold',
     fontSize: 10,
     color: 'rgba(255,255,255,0.85)',
   },

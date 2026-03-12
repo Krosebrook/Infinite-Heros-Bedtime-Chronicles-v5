@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Infinity Bedtime Chronicles - Immersive Reader</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f0fbd",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101022",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .starlit-bg {
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #ffffff22, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #ffffff33, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 50px 160px, #ffffff22, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #ffffff33, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 130px 80px, #ffffff22, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 160px 120px, #ffffff33, rgba(0,0,0,0));
+            background-size: 200px 200px;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen flex flex-col antialiased starlit-bg">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 bg-background-light/80 dark:bg-background-dark/80 backdrop-blur-md border-b border-slate-200 dark:border-primary/20">
+<div class="flex items-center justify-between px-4 h-16 max-w-5xl mx-auto w-full">
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 dark:hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">arrow_back</span>
+</button>
+<div class="flex flex-col items-center">
+<h1 class="text-sm font-bold tracking-tight uppercase text-primary">Infinity Bedtime Chronicles</h1>
+<span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium tracking-widest">CHAPTER 4: THE CRYSTAL STAR</span>
+</div>
+<button class="flex items-center justify-center size-10 rounded-full hover:bg-slate-200 dark:hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<main class="flex-1 flex flex-col max-w-5xl mx-auto w-full">
+<!-- Visual Story Section -->
+<section class="p-4 @container">
+<div class="relative group">
+<div class="w-full aspect-[4/3] md:aspect-[21/9] overflow-hidden rounded-xl border border-slate-200 dark:border-primary/30 shadow-2xl">
+<div class="w-full h-full bg-center bg-no-repeat bg-cover transform transition-transform duration-1000 group-hover:scale-105" data-alt="A magical small fox standing in a glowing crystal forest under a purple nebula sky" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDnGIgqLtGlajIKN7yOFi49N5K34wfTWoArHixHyBO4Ufw8VyxC5ZnLJq6BnN1O0bW7CcdBQdAu-g_IvaeKH4eUKkkaWq5g2eoj7t8m-e2w7dnLwKxp3k92PFwhVASuvtKtqCw5Kjsd_PjxMNGIABG23REjt5DxciSoz0qf71b5oiKhWLwD15L3OXH7ZEshuLJbtRa8jxk24qFFl82gaKUPmpcpQNY7x9sTXg5QLiVvGzANKFydNtFZiVj0KiklKxQi3TOdP18-nOs');">
+</div>
+<!-- Soft gradient overlay for text readability if needed -->
+<div class="absolute inset-0 bg-gradient-to-t from-background-dark/60 via-transparent to-transparent"></div>
+</div>
+</div>
+</section>
+<!-- Reading Section -->
+<section class="flex-1 px-6 py-8 md:px-12 md:py-12 flex flex-col items-center max-w-3xl mx-auto">
+<div class="space-y-6 text-center">
+<h2 class="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-slate-50">
+                    The Quest for the Crystal Star
+                </h2>
+<div class="w-16 h-1 bg-primary/40 rounded-full mx-auto"></div>
+<p class="text-lg md:text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light italic">
+                    "In a land where the moon whispered secrets to the trees, a small fox named Finnegan set out on a journey. The stars above danced in patterns no one had seen for a thousand years, guiding his paws toward the hidden valley of whispers."
+                </p>
+<p class="text-lg md:text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-light">
+                    Every step he took crackled with the energy of ancient magic. The air tasted of pine and starlight. Finnegan knew that the fate of the forest rested on his tiny shoulders, yet he felt a strange, calming warmth emanating from the pendant around his neck.
+                </p>
+</div>
+</section>
+</main>
+<!-- Bottom Controls -->
+<footer class="sticky bottom-0 bg-gradient-to-t from-background-light dark:from-background-dark to-transparent pt-12 pb-8 px-4">
+<div class="max-w-xl mx-auto flex items-center justify-between gap-4">
+<button class="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl bg-slate-200/50 dark:bg-primary/10 hover:bg-slate-300 dark:hover:bg-primary/20 text-slate-900 dark:text-slate-100 font-bold transition-all border border-transparent hover:border-primary/30">
+<span class="material-symbols-outlined">chevron_left</span>
+<span>Previous</span>
+</button>
+<div class="flex items-center gap-1 px-4 text-xs font-bold text-slate-400">
+<span class="text-primary">04</span>
+<span class="opacity-30">/</span>
+<span>12</span>
+</div>
+<button class="flex-1 flex items-center justify-center gap-2 h-14 rounded-xl bg-primary text-white font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all hover:-translate-y-0.5 active:translate-y-0">
+<span>Next</span>
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+<!-- Reading Progress Bar -->
+<div class="max-w-xl mx-auto mt-6 px-1">
+<div class="h-1 w-full bg-slate-200 dark:bg-primary/10 rounded-full overflow-hidden">
+<div class="h-full bg-primary w-1/3 rounded-full"></div>
+</div>
+</div>
+</footer>
+</body></html>

@@ -45,19 +45,19 @@ interface AISuggestion {
 
 const MODE_THEMES = {
   classic: {
-    accent: "#3B82F6",
-    accentLight: "#60A5FA",
-    gradient: ["#0B1A40", "#122050", "#0B1026"] as [string, string, string],
-    buttonGradient: ["#3B82F6", "#2563EB"] as [string, string],
-    cardAccent: "#3B82F6",
-    glow: "rgba(59,130,246,0.25)",
+    accent: "#6366f1",
+    accentLight: "#818cf8",
+    gradient: ["#05051e", "#0a0a2e", "#05051e"] as [string, string, string],
+    buttonGradient: ["#6366f1", "#4f46e5"] as [string, string],
+    cardAccent: "#6366f1",
+    glow: "rgba(99,102,241,0.25)",
     label: "Classic",
     tagline: "Choose your own adventure",
   },
   madlibs: {
     accent: "#F97316",
     accentLight: "#FB923C",
-    gradient: ["#1A0A00", "#2D1400", "#1A0800"] as [string, string, string],
+    gradient: ["#05051e", "#1A0A00", "#05051e"] as [string, string, string],
     buttonGradient: ["#F97316", "#EA580C"] as [string, string],
     cardAccent: "#F97316",
     glow: "rgba(249,115,22,0.25)",
@@ -67,7 +67,7 @@ const MODE_THEMES = {
   sleep: {
     accent: "#A855F7",
     accentLight: "#C084FC",
-    gradient: ["#0D0520", "#1A0A35", "#0D0318"] as [string, string, string],
+    gradient: ["#05051e", "#0D0520", "#05051e"] as [string, string, string],
     buttonGradient: ["#A855F7", "#7C3AED"] as [string, string],
     cardAccent: "#A855F7",
     glow: "rgba(168,85,247,0.25)",
@@ -131,131 +131,12 @@ const MODE_DEFAULT_SPEED: Record<ModeId, string> = {
   sleep: "gentle",
 };
 
-
-function HeroCard({ hero, isActive }: { hero: Hero; isActive: boolean }) {
-  const cardScale = useSharedValue(isActive ? 1 : 0.88);
-
-  useEffect(() => {
-    cardScale.value = withSpring(isActive ? 1 : 0.88, { damping: 15, stiffness: 120 });
-  }, [isActive]);
-
-  const cardStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: cardScale.value }],
-    opacity: isActive ? 1 : 0.5,
-  }));
-
-  return (
-    <Animated.View style={[s.heroCard, cardStyle]}>
-      <LinearGradient
-        colors={hero.gradient}
-        style={s.heroCardGradient}
-      >
-        <View style={s.heroIconWrap}>
-          <Ionicons name={hero.iconName as any} size={36} color={hero.color} />
-        </View>
-        <Text style={s.heroCardName}>{hero.name}</Text>
-        <Text style={s.heroCardTitle}>{hero.title}</Text>
-        <View style={s.heroPowerPill}>
-          <Ionicons name="sparkles" size={10} color="rgba(255,255,255,0.8)" />
-          <Text style={s.heroPowerText}>{hero.power}</Text>
-        </View>
-      </LinearGradient>
-    </Animated.View>
-  );
-}
-
-function DurationPicker({
-  selected,
-  onSelect,
-  accent,
-}: {
-  selected: string;
-  onSelect: (id: string) => void;
-  accent: string;
-}) {
-  return (
-    <View style={s.durationRow}>
-      {DURATIONS.map((d) => {
-        const isActive = d.id === selected;
-        return (
-          <Pressable
-            key={d.id}
-            onPress={() => {
-              Haptics.selectionAsync();
-              onSelect(d.id);
-            }}
-            style={[
-              s.durationPill,
-              isActive && { backgroundColor: accent, borderColor: accent },
-            ]}
-            testID={`duration-${d.id}`}
-          >
-            <Ionicons
-              name={d.icon as any}
-              size={14}
-              color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
-            />
-            <Text
-              style={[
-                s.durationLabel,
-                isActive && { color: "#FFF" },
-              ]}
-            >
-              {d.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-function ModeDock({
-  activeMode,
-  onSelect,
-}: {
-  activeMode: ModeId;
-  onSelect: (id: ModeId) => void;
-}) {
-  return (
-    <View style={s.modeDock}>
-      {MODES.map((m) => {
-        const isActive = activeMode === m.id;
-        const theme = MODE_THEMES[m.id];
-        return (
-          <Pressable
-            key={m.id}
-            onPress={() => {
-              Haptics.selectionAsync();
-              onSelect(m.id);
-            }}
-            style={[s.modeDockItem, isActive && { backgroundColor: `${theme.accent}22` }]}
-            testID={`mode-${m.id}`}
-          >
-            <View style={[s.modeDockIcon, isActive && { backgroundColor: theme.accent }]}>
-              {m.iconSet === "mci" ? (
-                <MaterialCommunityIcons
-                  name={m.icon as any}
-                  size={20}
-                  color={isActive ? "#FFF" : "rgba(255,255,255,0.35)"}
-                />
-              ) : (
-                <Ionicons
-                  name={m.icon as any}
-                  size={20}
-                  color={isActive ? "#FFF" : "rgba(255,255,255,0.35)"}
-                />
-              )}
-            </View>
-            <Text style={[s.modeDockLabel, isActive && { color: theme.accent }]}>
-              {theme.label}
-            </Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
+const TAB_ITEMS = [
+  { id: "create", label: "Create", icon: "add-circle" as const },
+  { id: "stories", label: "My Stories", icon: "library" as const },
+  { id: "favorites", label: "Favorites", icon: "heart" as const },
+  { id: "settings", label: "Settings", icon: "settings" as const },
+];
 
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
@@ -274,6 +155,7 @@ export default function HomeScreen() {
   const [profileVisible, setProfileVisible] = useState(false);
   const [parentControlsVisible, setParentControlsVisible] = useState(false);
   const { activeProfile } = useProfile();
+  const [activeTab, setActiveTab] = useState("create");
 
   const [suggestion, setSuggestion] = useState<AISuggestion | null>(null);
   const [suggestionLoading, setSuggestionLoading] = useState(false);
@@ -373,16 +255,6 @@ export default function HomeScreen() {
     }
   }, [previewLoading]);
 
-  const prevHero = () => {
-    Haptics.selectionAsync();
-    setHeroIndex((prev) => (prev === 0 ? HEROES.length - 1 : prev - 1));
-  };
-
-  const nextHero = () => {
-    Haptics.selectionAsync();
-    setHeroIndex((prev) => (prev === HEROES.length - 1 ? 0 : prev + 1));
-  };
-
   const handleEngage = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
 
@@ -401,6 +273,18 @@ export default function HomeScreen() {
         pathname: "/story",
         params: { heroId: hero.id, duration, voice, mode: "classic", speed },
       });
+    }
+  };
+
+  const handleTabPress = (tabId: string) => {
+    Haptics.selectionAsync();
+    setActiveTab(tabId);
+    if (tabId === "stories") {
+      setJarVisible(true);
+    } else if (tabId === "favorites") {
+      router.push("/trophies");
+    } else if (tabId === "settings") {
+      setSettingsVisible(true);
     }
   };
 
@@ -426,7 +310,7 @@ export default function HomeScreen() {
               Haptics.selectionAsync();
               setProfileVisible(true);
             }}
-            style={s.jarButton}
+            style={s.topBarBtn}
             testID="profile-button"
           >
             {activeProfile ? (
@@ -435,23 +319,13 @@ export default function HomeScreen() {
               <Ionicons name="person-circle-outline" size={20} color="rgba(255,255,255,0.5)" />
             )}
           </Pressable>
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setSettingsVisible(true);
-            }}
-            style={s.jarButton}
-            testID="settings-button"
-          >
-            <Ionicons name="settings-outline" size={20} color="rgba(255,255,255,0.5)" />
-          </Pressable>
           <View style={{ flex: 1 }} />
           <Pressable
             onPress={() => {
               Haptics.selectionAsync();
               router.push("/trophies");
             }}
-            style={s.jarButton}
+            style={s.topBarBtn}
             testID="trophy-button"
           >
             <Ionicons name="trophy" size={20} color="#FFD54F" />
@@ -461,20 +335,10 @@ export default function HomeScreen() {
               Haptics.selectionAsync();
               setParentControlsVisible(true);
             }}
-            style={[s.jarButton, { marginLeft: 8 }]}
+            style={[s.topBarBtn, { marginLeft: 8 }]}
             testID="parent-controls-button"
           >
             <Ionicons name="shield-checkmark-outline" size={20} color="rgba(255,255,255,0.5)" />
-          </Pressable>
-          <Pressable
-            onPress={() => {
-              Haptics.selectionAsync();
-              setJarVisible(true);
-            }}
-            style={[s.jarButton, { marginLeft: 8 }]}
-            testID="memory-jar-button"
-          >
-            <Ionicons name="archive" size={20} color={theme.accent} />
           </Pressable>
         </View>
 
@@ -487,21 +351,65 @@ export default function HomeScreen() {
         )}
 
         <Animated.View entering={FadeIn.duration(800)} style={s.headerBlock}>
-          <Text style={s.titleInfinity}>INFINITY</Text>
-          <Text style={[s.titleHeroes, { color: theme.accent }]}>HEROES</Text>
+          <View style={s.headerTitleRow}>
+            <Ionicons name="star" size={22} color={theme.accent} />
+            <Text style={s.titleMain}>Infinity</Text>
+          </View>
+          <Text style={[s.titleSub, { color: theme.accent }]}>Chronicles</Text>
           <View style={s.taglineRow}>
             <View style={[s.taglineLine, { backgroundColor: theme.accent }]} />
-            <Text style={s.taglineText}>{theme.tagline.toUpperCase()}</Text>
+            <Text style={s.taglineText}>CREATE YOUR OWN MAGIC</Text>
             <View style={[s.taglineLine, { backgroundColor: theme.accent }]} />
+          </View>
+        </Animated.View>
+
+        <Animated.View entering={FadeInDown.duration(500)} style={s.modeSection}>
+          <View style={s.sectionHeader}>
+            <Ionicons name="color-palette" size={14} color={theme.accent} />
+            <Text style={s.sectionLabel}>STORY MODE</Text>
+          </View>
+          <View style={s.modeRow}>
+            {MODES.map((m) => {
+              const isActive = mode === m.id;
+              const mTheme = MODE_THEMES[m.id];
+              return (
+                <Pressable
+                  key={m.id}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    handleModeChange(m.id);
+                  }}
+                  style={[
+                    s.modeChip,
+                    isActive && { backgroundColor: mTheme.accent, borderColor: mTheme.accent },
+                  ]}
+                  testID={`mode-${m.id}`}
+                >
+                  {m.iconSet === "mci" ? (
+                    <MaterialCommunityIcons
+                      name={m.icon as any}
+                      size={16}
+                      color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
+                    />
+                  ) : (
+                    <Ionicons
+                      name={m.icon as any}
+                      size={16}
+                      color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
+                    />
+                  )}
+                  <Text style={[s.modeChipText, isActive && { color: "#FFF" }]}>
+                    {mTheme.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
           </View>
         </Animated.View>
 
         {(suggestionLoading || (suggestion && !suggestionDismissed)) && (
           <Animated.View entering={FadeInDown.duration(400)} style={s.suggestionCard}>
-            <LinearGradient
-              colors={[`${theme.accent}15`, `${theme.accent}08`]}
-              style={s.suggestionGradient}
-            >
+            <View style={s.glassCard}>
               <View style={s.suggestionHeader}>
                 <View style={[s.suggestionIconWrap, { backgroundColor: `${theme.accent}30` }]}>
                   <Ionicons name="sparkles" size={14} color={theme.accent} />
@@ -526,28 +434,28 @@ export default function HomeScreen() {
               {suggestionLoading ? (
                 <View style={s.suggestionLoadingWrap}>
                   <ActivityIndicator size="small" color={theme.accent} />
-                  <Text style={s.suggestionLoadingText}>Thinking...</Text>
+                  <Text style={s.suggestionLoadingText}>Dreaming up ideas...</Text>
                 </View>
               ) : suggestion ? (
                 <>
                   <Text style={s.suggestionTip}>{suggestion.tip}</Text>
                   <View style={s.suggestionChips}>
-                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                    <View style={[s.suggestionChipItem, { borderColor: `${theme.accent}40` }]}>
                       <Text style={s.suggestionChipText}>
                         {MODE_THEMES[suggestion.mode as ModeId]?.label || suggestion.mode}
                       </Text>
                     </View>
-                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                    <View style={[s.suggestionChipItem, { borderColor: `${theme.accent}40` }]}>
                       <Text style={s.suggestionChipText}>
                         {DURATIONS.find(d => d.id === suggestion.duration)?.label || suggestion.duration}
                       </Text>
                     </View>
-                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                    <View style={[s.suggestionChipItem, { borderColor: `${theme.accent}40` }]}>
                       <Text style={s.suggestionChipText}>
                         {SPEED_PRESETS.find(sp => sp.id === suggestion.speed)?.label || suggestion.speed}
                       </Text>
                     </View>
-                    <View style={[s.suggestionChip, { borderColor: `${theme.accent}40` }]}>
+                    <View style={[s.suggestionChipItem, { borderColor: `${theme.accent}40` }]}>
                       <Text style={s.suggestionChipText}>
                         {VOICES.find(v => v.id === suggestion.voice)?.label || suggestion.voice}
                       </Text>
@@ -563,7 +471,7 @@ export default function HomeScreen() {
                   </Pressable>
                 </>
               ) : null}
-            </LinearGradient>
+            </View>
           </Animated.View>
         )}
 
@@ -573,40 +481,56 @@ export default function HomeScreen() {
             <Text style={s.sectionLabel}>CHOOSE YOUR HERO</Text>
           </View>
 
-          <View style={s.heroCarousel}>
-            <Pressable onPress={prevHero} style={s.heroArrow} testID="prev-hero">
-              <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.6)" />
-            </Pressable>
-
-            <View style={s.heroCardContainer}>
-              <HeroCard hero={hero} isActive={true} />
-            </View>
-
-            <Pressable onPress={nextHero} style={s.heroArrow} testID="next-hero">
-              <Ionicons name="chevron-forward" size={24} color="rgba(255,255,255,0.6)" />
-            </Pressable>
-          </View>
-
-          <View style={s.dotRow}>
-            {HEROES.map((_, i) => (
-              <Pressable
-                key={i}
-                onPress={() => {
-                  Haptics.selectionAsync();
-                  setHeroIndex(i);
-                }}
-              >
-                <View
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={s.heroChipScroll}
+          >
+            {HEROES.map((h, i) => {
+              const isActive = i === heroIndex;
+              return (
+                <Pressable
+                  key={h.id}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setHeroIndex(i);
+                  }}
                   style={[
-                    s.dot,
-                    i === heroIndex && [s.dotActive, { backgroundColor: theme.accent }],
+                    s.heroChip,
+                    isActive && { backgroundColor: `${theme.accent}20`, borderColor: theme.accent },
                   ]}
-                />
-              </Pressable>
-            ))}
-          </View>
+                  testID={`hero-${h.id}`}
+                >
+                  <View style={[s.heroChipIcon, isActive && { backgroundColor: theme.accent }]}>
+                    <Ionicons name={h.iconName as any} size={18} color={isActive ? "#FFF" : h.color} />
+                  </View>
+                  <View>
+                    <Text style={[s.heroChipName, isActive && { color: "#FFF" }]}>{h.name}</Text>
+                    <Text style={[s.heroChipTitle, isActive && { color: theme.accentLight }]}>{h.title}</Text>
+                  </View>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
 
-          <Text style={s.heroDesc} numberOfLines={2}>{hero.description}</Text>
+          <View style={s.heroDetailCard}>
+            <View style={s.glassCard}>
+              <View style={s.heroDetailRow}>
+                <View style={[s.heroDetailIcon, { backgroundColor: `${hero.color}20` }]}>
+                  <Ionicons name={hero.iconName as any} size={28} color={hero.color} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={s.heroDetailName}>{hero.name}</Text>
+                  <Text style={s.heroDetailTitle}>{hero.title}</Text>
+                </View>
+                <View style={[s.heroPowerPill, { backgroundColor: `${theme.accent}20` }]}>
+                  <Ionicons name="sparkles" size={10} color={theme.accent} />
+                  <Text style={[s.heroPowerText, { color: theme.accent }]}>{hero.power}</Text>
+                </View>
+              </View>
+              <Text style={s.heroDetailDesc}>{hero.description}</Text>
+            </View>
+          </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(200)}>
@@ -614,7 +538,39 @@ export default function HomeScreen() {
             <Ionicons name="time" size={14} color={theme.accent} />
             <Text style={s.sectionLabel}>STORY LENGTH</Text>
           </View>
-          <DurationPicker selected={duration} onSelect={setDuration} accent={theme.accent} />
+          <View style={s.durationRow}>
+            {DURATIONS.map((d) => {
+              const isActive = d.id === duration;
+              return (
+                <Pressable
+                  key={d.id}
+                  onPress={() => {
+                    Haptics.selectionAsync();
+                    setDuration(d.id);
+                  }}
+                  style={[
+                    s.durationPill,
+                    isActive && { backgroundColor: theme.accent, borderColor: theme.accent },
+                  ]}
+                  testID={`duration-${d.id}`}
+                >
+                  <Ionicons
+                    name={d.icon as any}
+                    size={14}
+                    color={isActive ? "#FFF" : "rgba(255,255,255,0.4)"}
+                  />
+                  <Text
+                    style={[
+                      s.durationLabel,
+                      isActive && { color: "#FFF" },
+                    ]}
+                  >
+                    {d.label}
+                  </Text>
+                </Pressable>
+              );
+            })}
+          </View>
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(500).delay(300)}>
@@ -743,25 +699,43 @@ export default function HomeScreen() {
               end={{ x: 1, y: 0 }}
               style={s.engageBtnGradient}
             >
-              <Text style={s.engageBtnText}>
-                {mode === "madlibs"
-                  ? "FILL IN WORDS"
-                  : mode === "sleep"
-                    ? "START DREAMSCAPE"
-                    : "BEGIN ADVENTURE"}
-              </Text>
+              <Ionicons name="sparkles" size={18} color="rgba(255,255,255,0.8)" />
+              <Text style={s.engageBtnText}>GENERATE MY STORY</Text>
               <Ionicons name="arrow-forward" size={18} color="#FFF" />
             </LinearGradient>
           </Pressable>
         </Animated.View>
       </ScrollView>
 
-      <View style={[s.modeDockWrap, { paddingBottom: bottomInset + 8 }]}>
+      <View style={[s.bottomTabWrap, { paddingBottom: bottomInset + 4 }]}>
         <LinearGradient
-          colors={["transparent", "rgba(0,0,0,0.8)", "rgba(0,0,0,0.95)"]}
-          style={s.modeDockGradient}
+          colors={["transparent", "rgba(5,5,30,0.9)", "rgba(5,5,30,0.98)"]}
+          style={s.bottomTabGradient}
         />
-        <ModeDock activeMode={mode} onSelect={handleModeChange} />
+        <View style={s.bottomTabBar}>
+          {TAB_ITEMS.map((tab) => {
+            const isActive = tab.id === activeTab;
+            return (
+              <Pressable
+                key={tab.id}
+                onPress={() => handleTabPress(tab.id)}
+                style={s.bottomTabItem}
+                testID={`tab-${tab.id}`}
+              >
+                <View style={[s.bottomTabIconWrap, isActive && { backgroundColor: `${theme.accent}20` }]}>
+                  <Ionicons
+                    name={tab.icon as any}
+                    size={22}
+                    color={isActive ? theme.accent : "rgba(255,255,255,0.35)"}
+                  />
+                </View>
+                <Text style={[s.bottomTabLabel, isActive && { color: theme.accent }]}>
+                  {tab.label}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
       <MemoryJar visible={jarVisible} onClose={() => setJarVisible(false)} />
@@ -783,13 +757,13 @@ const s = StyleSheet.create({
     paddingHorizontal: 16,
     marginBottom: 4,
   },
-  jarButton: {
+  topBarBtn: {
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.06)",
+    backgroundColor: Colors.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: Colors.cardBorder,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -799,32 +773,30 @@ const s = StyleSheet.create({
     paddingHorizontal: 20,
   },
   greetingText: {
-    fontFamily: "Nunito_600SemiBold",
-    fontSize: 15,
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 14,
     color: "rgba(255,255,255,0.7)",
     textAlign: "center",
   },
   headerBlock: {
     alignItems: "center",
-    paddingBottom: 24,
+    paddingBottom: 20,
   },
-  titleInfinity: {
-    fontFamily: "Bangers_400Regular",
-    fontSize: 48,
+  headerTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  titleMain: {
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontSize: 38,
     color: "#FFFFFF",
-    letterSpacing: 6,
-    textAlign: "center",
-    lineHeight: 52,
-    textShadowColor: "rgba(255,255,255,0.15)",
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 20,
+    letterSpacing: 1,
   },
-  titleHeroes: {
-    fontFamily: "Bangers_400Regular",
-    fontSize: 54,
-    letterSpacing: 8,
-    textAlign: "center",
-    lineHeight: 56,
+  titleSub: {
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontSize: 44,
+    letterSpacing: 2,
     marginTop: -6,
   },
   taglineRow: {
@@ -839,10 +811,35 @@ const s = StyleSheet.create({
     opacity: 0.4,
   },
   taglineText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 10,
     color: "rgba(255,255,255,0.45)",
     letterSpacing: 3,
+  },
+  modeSection: {
+    marginBottom: 4,
+  },
+  modeRow: {
+    flexDirection: "row",
+    paddingHorizontal: 20,
+    gap: 8,
+  },
+  modeChip: {
+    flex: 1,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 6,
+    paddingVertical: 10,
+    borderRadius: 14,
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
+  },
+  modeChipText: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.5)",
   },
   sectionHeader: {
     flexDirection: "row",
@@ -853,118 +850,106 @@ const s = StyleSheet.create({
     marginBottom: 12,
   },
   sectionLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 11,
     color: "rgba(255,255,255,0.5)",
     letterSpacing: 2,
   },
   sectionHint: {
-    fontFamily: "Nunito_500Medium",
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 10,
     color: "rgba(255,255,255,0.3)",
     marginLeft: "auto",
     letterSpacing: 0.5,
   },
-  heroCarousel: {
+  heroChipScroll: {
+    paddingHorizontal: 20,
+    gap: 8,
+    paddingBottom: 4,
+  },
+  heroChip: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 8,
+    gap: 10,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    borderRadius: 16,
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
   },
-  heroArrow: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
+  heroChipIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center",
     justifyContent: "center",
   },
-  heroCardContainer: {
-    flex: 1,
-    alignItems: "center",
-    maxWidth: 260,
+  heroChipName: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.7)",
   },
-  heroCard: {
-    width: "100%",
-    borderRadius: 20,
-    overflow: "hidden",
-    elevation: 8,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.3,
-    shadowRadius: 16,
+  heroChipTitle: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 10,
+    color: "rgba(255,255,255,0.35)",
+    marginTop: 1,
   },
-  heroCardGradient: {
-    padding: 24,
-    alignItems: "center",
+  heroDetailCard: {
+    paddingHorizontal: 20,
+    marginTop: 12,
+  },
+  glassCard: {
+    backgroundColor: Colors.cardBg,
     borderRadius: 20,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: Colors.cardBorder,
+    padding: 16,
   },
-  heroIconWrap: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.1)",
+  heroDetailRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 12,
+    marginBottom: 10,
+  },
+  heroDetailIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
-    borderWidth: 2,
-    borderColor: "rgba(255,255,255,0.15)",
   },
-  heroCardName: {
-    fontFamily: "Bangers_400Regular",
-    fontSize: 28,
+  heroDetailName: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 18,
     color: "#FFFFFF",
-    letterSpacing: 2,
-    textAlign: "center",
   },
-  heroCardTitle: {
-    fontFamily: "Nunito_500Medium",
+  heroDetailTitle: {
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 12,
-    color: "rgba(255,255,255,0.6)",
-    textAlign: "center",
+    color: "rgba(255,255,255,0.5)",
     marginTop: 2,
-    marginBottom: 10,
   },
   heroPowerPill: {
     flexDirection: "row",
     alignItems: "center",
     gap: 4,
-    backgroundColor: "rgba(255,255,255,0.1)",
     paddingVertical: 4,
-    paddingHorizontal: 12,
+    paddingHorizontal: 10,
     borderRadius: 12,
   },
   heroPowerText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 10,
-    color: "rgba(255,255,255,0.7)",
     letterSpacing: 0.5,
   },
-  dotRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    gap: 6,
-    marginTop: 14,
-  },
-  dot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.2)",
-  },
-  dotActive: {
-    width: 20,
-    borderRadius: 3,
-  },
-  heroDesc: {
-    fontFamily: "Nunito_400Regular",
-    fontSize: 12,
-    color: "rgba(255,255,255,0.4)",
-    textAlign: "center",
-    paddingHorizontal: 40,
-    marginTop: 10,
-    lineHeight: 18,
+  heroDetailDesc: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.5)",
+    lineHeight: 20,
   },
   durationRow: {
     flexDirection: "row",
@@ -976,13 +961,13 @@ const s = StyleSheet.create({
     alignItems: "center",
     paddingVertical: 10,
     borderRadius: 12,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: Colors.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: Colors.cardBorder,
     gap: 4,
   },
   durationLabel: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 10,
     color: "rgba(255,255,255,0.4)",
   },
@@ -996,9 +981,9 @@ const s = StyleSheet.create({
     paddingVertical: 10,
     paddingHorizontal: 12,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: Colors.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: Colors.cardBorder,
   },
   voiceChipDot: {
     width: 26,
@@ -1009,7 +994,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   voiceChipName: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 12,
     color: "rgba(255,255,255,0.5)",
   },
@@ -1028,12 +1013,12 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   voiceChipDesc: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 9,
     color: "rgba(255,255,255,0.3)",
   },
   voiceChipAccent: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 8,
     color: "rgba(255,255,255,0.2)",
     marginTop: 2,
@@ -1051,20 +1036,20 @@ const s = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 10,
     borderRadius: 16,
-    backgroundColor: "rgba(255,255,255,0.04)",
+    backgroundColor: Colors.cardBg,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
+    borderColor: Colors.cardBorder,
   },
   engageBtn: {
     marginHorizontal: 20,
     marginTop: 28,
     borderRadius: 9999,
     overflow: "hidden",
-    elevation: 6,
-    shadowColor: "#000",
+    elevation: 8,
+    shadowColor: Colors.accent,
     shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.35,
-    shadowRadius: 16,
+    shadowOpacity: 0.4,
+    shadowRadius: 20,
   },
   engageBtnGradient: {
     flexDirection: "row",
@@ -1074,60 +1059,52 @@ const s = StyleSheet.create({
     gap: 10,
   },
   engageBtnText: {
-    fontFamily: "Bangers_400Regular",
-    fontSize: 20,
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontSize: 16,
     color: "#FFF",
-    letterSpacing: 3,
+    letterSpacing: 2,
   },
-  modeDockWrap: {
+  bottomTabWrap: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
   },
-  modeDockGradient: {
+  bottomTabGradient: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
     height: 120,
   },
-  modeDock: {
+  bottomTabBar: {
     flexDirection: "row",
     justifyContent: "space-around",
-    paddingHorizontal: 24,
+    paddingHorizontal: 16,
     paddingTop: 8,
   },
-  modeDockItem: {
+  bottomTabItem: {
     alignItems: "center",
     gap: 4,
-    paddingVertical: 8,
-    paddingHorizontal: 20,
-    borderRadius: 16,
+    paddingVertical: 6,
+    paddingHorizontal: 14,
   },
-  modeDockIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(255,255,255,0.06)",
+  bottomTabIconWrap: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
     alignItems: "center",
     justifyContent: "center",
   },
-  modeDockLabel: {
-    fontFamily: "Nunito_700Bold",
+  bottomTabLabel: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 10,
     color: "rgba(255,255,255,0.35)",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
   },
   suggestionCard: {
     marginHorizontal: 20,
     marginBottom: 4,
-  },
-  suggestionGradient: {
-    borderRadius: 16,
-    padding: 14,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
   },
   suggestionHeader: {
     flexDirection: "row",
@@ -1143,7 +1120,7 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   suggestionTitle: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 12,
     letterSpacing: 1,
   },
@@ -1163,12 +1140,12 @@ const s = StyleSheet.create({
     paddingVertical: 10,
   },
   suggestionLoadingText: {
-    fontFamily: "Nunito_500Medium",
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 12,
     color: "rgba(255,255,255,0.4)",
   },
   suggestionTip: {
-    fontFamily: "Nunito_500Medium",
+    fontFamily: "PlusJakartaSans_500Medium",
     fontSize: 13,
     color: "rgba(255,255,255,0.7)",
     lineHeight: 18,
@@ -1180,7 +1157,7 @@ const s = StyleSheet.create({
     gap: 6,
     marginBottom: 10,
   },
-  suggestionChip: {
+  suggestionChipItem: {
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 10,
@@ -1188,7 +1165,7 @@ const s = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.04)",
   },
   suggestionChipText: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 11,
     color: "rgba(255,255,255,0.6)",
   },
@@ -1201,7 +1178,7 @@ const s = StyleSheet.create({
     borderRadius: 10,
   },
   suggestionApplyText: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 12,
     color: "#FFF",
     letterSpacing: 0.5,

@@ -51,7 +51,7 @@ export default function TrophiesScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#1A237E", "#0D47A1", Colors.primary]}
+        colors={["#0f0fbd", "#05051e", Colors.primary]}
         start={{ x: 0, y: 0 }}
         end={{ x: 0, y: 0.5 }}
         style={StyleSheet.absoluteFill}
@@ -186,20 +186,22 @@ const styles = StyleSheet.create({
   },
   backBtn: {
     width: 40, height: 40, borderRadius: 20,
-    backgroundColor: "rgba(0,0,0,0.25)",
+    backgroundColor: Colors.cardBg,
+    borderWidth: 1,
+    borderColor: Colors.cardBorder,
     alignItems: "center", justifyContent: "center",
   },
   topTitle: {
-    fontFamily: "Bangers_400Regular", fontSize: 24,
-    color: "#FFD54F", letterSpacing: 2,
+    fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 22,
+    color: "#FFD54F", letterSpacing: 1,
   },
   scrollContent: { paddingHorizontal: 20 },
   noProfile: {
     alignItems: "center", paddingVertical: 80, gap: 12,
   },
-  noProfileTitle: { fontFamily: "Nunito_700Bold", fontSize: 20, color: "rgba(255,255,255,0.5)" },
+  noProfileTitle: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 20, color: "rgba(255,255,255,0.5)" },
   noProfileSub: {
-    fontFamily: "Nunito_400Regular", fontSize: 14,
+    fontFamily: "PlusJakartaSans_400Regular", fontSize: 14,
     color: "rgba(255,255,255,0.3)", textAlign: "center", paddingHorizontal: 32,
   },
   profileHeader: { alignItems: "center", marginBottom: 20, marginTop: 8 },
@@ -211,7 +213,7 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
   profileAvatarText: { fontSize: 30 },
-  profileName: { fontFamily: "Nunito_800ExtraBold", fontSize: 22, color: "#FFF" },
+  profileName: { fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 22, color: "#FFF" },
   statsRow: {
     flexDirection: "row", gap: 10, marginBottom: 24,
   },
@@ -221,8 +223,8 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
   },
   statCardAccent: { borderColor: "#FFD54F40", backgroundColor: "rgba(255,213,79,0.06)" },
-  statValue: { fontFamily: "Bangers_400Regular", fontSize: 28, color: "#FFD54F" },
-  statLabel: { fontFamily: "Nunito_600SemiBold", fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 },
+  statValue: { fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 28, color: "#FFD54F" },
+  statLabel: { fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 },
   streakRow: { flexDirection: "row", alignItems: "center", gap: 4 },
   fireEmoji: { fontSize: 16 },
   sectionHeader: {
@@ -230,7 +232,7 @@ const styles = StyleSheet.create({
     marginBottom: 14, marginTop: 8,
   },
   sectionLabel: {
-    fontFamily: "Nunito_700Bold", fontSize: 12,
+    fontFamily: "PlusJakartaSans_700Bold", fontSize: 12,
     color: "rgba(255,255,255,0.5)", letterSpacing: 2,
   },
   emptyBadges: {
@@ -238,7 +240,7 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 16,
     borderWidth: 1, borderColor: "rgba(255,255,255,0.05)", marginBottom: 20,
   },
-  emptyBadgeText: { fontFamily: "Nunito_500Medium", fontSize: 13, color: "rgba(255,255,255,0.3)" },
+  emptyBadgeText: { fontFamily: "PlusJakartaSans_500Medium", fontSize: 13, color: "rgba(255,255,255,0.3)" },
   loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
   badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
   badgeCard: {
@@ -249,7 +251,7 @@ const styles = StyleSheet.create({
   },
   badgeCardLocked: { borderColor: "rgba(255,255,255,0.04)" },
   badgeEmoji: { fontSize: 32, marginBottom: 4 },
-  badgeTitle: { fontFamily: "Nunito_700Bold", fontSize: 13, color: "#FFD54F", textAlign: "center" },
-  badgeDesc: { fontFamily: "Nunito_400Regular", fontSize: 10, color: "rgba(255,255,255,0.4)", textAlign: "center" },
-  badgeDate: { fontFamily: "Nunito_400Regular", fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 4 },
+  badgeTitle: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 13, color: "#FFD54F", textAlign: "center" },
+  badgeDesc: { fontFamily: "PlusJakartaSans_400Regular", fontSize: 10, color: "rgba(255,255,255,0.4)", textAlign: "center" },
+  badgeDate: { fontFamily: "PlusJakartaSans_400Regular", fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 4 },
 });

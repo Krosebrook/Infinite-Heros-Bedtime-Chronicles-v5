@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   headerTitle: {
-    fontFamily: "Nunito_800ExtraBold",
+    fontFamily: "PlusJakartaSans_800ExtraBold",
     fontSize: 24,
     color: "#FFF",
   },
@@ -295,7 +295,7 @@ const styles = StyleSheet.create({
     borderColor: Colors.accent,
   },
   tabLabel: {
-    fontFamily: "Nunito_600SemiBold",
+    fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 12,
     color: "rgba(255,255,255,0.4)",
   },
@@ -306,7 +306,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
   },
   sectionTitle: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 12,
     color: "rgba(255,255,255,0.5)",
     letterSpacing: 2,
@@ -335,7 +335,7 @@ const styles = StyleSheet.create({
     backgroundColor: `${Colors.accent}12`,
   },
   optionLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 14,
     color: "rgba(255,255,255,0.6)",
   },
@@ -343,7 +343,7 @@ const styles = StyleSheet.create({
     color: Colors.accent,
   },
   optionDesc: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 10,
     color: "rgba(255,255,255,0.3)",
     marginTop: 2,
@@ -386,12 +386,12 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.accent,
   },
   voiceName: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 15,
     color: "rgba(255,255,255,0.6)",
   },
   voiceDesc: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 11,
     color: "rgba(255,255,255,0.3)",
   },
@@ -407,12 +407,12 @@ const styles = StyleSheet.create({
     marginBottom: 16,
   },
   toggleLabel: {
-    fontFamily: "Nunito_700Bold",
+    fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 15,
     color: "rgba(255,255,255,0.8)",
   },
   toggleDesc: {
-    fontFamily: "Nunito_400Regular",
+    fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 11,
     color: "rgba(255,255,255,0.35)",
     marginTop: 2,

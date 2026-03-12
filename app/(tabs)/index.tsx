@@ -8,7 +8,6 @@ import {
   ScrollView,
   TextInput,
   Image,
-  FlatList,
   Dimensions,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
@@ -53,7 +52,7 @@ const CATEGORIES = [
   },
 ];
 
-const TABS = ["New Arrivals", "Favorites", "AI Crafted"] as const;
+const TABS = ["New Arrivals", "Favorites", "All Crafted"] as const;
 
 const STORIES = [
   {
@@ -105,7 +104,7 @@ export default function HomeScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#101022", "#0a0a2e", "#101022"]}
+        colors={["#0a0a1e", "#0d0d28", "#0a0a1e"]}
         style={StyleSheet.absoluteFill}
       />
       <StarField />
@@ -132,11 +131,11 @@ export default function HomeScreen() {
         <Animated.View entering={FadeInDown.duration(400).delay(100)}>
           <View style={styles.searchWrap}>
             <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color="rgba(255,255,255,0.3)" />
+              <Ionicons name="search" size={20} color="rgba(255,255,255,0.35)" />
               <TextInput
                 style={styles.searchInput}
                 placeholder="Search for a magical tale..."
-                placeholderTextColor="rgba(255,255,255,0.3)"
+                placeholderTextColor="rgba(255,255,255,0.35)"
                 value={searchText}
                 onChangeText={setSearchText}
                 testID="search-input"
@@ -159,7 +158,6 @@ export default function HomeScreen() {
                     style={styles.categoryImage}
                     resizeMode="cover"
                   />
-                  <View style={[styles.categoryOverlay, { backgroundColor: `${cat.color}40` }]} />
                 </View>
                 <Text style={styles.categoryLabel}>{cat.label}</Text>
               </Pressable>
@@ -189,7 +187,7 @@ export default function HomeScreen() {
 
         <Animated.View entering={FadeInDown.duration(400).delay(400)}>
           <View style={styles.storyGrid}>
-            {STORIES.map((story, index) => (
+            {STORIES.map((story) => (
               <Pressable
                 key={story.id}
                 style={styles.storyCard}
@@ -203,22 +201,23 @@ export default function HomeScreen() {
                     resizeMode="cover"
                   />
                   <LinearGradient
-                    colors={["transparent", "rgba(16,16,34,0.8)"]}
+                    colors={["transparent", "transparent", "rgba(0,0,0,0.75)"]}
+                    locations={[0, 0.4, 1]}
                     style={styles.storyImageOverlay}
                   />
                   {story.badge && (
                     <View style={styles.storyBadge}>
-                      <Text style={styles.storyBadgeText}>{story.badge}</Text>
+                      <Text style={styles.storyBadgeText}>{story.badge.toUpperCase()}</Text>
                     </View>
                   )}
-                </View>
-                <View style={styles.storyInfo}>
-                  <Text style={styles.storyTitle} numberOfLines={1}>
-                    {story.title}
-                  </Text>
-                  <Text style={styles.storyMeta}>
-                    {story.duration} • {story.category}
-                  </Text>
+                  <View style={styles.storyInfoOverlay}>
+                    <Text style={styles.storyTitle} numberOfLines={2}>
+                      {story.title}
+                    </Text>
+                    <Text style={styles.storyMeta}>
+                      {story.duration} • {story.category}
+                    </Text>
+                  </View>
                 </View>
               </Pressable>
             ))}
@@ -232,7 +231,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#101022",
+    backgroundColor: "#0a0a1e",
   },
   scrollView: {
     flex: 1,
@@ -262,26 +261,28 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: "rgba(15, 15, 189, 0.2)",
+    backgroundColor: "rgba(99, 102, 241, 0.2)",
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.3)",
   },
   profileEmoji: {
     fontSize: 20,
   },
   searchWrap: {
     paddingHorizontal: 16,
-    paddingVertical: 12,
+    paddingVertical: 10,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(15, 15, 189, 0.1)",
-    borderRadius: 12,
+    backgroundColor: "rgba(99, 102, 241, 0.08)",
+    borderRadius: 14,
     paddingHorizontal: 16,
-    height: 48,
-    borderWidth: 1,
-    borderColor: "rgba(15, 15, 189, 0.2)",
+    height: 50,
+    borderWidth: 1.5,
+    borderColor: "rgba(99, 102, 241, 0.2)",
     gap: 10,
   },
   searchInput: {
@@ -292,41 +293,38 @@ const styles = StyleSheet.create({
   },
   categoriesScroll: {
     paddingHorizontal: 16,
-    paddingVertical: 8,
-    gap: 16,
+    paddingVertical: 10,
+    gap: 14,
   },
   categoryItem: {
     alignItems: "center",
     gap: 8,
-    width: 80,
+    width: 90,
   },
   categoryImageWrap: {
-    width: 80,
-    height: 112,
-    borderRadius: 12,
+    width: 90,
+    height: 110,
+    borderRadius: 14,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(15, 15, 189, 0.3)",
+    borderWidth: 1.5,
+    borderColor: "rgba(99, 102, 241, 0.25)",
   },
   categoryImage: {
     width: "100%",
     height: "100%",
   },
-  categoryOverlay: {
-    ...StyleSheet.absoluteFillObject,
-  },
   categoryLabel: {
     fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 11,
-    color: "rgba(255,255,255,0.6)",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.7)",
   },
   tabsRow: {
     flexDirection: "row",
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(15, 15, 189, 0.2)",
-    marginTop: 20,
+    borderBottomColor: "rgba(99, 102, 241, 0.12)",
+    marginTop: 16,
     paddingHorizontal: 16,
-    gap: 24,
+    gap: 28,
   },
   tabItem: {
     paddingBottom: 12,
@@ -335,34 +333,34 @@ const styles = StyleSheet.create({
     borderBottomColor: "transparent",
   },
   tabItemActive: {
-    borderBottomColor: Colors.deepIndigo,
+    borderBottomColor: Colors.accent,
   },
   tabText: {
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 13,
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 14,
     color: "rgba(255,255,255,0.4)",
   },
   tabTextActive: {
-    color: Colors.deepIndigo,
+    color: Colors.accent,
+    fontFamily: "PlusJakartaSans_700Bold",
   },
   storyGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     paddingHorizontal: 16,
-    paddingTop: 16,
-    gap: 16,
+    paddingTop: 20,
+    gap: 14,
   },
   storyCard: {
     width: CARD_WIDTH,
-    gap: 10,
   },
   storyImageWrap: {
     width: "100%",
     aspectRatio: 3 / 4,
-    borderRadius: 12,
+    borderRadius: 16,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: "rgba(15, 15, 189, 0.1)",
+    borderWidth: 1.5,
+    borderColor: "rgba(99, 102, 241, 0.15)",
   },
   storyImage: {
     width: "100%",
@@ -370,35 +368,41 @@ const styles = StyleSheet.create({
   },
   storyImageOverlay: {
     ...StyleSheet.absoluteFillObject,
-    justifyContent: "flex-end",
   },
   storyBadge: {
     position: "absolute",
-    bottom: 10,
-    left: 10,
-    backgroundColor: "rgba(15, 15, 189, 0.8)",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 100,
+    top: 12,
+    left: 12,
+    backgroundColor: "rgba(99, 102, 241, 0.85)",
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: 6,
+    borderWidth: 1,
+    borderColor: "rgba(99, 102, 241, 0.6)",
   },
   storyBadgeText: {
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 9,
     color: "#FFFFFF",
-    letterSpacing: 0.8,
-    textTransform: "uppercase",
+    letterSpacing: 1,
   },
-  storyInfo: {
-    gap: 2,
+  storyInfoOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 14,
+    gap: 3,
   },
   storyTitle: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 14,
+    fontSize: 15,
     color: "#FFFFFF",
+    lineHeight: 20,
   },
   storyMeta: {
     fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 11,
-    color: "rgba(255,255,255,0.4)",
+    color: "rgba(255,255,255,0.55)",
   },
 });

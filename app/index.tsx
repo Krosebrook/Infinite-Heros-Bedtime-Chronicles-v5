@@ -83,7 +83,7 @@ const MODE_THEMES = {
 type ModeId = keyof typeof MODE_THEMES;
 const VALID_MODES_LIST: ModeId[] = ["classic", "madlibs", "sleep"];
 
-const MODES: { id: ModeId; icon: MCIName; iconSet: "mci" | "ion" }[] = [
+const MODES: { id: ModeId; icon: MCIName; iconSet: "mci" }[] = [
   { id: "classic", icon: "sword-cross", iconSet: "mci" },
   { id: "madlibs", icon: "emoticon-tongue-outline", iconSet: "mci" },
   { id: "sleep", icon: "moon-waning-crescent", iconSet: "mci" },
@@ -389,19 +389,11 @@ export default function HomeScreen() {
                   ]}
                   testID={`mode-${m.id}`}
                 >
-                  {m.iconSet === "mci" ? (
-                    <MaterialCommunityIcons
-                      name={m.icon}
-                      size={16}
-                      color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
-                    />
-                  ) : (
-                    <Ionicons
-                      name={m.icon}
-                      size={16}
-                      color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
-                    />
-                  )}
+                  <MaterialCommunityIcons
+                    name={m.icon}
+                    size={16}
+                    color={isActive ? "#FFF" : "rgba(255,255,255,0.5)"}
+                  />
                   <Text style={[s.modeChipText, isActive && { color: "#FFF" }]}>
                     {mTheme.label}
                   </Text>

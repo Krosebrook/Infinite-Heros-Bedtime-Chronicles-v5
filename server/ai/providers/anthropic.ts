@@ -1,5 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
-import type { AIProvider, TextGenerationRequest, TextGenerationResponse } from "../types";
+import type { AIProvider, TextGenerationRequest, TextGenerationResponse, StreamingTextChunk } from "../types";
 
 function getClient(): Anthropic | null {
   const apiKey = process.env.AI_INTEGRATIONS_ANTHROPIC_API_KEY;
@@ -40,5 +40,24 @@ export const anthropicProvider: AIProvider = {
         outputTokens: message.usage?.output_tokens,
       },
     };
+  },
+
+  async *generateTextStream(req: TextGenerationRequest): AsyncGenerator<StreamingTextChunk> {
+    const client = getClient();
+    if (!client) throw new Error("Anthropic not configured");
+
+    const stream = client.messages.stream({
+      model: "claude-sonnet-4-6",
+      max_tokens: req.maxTokens ?? 8192,
+      system: req.systemPrompt,
+      messages: [{ role: "user", content: req.userPrompt }],
+    });
+
+    for await (const event of stream) {
+      if (event.type === "content_block_delta" && event.delta.type === "text_delta") {
+        yield { text: event.delta.text, done: false };
+      }
+    }
+    yield { text: "", done: true };
   },
 };

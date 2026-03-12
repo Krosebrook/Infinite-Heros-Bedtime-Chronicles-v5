@@ -1,5 +1,5 @@
 import { GoogleGenAI, Modality } from "@google/genai";
-import type { AIProvider, TextGenerationRequest, TextGenerationResponse, ImageGenerationRequest, ImageGenerationResponse } from "../types";
+import type { AIProvider, TextGenerationRequest, TextGenerationResponse, ImageGenerationRequest, ImageGenerationResponse, StreamingTextChunk } from "../types";
 
 let client: GoogleGenAI | null = null;
 
@@ -57,6 +57,33 @@ export const geminiProvider: AIProvider = {
         outputTokens: response.usageMetadata?.candidatesTokenCount,
       },
     };
+  },
+
+  async *generateTextStream(req: TextGenerationRequest): AsyncGenerator<StreamingTextChunk> {
+    const ai = getClient();
+    const config: Record<string, unknown> = {
+      systemInstruction: req.systemPrompt,
+      temperature: req.temperature ?? 0.9,
+      maxOutputTokens: req.maxTokens ?? 8192,
+    };
+
+    if (req.thinkingBudget !== undefined) {
+      config.thinkingConfig = { thinkingBudget: req.thinkingBudget };
+    }
+
+    const response = await ai.models.generateContentStream({
+      model: "gemini-2.5-flash",
+      contents: [{ role: "user", parts: [{ text: req.userPrompt }] }],
+      config,
+    });
+
+    for await (const chunk of response) {
+      const text = chunk.text || "";
+      if (text) {
+        yield { text, done: false };
+      }
+    }
+    yield { text: "", done: true };
   },
 
   async generateImage(req: ImageGenerationRequest): Promise<ImageGenerationResponse> {

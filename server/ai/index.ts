@@ -6,7 +6,7 @@ import { xaiProvider, mistralProvider, cohereProvider, metaLlamaProvider } from 
 import type { ProviderStatus } from "./types";
 
 export { AIRouter } from "./router";
-export type { AITaskType, ProviderName, TextGenerationRequest, TextGenerationResponse, ImageGenerationRequest, ImageGenerationResponse, ProviderStatus } from "./types";
+export type { AITaskType, ProviderName, TextGenerationRequest, TextGenerationResponse, ImageGenerationRequest, ImageGenerationResponse, StreamingTextChunk, ProviderStatus } from "./types";
 
 const allProviders = [
   geminiProvider,

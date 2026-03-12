@@ -30,6 +30,11 @@ export interface ImageGenerationResponse {
   model: string;
 }
 
+export interface StreamingTextChunk {
+  text: string;
+  done: boolean;
+}
+
 export interface AIProvider {
   name: ProviderName;
   displayName: string;
@@ -40,6 +45,7 @@ export interface AIProvider {
     streaming: boolean;
   };
   generateText(req: TextGenerationRequest): Promise<TextGenerationResponse>;
+  generateTextStream?(req: TextGenerationRequest): AsyncGenerator<StreamingTextChunk>;
   generateImage?(req: ImageGenerationRequest): Promise<ImageGenerationResponse>;
 }
 

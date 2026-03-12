@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AIProvider, TextGenerationRequest, TextGenerationResponse, ImageGenerationRequest, ImageGenerationResponse } from "../types";
+import type { AIProvider, TextGenerationRequest, TextGenerationResponse, ImageGenerationRequest, ImageGenerationResponse, StreamingTextChunk } from "../types";
 
 function getIntegrationsClient(): OpenAI | null {
   const apiKey = process.env.AI_INTEGRATIONS_OPENAI_API_KEY;
@@ -58,6 +58,32 @@ export const openaiProvider: AIProvider = {
         outputTokens: response.usage?.completion_tokens,
       },
     };
+  },
+
+  async *generateTextStream(req: TextGenerationRequest): AsyncGenerator<StreamingTextChunk> {
+    const client = getIntegrationsClient() || getDirectClient();
+    if (!client) throw new Error("OpenAI not configured");
+
+    const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: req.systemPrompt },
+      { role: "user", content: req.userPrompt },
+    ];
+
+    const stream = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages,
+      temperature: req.temperature ?? 0.9,
+      max_tokens: req.maxTokens ?? 8192,
+      stream: true,
+    });
+
+    for await (const chunk of stream) {
+      const content = chunk.choices[0]?.delta?.content || "";
+      if (content) {
+        yield { text: content, done: false };
+      }
+    }
+    yield { text: "", done: true };
   },
 
   async generateImage(req: ImageGenerationRequest): Promise<ImageGenerationResponse> {

@@ -6,12 +6,13 @@ import type {
   TextGenerationResponse,
   ImageGenerationRequest,
   ImageGenerationResponse,
+  StreamingTextChunk,
   FallbackChain,
 } from "./types";
 
 const DEFAULT_CHAINS: FallbackChain[] = [
-  { taskType: "story", providers: ["anthropic", "gemini", "openai", "meta-llama", "mistral"] },
-  { taskType: "suggestion", providers: ["gemini", "mistral", "anthropic", "meta-llama"] },
+  { taskType: "story", providers: ["anthropic", "gemini", "openai", "meta-llama", "xai", "mistral", "cohere"] },
+  { taskType: "suggestion", providers: ["gemini", "mistral", "anthropic", "meta-llama", "xai", "cohere"] },
   { taskType: "image", providers: ["gemini", "openai"] },
   { taskType: "avatar", providers: ["gemini", "openai"] },
   { taskType: "scene", providers: ["gemini", "openai"] },
@@ -90,6 +91,35 @@ export class AIRouter {
     }
 
     throw lastError || new Error("All providers failed");
+  }
+
+  async *generateTextStream(
+    taskType: AITaskType,
+    req: TextGenerationRequest
+  ): AsyncGenerator<StreamingTextChunk & { provider: ProviderName; model: string }> {
+    const chain = this.getAvailableChain(taskType, "text");
+    if (chain.length === 0) {
+      throw new Error(`No AI providers available for streaming text generation (task: ${taskType})`);
+    }
+
+    let lastError: Error | null = null;
+    for (const provider of chain) {
+      if (!provider.generateTextStream || !provider.capabilities.streaming) {
+        continue;
+      }
+      try {
+        const stream = provider.generateTextStream(req);
+        for await (const chunk of stream) {
+          yield { ...chunk, provider: provider.name, model: provider.displayName };
+        }
+        return;
+      } catch (err) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        console.error(`[AI Router] ${provider.displayName} streaming failed for ${taskType}: ${lastError.message}`);
+      }
+    }
+
+    throw lastError || new Error("All streaming providers failed");
   }
 
   async generateImage(

@@ -1,5 +1,5 @@
 import OpenAI from "openai";
-import type { AIProvider, ProviderName, TextGenerationRequest, TextGenerationResponse } from "../types";
+import type { AIProvider, ProviderName, TextGenerationRequest, TextGenerationResponse, StreamingTextChunk } from "../types";
 
 function getClient(): OpenAI | null {
   const apiKey = process.env.AI_INTEGRATIONS_OPENROUTER_API_KEY;
@@ -76,6 +76,32 @@ function createOpenRouterProvider(providerKey: string): AIProvider {
           outputTokens: response.usage?.completion_tokens,
         },
       };
+    },
+
+    async *generateTextStream(req: TextGenerationRequest): AsyncGenerator<StreamingTextChunk> {
+      const client = getClient();
+      if (!client) throw new Error(`${info.displayName} not configured (requires OpenRouter)`);
+
+      const messages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+        { role: "system", content: req.systemPrompt },
+        { role: "user", content: req.userPrompt },
+      ];
+
+      const stream = await client.chat.completions.create({
+        model: info.model,
+        messages,
+        temperature: req.temperature ?? 0.9,
+        max_tokens: req.maxTokens ?? 8192,
+        stream: true,
+      });
+
+      for await (const chunk of stream) {
+        const content = chunk.choices[0]?.delta?.content || "";
+        if (content) {
+          yield { text: content, done: false };
+        }
+      }
+      yield { text: "", done: true };
     },
   };
 }

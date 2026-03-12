@@ -28,6 +28,7 @@ Preferred communication style: Simple, everyday language.
     - `/api/suggest-settings`: Provides AI-powered story setting suggestions.
     - `/api/generate-avatar`, `/api/generate-scene`: AI-driven image generation.
 - **AI Integration**: Multi-provider AI abstraction layer with automatic fallback, supporting Gemini (primary), OpenAI, Anthropic, xAI, Mistral, Cohere, and Meta Llama via Replit AI Integrations and OpenRouter.
+- **Landing Page**: Premium branded HTML landing page at `/` with cosmic theme, star field, gradient mesh, hero section, trust stats, feature cards, "How It Works" flow, social proof, testimonials, QR code for Expo Go. Served from `server/templates/landing-page.html` with placeholder replacements (APP_NAME, EXPS_URL, BASE_URL). Uses Plus Jakarta Sans + Inter fonts via Google Fonts CDN.
 - **Security**: Includes input sanitization, rate limiting, and path traversal protection.
 
 ### Shared Code (`shared/`)

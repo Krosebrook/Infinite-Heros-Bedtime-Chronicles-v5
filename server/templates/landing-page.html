@@ -1,416 +1,525 @@
 <!doctype html>
-<html>
+<html lang="en">
   <head>
     <title>APP_NAME_PLACEHOLDER</title>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
     <style>
-      * {
-        box-sizing: border-box;
+      *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --font-display: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+        --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+        --accent: #6366f1;
+        --accent-light: #818cf8;
+        --purple: #a855f7;
+        --pink: #ec4899;
+        --bg: #020215;
+        --surface: rgba(255,255,255,0.03);
+        --border: rgba(255,255,255,0.06);
+        --text: #f1f5f9;
+        --text-muted: #94a3b8;
+        --text-dim: #64748b;
       }
+      html { scroll-behavior: smooth; }
       body {
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-        margin: 0;
-        padding: 32px 20px;
-        text-align: center;
-        background: #fff;
-        color: #222;
-        line-height: 1.5;
+        font-family: var(--font-display);
+        background: var(--bg);
+        color: var(--text);
         min-height: 100vh;
-      }
-      .wrapper {
-        max-width: 480px;
-        margin: 0 auto;
-      }
-      h1 {
-        font-size: 26px;
-        font-weight: 600;
-        margin: 0;
-        color: #111;
-      }
-      .subtitle {
-        font-size: 15px;
-        color: #666;
-        margin-top: 8px;
-        margin-bottom: 32px;
-      }
-      .loading {
-        display: none;
-        margin: 60px 0;
-      }
-      .spinner {
-        border: 2px solid #ddd;
-        border-top-color: #333;
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        animation: spin 0.8s linear infinite;
-        margin: 20px auto;
-      }
-      @keyframes spin {
-        to {
-          transform: rotate(360deg);
-        }
-      }
-      .loading-text {
-        font-size: 16px;
-        color: #444;
-      }
-      .content {
-        display: block;
+        overflow-x: hidden;
+        position: relative;
+        line-height: 1.5;
+        -webkit-font-smoothing: antialiased;
       }
 
-      .steps-container {
-        display: flex;
-        flex-direction: column;
-        gap: 20px;
+      /* Star field */
+      .stars {
+        position: fixed; inset: 0; opacity: 0.2; pointer-events: none; z-index: 0;
+        background-image:
+          radial-gradient(1px 1px at 20px 30px, #fff, transparent),
+          radial-gradient(1px 1px at 80px 120px, #fff, transparent),
+          radial-gradient(2px 2px at 150px 50px, #fff, transparent),
+          radial-gradient(1px 1px at 200px 160px, #fff, transparent),
+          radial-gradient(1px 1px at 300px 80px, #fff, transparent),
+          radial-gradient(2px 2px at 350px 200px, #fff, transparent),
+          radial-gradient(1px 1px at 420px 110px, #fff, transparent),
+          radial-gradient(1.5px 1.5px at 500px 180px, #fff, transparent);
+        background-repeat: repeat;
+        background-size: 550px 300px;
       }
 
-      .step {
-        padding: 24px;
-        border: 1px solid #ddd;
-        border-radius: 12px;
-        text-align: center;
-        background: #fafafa;
-      }
-      .step-header {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 10px;
-        margin-bottom: 12px;
-      }
-      .step-number {
-        width: 28px;
-        height: 28px;
-        border: 1px solid #999;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: 600;
-        font-size: 14px;
-        flex-shrink: 0;
-        color: #555;
-      }
-      .step-title {
-        font-size: 18px;
-        font-weight: 600;
-        margin: 0;
-        color: #222;
-      }
-      .step-description {
-        font-size: 14px;
-        margin-bottom: 16px;
-        color: #666;
+      /* Gradient mesh */
+      .mesh {
+        position: fixed; inset: 0; pointer-events: none; z-index: 0;
+        background:
+          radial-gradient(ellipse at 20% 20%, rgba(99,102,241,0.13) 0%, transparent 50%),
+          radial-gradient(ellipse at 80% 60%, rgba(168,85,247,0.09) 0%, transparent 50%),
+          radial-gradient(ellipse at 50% 90%, rgba(236,72,153,0.06) 0%, transparent 50%);
       }
 
-      .store-buttons {
-        display: flex;
-        flex-direction: column;
-        gap: 6px;
-        justify-content: center;
-        flex-wrap: wrap;
+      .page { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; }
+
+      /* Loading overlay for Expo Go redirect */
+      .loading { display: none; position: fixed; inset: 0; z-index: 100; background: var(--bg); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+      .loading.active { display: flex; }
+      .spinner { border: 2px solid rgba(99,102,241,0.2); border-top-color: var(--accent); border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .loading-text { font-size: 15px; color: var(--text-muted); font-family: var(--font-body); }
+
+      /* Nav */
+      .nav {
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 18px 24px; position: relative; z-index: 10;
+        border-bottom: 1px solid rgba(255,255,255,0.04);
       }
-      .store-button {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        padding: 12px 20px;
-        font-size: 14px;
-        font-weight: 500;
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        text-decoration: none;
-        color: #333;
-        background: #fff;
-        transition: all 0.15s;
+      .nav-brand { display: flex; align-items: center; gap: 10px; }
+      .nav-logo {
+        width: 36px; height: 36px; border-radius: 10px;
+        background: linear-gradient(135deg, var(--accent), var(--purple));
+        display: flex; align-items: center; justify-content: center; font-size: 18px;
       }
-      .store-button:hover {
-        background: #f5f5f5;
-        border-color: #999;
+      .nav-name { font-weight: 800; font-size: 15px; letter-spacing: -0.3px; }
+      .nav-sub { font-size: 10px; color: var(--accent-light); font-weight: 500; letter-spacing: 1.5px; text-transform: uppercase; }
+      .nav-cta {
+        background: rgba(99,102,241,0.15); border: 1px solid rgba(99,102,241,0.3);
+        color: var(--accent-light); padding: 9px 20px; border-radius: 10px;
+        font-size: 13px; font-weight: 600; font-family: var(--font-display); cursor: pointer;
+        transition: background 0.2s;
       }
-      .store-link {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        gap: 6px;
-        padding: 8px 0;
-        font-size: 13px;
-        font-weight: 400;
-        text-decoration: underline;
-        text-underline-offset: 2px;
-        color: #666;
-        background: none;
-        border: none;
-        transition: color 0.15s;
+      .nav-cta:hover { background: rgba(99,102,241,0.25); }
+
+      /* Hero */
+      .hero { padding: 56px 24px 40px; text-align: center; }
+      .hero-pill {
+        display: inline-flex; align-items: center; gap: 8px;
+        background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
+        border-radius: 20px; padding: 6px 16px; margin-bottom: 28px;
       }
-      .store-link:hover {
-        color: #333;
+      .hero-pill span {
+        font-size: 11px; color: var(--accent-light); font-weight: 600;
+        letter-spacing: 1.5px; text-transform: uppercase;
       }
-      .store-link .store-icon {
-        width: 14px;
-        height: 14px;
+      .hero h1 {
+        font-weight: 800; font-size: 40px; line-height: 1.08;
+        letter-spacing: -1.5px; margin-bottom: 18px;
       }
-      .store-icon {
-        width: 18px;
-        height: 18px;
+      .hero .gradient-text {
+        background: linear-gradient(135deg, #818cf8, #c084fc, #f472b6);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+        background-clip: text;
+      }
+      .hero p {
+        font-family: var(--font-body); font-size: 16px; line-height: 1.7;
+        color: rgba(203,213,225,0.85); max-width: 420px; margin: 0 auto 32px;
       }
 
-      .qr-section {
-        background: #333;
-        color: #fff;
-        border-color: #333;
+      /* CTA buttons */
+      .cta-stack { display: flex; flex-direction: column; gap: 12px; max-width: 320px; margin: 0 auto; }
+      .btn-primary {
+        background: linear-gradient(135deg, #6366f1, #4f46e5); border: none;
+        color: #fff; padding: 16px 32px; border-radius: 14px; font-size: 16px;
+        font-weight: 700; font-family: var(--font-display); cursor: pointer;
+        box-shadow: 0 8px 32px rgba(99,102,241,0.35); transition: transform 0.2s, box-shadow 0.2s;
       }
-      .qr-section .step-number {
-        border-color: rgba(255, 255, 255, 0.5);
-        color: #fff;
+      .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 40px rgba(99,102,241,0.45); }
+      .cta-sub { font-size: 13px; color: rgba(148,163,184,0.5); font-family: var(--font-body); }
+
+      /* Phone mockup */
+      .phone-wrap { margin-top: 48px; position: relative; max-width: 280px; margin-left: auto; margin-right: auto; }
+      .phone-frame {
+        background: linear-gradient(180deg, rgba(99,102,241,0.08), rgba(168,85,247,0.04));
+        border: 1px solid rgba(99,102,241,0.15); border-radius: 28px; padding: 12px;
       }
-      .qr-section .step-title {
-        color: #fff;
+      .phone-screen {
+        background: #0a0a2e; border-radius: 20px; overflow: hidden;
+        aspect-ratio: 9/16; display: flex; flex-direction: column;
+        align-items: center; justify-content: center; gap: 16px; padding: 24px;
       }
-      .qr-section .step-description {
-        color: rgba(255, 255, 255, 0.7);
+      .phone-screen .icon { font-size: 48px; opacity: 0.7; }
+      .phone-screen .title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+      .phone-screen .meta { font-size: 12px; color: var(--text-muted); }
+      .phone-progress { width: 100%; height: 4px; background: rgba(99,102,241,0.2); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+      .phone-progress-fill { width: 65%; height: 100%; background: var(--accent); border-radius: 2px; }
+      .phone-glow {
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 140%; height: 140%; background: radial-gradient(circle, rgba(99,102,241,0.06), transparent 60%);
+        border-radius: 50%; pointer-events: none; z-index: -1;
       }
+
+      /* Trust strip */
+      .trust { padding: 36px 24px; text-align: center; border-top: 1px solid var(--border); }
+      .trust-grid { display: flex; justify-content: center; gap: 36px; }
+      .trust-num { font-weight: 800; font-size: 24px; color: var(--accent-light); letter-spacing: -0.5px; }
+      .trust-label { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-family: var(--font-body); }
+
+      /* Features */
+      .features { padding: 20px 24px 36px; display: flex; flex-direction: column; gap: 14px; }
+      .feature-card {
+        display: flex; gap: 14px; padding: 20px; border-radius: 16px;
+        background: var(--surface); border: 1px solid var(--border);
+        align-items: flex-start; transition: border-color 0.2s;
+      }
+      .feature-card:hover { border-color: rgba(99,102,241,0.15); }
+      .feature-icon {
+        width: 44px; height: 44px; border-radius: 12px; display: flex;
+        align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0;
+      }
+      .feature-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+      .feature-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; font-family: var(--font-body); }
+
+      /* How it works */
+      .how { padding: 36px 24px 40px; border-top: 1px solid var(--border); }
+      .how h3 { font-weight: 800; font-size: 24px; margin-bottom: 24px; letter-spacing: -0.5px; }
+      .how-step { display: flex; gap: 16px; margin-bottom: 22px; align-items: flex-start; }
+      .how-num { font-weight: 800; font-size: 28px; color: rgba(99,102,241,0.3); line-height: 1; min-width: 44px; font-family: var(--font-display); }
+      .how-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
+      .how-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; font-family: var(--font-body); }
+
+      /* Social proof */
+      .social-proof {
+        margin: 0 24px; padding: 24px 20px; border-radius: 20px;
+        background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.06));
+        border: 1px solid rgba(99,102,241,0.15);
+      }
+      .avatar-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+      .avatar-stack { display: flex; }
+      .avatar-circle {
+        width: 32px; height: 32px; border-radius: 16px; background: #1e1b4b;
+        display: flex; align-items: center; justify-content: center;
+        font-size: 16px; border: 2px solid var(--bg);
+      }
+      .avatar-circle + .avatar-circle { margin-left: -8px; }
+      .avatar-info-title { font-weight: 700; font-size: 14px; }
+      .avatar-info-sub { font-size: 12px; color: var(--text-muted); }
+      .social-quote {
+        font-family: var(--font-body); font-size: 14px; color: #cbd5e1;
+        line-height: 1.65; font-style: italic; margin: 0;
+      }
+
+      /* Testimonials */
+      .testimonials { padding: 36px 24px; }
+      .testimonials-label {
+        font-size: 11px; color: var(--accent); font-weight: 600;
+        letter-spacing: 3px; text-transform: uppercase; margin-bottom: 18px;
+      }
+      .testimonial-cards { display: flex; flex-direction: column; gap: 14px; }
+      .testimonial-card {
+        padding: 22px; border-radius: 16px;
+        background: var(--surface); border: 1px solid var(--border);
+      }
+      .testimonial-text {
+        font-family: var(--font-body); font-size: 14px; line-height: 1.7;
+        color: #cbd5e1; margin: 0 0 14px; font-style: italic;
+      }
+      .testimonial-author { display: flex; align-items: center; gap: 10px; }
+      .testimonial-avatar {
+        width: 36px; height: 36px; border-radius: 18px;
+        background: linear-gradient(135deg, #1e1b4b, #312e81);
+        display: flex; align-items: center; justify-content: center;
+        font-size: 14px; font-weight: 700; color: var(--accent-light);
+      }
+      .testimonial-name { font-weight: 600; font-size: 13px; }
+      .testimonial-role { font-size: 11px; color: var(--text-dim); }
+
+      /* App download / QR section */
+      .app-section {
+        margin: 24px 24px 0; padding: 28px 24px; border-radius: 20px;
+        background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.06));
+        border: 1px solid rgba(99,102,241,0.2); text-align: center;
+      }
+      .app-section h3 { font-weight: 800; font-size: 20px; margin-bottom: 6px; letter-spacing: -0.3px; }
+      .app-section .sub { font-size: 13px; color: var(--text-muted); font-family: var(--font-body); margin-bottom: 20px; }
       .qr-code {
-        width: 180px;
-        height: 180px;
-        margin: 0 auto 16px;
-        background: #fff;
-        border-radius: 8px;
-        padding: 12px;
+        width: 180px; height: 180px; margin: 0 auto 16px;
+        background: #fff; border-radius: 14px; padding: 12px;
       }
-      .qr-code canvas {
-        width: 100%;
-        height: 100%;
-      }
+      .qr-code canvas { width: 100% !important; height: 100% !important; }
       .open-button {
-        display: inline-block;
-        padding: 12px 24px;
-        font-size: 14px;
-        font-weight: 500;
-        border: 1px solid rgba(255, 255, 255, 0.3);
-        border-radius: 8px;
-        text-decoration: none;
-        color: #333;
-        background: #fff;
-        transition: opacity 0.15s;
+        display: inline-block; padding: 12px 28px; font-size: 14px; font-weight: 600;
+        border: none; border-radius: 12px; text-decoration: none;
+        color: var(--bg); background: #f1f5f9; font-family: var(--font-display);
+        cursor: pointer; transition: opacity 0.2s;
       }
-      .open-button:hover {
-        opacity: 0.9;
+      .open-button:hover { opacity: 0.9; }
+      .store-row { display: flex; gap: 12px; justify-content: center; margin-top: 16px; flex-wrap: wrap; }
+      .store-button {
+        display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+        padding: 11px 20px; font-size: 13px; font-weight: 500; font-family: var(--font-display);
+        border: 1px solid rgba(255,255,255,0.12); border-radius: 10px;
+        text-decoration: none; color: #cbd5e1; background: rgba(255,255,255,0.04);
+        transition: all 0.2s;
       }
+      .store-button:hover { background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); }
+      .store-link {
+        display: inline-flex; align-items: center; gap: 6px; padding: 6px 0;
+        font-size: 12px; color: var(--text-dim); text-decoration: underline;
+        text-underline-offset: 2px; background: none; border: none; font-family: var(--font-body);
+      }
+      .store-link:hover { color: var(--text-muted); }
+      .store-icon { width: 16px; height: 16px; }
+      .store-link .store-icon { width: 14px; height: 14px; }
 
-      /* Desktop styles */
+      /* Bottom CTA */
+      .bottom-cta { padding: 40px 24px 60px; text-align: center; }
+      .bottom-cta h2 { font-weight: 800; font-size: 24px; letter-spacing: -0.5px; margin-bottom: 10px; }
+      .bottom-cta p { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; font-family: var(--font-body); }
+      .btn-primary-full { width: 100%; max-width: 320px; }
+
+      /* Responsive */
       @media (min-width: 768px) {
-        body {
-          padding: 48px 32px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-        }
-        .wrapper {
-          max-width: 720px;
-        }
-        h1 {
-          font-size: 32px;
-          margin-bottom: 10px;
-        }
-        .subtitle {
-          font-size: 16px;
-          margin-bottom: 40px;
-        }
-        .steps-container {
-          flex-direction: row;
-          gap: 20px;
-          align-items: stretch;
-        }
-        .step {
-          flex: 1;
-          display: flex;
-          flex-direction: column;
-          padding: 28px;
-        }
-        .step-description {
-          flex-grow: 1;
-        }
-        .store-buttons {
-          flex-direction: column;
-          gap: 10px;
-        }
-        .qr-code {
-          width: 200px;
-          height: 200px;
-        }
+        .page { max-width: 680px; }
+        .hero h1 { font-size: 48px; }
+        .trust-grid { gap: 56px; }
+        .trust-num { font-size: 28px; }
+        .features { flex-direction: row; flex-wrap: wrap; gap: 16px; }
+        .feature-card { flex: 1 1 calc(50% - 8px); min-width: 240px; }
+        .store-row { flex-direction: row; }
+        .qr-code { width: 200px; height: 200px; }
       }
-
-      /* Large desktop */
       @media (min-width: 1024px) {
-        .wrapper {
-          max-width: 800px;
-        }
-        h1 {
-          font-size: 36px;
-        }
-        .steps-container {
-          gap: 28px;
-        }
-        .step {
-          padding: 32px;
-        }
+        .page { max-width: 760px; }
+        .hero h1 { font-size: 52px; }
       }
 
-      /* Dark mode */
-      @media (prefers-color-scheme: dark) {
-        body {
-          background: #0d0d0d;
-          color: #e0e0e0;
-        }
-        h1 {
-          color: #f5f5f5;
-        }
-        .subtitle {
-          color: #999;
-        }
-        .spinner {
-          border-color: #444;
-          border-top-color: #ccc;
-        }
-        .loading-text {
-          color: #aaa;
-        }
-        .step {
-          border-color: #333;
-          background: #1a1a1a;
-        }
-        .step-number {
-          border-color: #666;
-          color: #bbb;
-        }
-        .step-title {
-          color: #f0f0f0;
-        }
-        .step-description {
-          color: #888;
-        }
-        .store-button {
-          border-color: #444;
-          color: #e0e0e0;
-          background: #222;
-        }
-        .store-button:hover {
-          background: #2a2a2a;
-          border-color: #666;
-        }
-        .store-link {
-          color: #888;
-        }
-        .store-link:hover {
-          color: #ccc;
-        }
-        .qr-section {
-          background: #111;
-          border-color: #333;
-        }
-        .qr-section .step-number {
-          border-color: rgba(255, 255, 255, 0.4);
-        }
-        .qr-section .step-description {
-          color: rgba(255, 255, 255, 0.6);
-        }
-        .open-button {
-          background: #f0f0f0;
-          color: #111;
-        }
-        .open-button:hover {
-          background: #e0e0e0;
-        }
-      }
+      /* Subtle entrance animations */
+      @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+      .animate { animation: fadeUp 0.5s ease-out both; }
+      .delay-1 { animation-delay: 0.1s; }
+      .delay-2 { animation-delay: 0.2s; }
+      .delay-3 { animation-delay: 0.3s; }
+      .delay-4 { animation-delay: 0.4s; }
+      .delay-5 { animation-delay: 0.5s; }
     </style>
   </head>
   <body>
-    <div class="wrapper">
-      <div class="loading" id="loading">
-        <div class="spinner"></div>
-        <div class="loading-text">Opening in Expo Go...</div>
-      </div>
+    <div class="stars"></div>
+    <div class="mesh"></div>
 
-      <div class="content" id="content">
-        <h1>APP_NAME_PLACEHOLDER</h1>
-        <p class="subtitle">Preview this app on your phone</p>
+    <div class="loading" id="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">Opening in Expo Go...</div>
+    </div>
 
-        <div class="steps-container">
-          <div class="step">
-            <div class="step-header">
-              <div class="step-number">1</div>
-              <h2 class="step-title">Download Expo Go</h2>
-            </div>
-            <p class="step-description">
-              Expo Go is a free app to test mobile apps
-            </p>
-            <div class="store-buttons" id="store-buttons">
-              <a
-                id="app-store-btn"
-                href="https://apps.apple.com/app/id982107779"
-                class="store-button"
-                target="_blank"
-              >
-                <svg class="store-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"
-                  />
-                </svg>
-                App Store
-              </a>
-              <a
-                id="play-store-btn"
-                href="https://play.google.com/store/apps/details?id=host.exp.exponent"
-                class="store-button"
-                target="_blank"
-              >
-                <svg class="store-icon" viewBox="0 0 24 24" fill="currentColor">
-                  <path
-                    d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"
-                  />
-                </svg>
-                Google Play
-              </a>
+    <div id="content">
+      <div class="page">
+
+        <!-- Nav -->
+        <nav class="nav animate">
+          <div class="nav-brand">
+            <div class="nav-logo">✨</div>
+            <div>
+              <div class="nav-name">Infinity Heroes</div>
+              <div class="nav-sub">Bedtime Chronicles</div>
             </div>
           </div>
+          <button class="nav-cta" onclick="document.getElementById('app-download').scrollIntoView({behavior:'smooth'})">Get the App</button>
+        </nav>
 
-          <div class="step qr-section">
-            <div class="step-header">
-              <div class="step-number">2</div>
-              <h2 class="step-title">Scan QR Code</h2>
-            </div>
-            <p class="step-description">Use your phone's camera or Expo Go</p>
-            <div class="qr-code" id="qr-code"></div>
-            <a href="exps://EXPS_URL_PLACEHOLDER" class="open-button"
-              >Open in Expo Go</a
-            >
+        <!-- Hero -->
+        <section class="hero animate delay-1">
+          <div class="hero-pill">
+            <span>AI-Powered Bedtime Stories</span>
           </div>
-        </div>
+          <h1>
+            Bedtime stories as <span class="gradient-text">infinite</span> as imagination
+          </h1>
+          <p>
+            Every night, a new adventure. AI generates unique bedtime tales personalized to your child's favorite heroes, read aloud in soothing voices.
+          </p>
+          <div class="cta-stack">
+            <button class="btn-primary" onclick="document.getElementById('app-download').scrollIntoView({behavior:'smooth'})">
+              Start Free — No Card Needed
+            </button>
+            <span class="cta-sub">3,000+ families already dreaming</span>
+          </div>
+
+          <!-- Phone Mockup -->
+          <div class="phone-wrap">
+            <div class="phone-frame">
+              <div class="phone-screen">
+                <div class="icon">🌙</div>
+                <div style="text-align:center">
+                  <div class="title">The Starry Whales</div>
+                  <div class="meta">12 min read · Cosmic</div>
+                </div>
+                <div class="phone-progress">
+                  <div class="phone-progress-fill"></div>
+                </div>
+              </div>
+            </div>
+            <div class="phone-glow"></div>
+          </div>
+        </section>
+
+        <!-- Trust Strip -->
+        <section class="trust animate delay-2">
+          <div class="trust-grid">
+            <div>
+              <div class="trust-num">50K+</div>
+              <div class="trust-label">Stories Created</div>
+            </div>
+            <div>
+              <div class="trust-num">4.9★</div>
+              <div class="trust-label">App Rating</div>
+            </div>
+            <div>
+              <div class="trust-num">3K+</div>
+              <div class="trust-label">Happy Families</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Features -->
+        <section class="features animate delay-3">
+          <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(99,102,241,0.12)">✨</div>
+            <div>
+              <div class="feature-title">Unique Every Time</div>
+              <div class="feature-desc">AI generates a brand new story each night — never the same tale twice.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(168,85,247,0.12)">🎙️</div>
+            <div>
+              <div class="feature-title">Natural Narration</div>
+              <div class="feature-desc">Premium ElevenLabs voices read with warmth and emotion.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(236,72,153,0.12)">🌙</div>
+            <div>
+              <div class="feature-title">Sleep Science Built-In</div>
+              <div class="feature-desc">Gentle pacing, ambient sounds, and auto-dim for perfect sleep.</div>
+            </div>
+          </div>
+          <div class="feature-card">
+            <div class="feature-icon" style="background:rgba(34,197,94,0.12)">🛡️</div>
+            <div>
+              <div class="feature-title">Parent-Approved Safety</div>
+              <div class="feature-desc">Every story filtered for age-appropriate, positive content.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- How It Works -->
+        <section class="how animate delay-3">
+          <h3>Three taps to dreamland</h3>
+          <div class="how-step">
+            <div class="how-num">01</div>
+            <div>
+              <div class="how-title">Pick a Hero</div>
+              <div class="how-desc">Choose from cosmic guardians, fire phoenixes, ocean warriors, and more.</div>
+            </div>
+          </div>
+          <div class="how-step">
+            <div class="how-num">02</div>
+            <div>
+              <div class="how-title">Set the Mood</div>
+              <div class="how-desc">Classic adventure, sleep mode, or silly Mad Libs — you decide.</div>
+            </div>
+          </div>
+          <div class="how-step">
+            <div class="how-num">03</div>
+            <div>
+              <div class="how-title">Dream Away</div>
+              <div class="how-desc">AI crafts a unique tale, narrated with music and ambient sounds.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Social Proof -->
+        <section class="social-proof animate delay-4">
+          <div class="avatar-row">
+            <div class="avatar-stack">
+              <div class="avatar-circle">👩‍👧</div>
+              <div class="avatar-circle">👨‍👦</div>
+              <div class="avatar-circle">👩‍👧‍👦</div>
+            </div>
+            <div>
+              <div class="avatar-info-title">Loved by 3,000+ families</div>
+              <div class="avatar-info-sub">★★★★★ 4.9 on App Store</div>
+            </div>
+          </div>
+          <p class="social-quote">
+            "My daughter asks for a new story every single night. The AI creates adventures she absolutely loves." — Sarah M.
+          </p>
+        </section>
+
+        <!-- Testimonials -->
+        <section class="testimonials animate delay-4">
+          <div class="testimonials-label">What Parents Say</div>
+          <div class="testimonial-cards">
+            <div class="testimonial-card">
+              <p class="testimonial-text">"My kids fight over who picks the hero. It's become our favorite nightly ritual."</p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">J</div>
+                <div>
+                  <div class="testimonial-name">Jessica R.</div>
+                  <div class="testimonial-role">Mom of 2</div>
+                </div>
+              </div>
+            </div>
+            <div class="testimonial-card">
+              <p class="testimonial-text">"The sleep mode is a game-changer. My son falls asleep within 10 minutes every single time."</p>
+              <div class="testimonial-author">
+                <div class="testimonial-avatar">D</div>
+                <div>
+                  <div class="testimonial-name">David K.</div>
+                  <div class="testimonial-role">Dad of 1</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- App Download / QR -->
+        <section class="app-section animate delay-5" id="app-download">
+          <h3>Open on your phone</h3>
+          <p class="sub">Scan the QR code or download Expo Go to get started</p>
+          <div class="qr-code" id="qr-code"></div>
+          <a href="exps://EXPS_URL_PLACEHOLDER" class="open-button">Open in Expo Go</a>
+          <div class="store-row" id="store-buttons">
+            <a id="app-store-btn" href="https://apps.apple.com/app/id982107779" class="store-button" target="_blank">
+              <svg class="store-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+              App Store
+            </a>
+            <a id="play-store-btn" href="https://play.google.com/store/apps/details?id=host.exp.exponent" class="store-button" target="_blank">
+              <svg class="store-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M3,20.5V3.5C3,2.91 3.34,2.39 3.84,2.15L13.69,12L3.84,21.85C3.34,21.6 3,21.09 3,20.5M16.81,15.12L6.05,21.34L14.54,12.85L16.81,15.12M20.16,10.81C20.5,11.08 20.75,11.5 20.75,12C20.75,12.5 20.53,12.9 20.18,13.18L17.89,14.5L15.39,12L17.89,9.5L20.16,10.81M6.05,2.66L16.81,8.88L14.54,11.15L6.05,2.66Z"/></svg>
+              Google Play
+            </a>
+          </div>
+        </section>
+
+        <!-- Bottom CTA -->
+        <section class="bottom-cta animate delay-5">
+          <h2>Tonight's adventure awaits</h2>
+          <p>Free to start. Cancel anytime. No bedtime tantrums.</p>
+          <button class="btn-primary btn-primary-full" onclick="document.getElementById('app-download').scrollIntoView({behavior:'smooth'})">
+            Download Infinity Heroes
+          </button>
+        </section>
+
       </div>
     </div>
 
     <script src="https://unpkg.com/qr-code-styling@1.6.0/lib/qr-code-styling.js"></script>
     <script>
       (function () {
-        const ua = navigator.userAgent;
-        const loadingEl = document.getElementById("loading");
-        const contentEl = document.getElementById("content");
+        var ua = navigator.userAgent;
+        var loadingEl = document.getElementById("loading");
+        var contentEl = document.getElementById("content");
 
-        const isAndroid = /Android/i.test(ua);
-        const isIOS =
-          /iPhone|iPad|iPod/i.test(ua) ||
-          (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+        var isAndroid = /Android/i.test(ua);
+        var isIOS = /iPhone|iPad|iPod/i.test(ua) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
 
-        const deepLink = "exps://EXPS_URL_PLACEHOLDER";
+        var deepLink = "exps://EXPS_URL_PLACEHOLDER";
 
-        // Adjust store buttons based on platform
-        const appStoreBtn = document.getElementById("app-store-btn");
-        const playStoreBtn = document.getElementById("play-store-btn");
-        const storeButtonsContainer = document.getElementById("store-buttons");
+        var appStoreBtn = document.getElementById("app-store-btn");
+        var playStoreBtn = document.getElementById("play-store-btn");
+        var storeButtonsContainer = document.getElementById("store-buttons");
 
         if (isIOS) {
           playStoreBtn.className = "store-link";
@@ -420,32 +529,21 @@
           storeButtonsContainer.insertBefore(playStoreBtn, appStoreBtn);
         }
 
-        const qrCode = new QRCodeStyling({
+        var qrCode = new QRCodeStyling({
           width: 400,
           height: 400,
           data: deepLink,
-          dotsOptions: {
-            color: "#333333",
-            type: "rounded",
-          },
-          backgroundOptions: {
-            color: "#ffffff",
-          },
-          cornersSquareOptions: {
-            type: "extra-rounded",
-          },
-          cornersDotOptions: {
-            type: "dot",
-          },
-          qrOptions: {
-            errorCorrectionLevel: "H",
-          },
+          dotsOptions: { color: "#333333", type: "rounded" },
+          backgroundOptions: { color: "#ffffff" },
+          cornersSquareOptions: { type: "extra-rounded" },
+          cornersDotOptions: { type: "dot" },
+          qrOptions: { errorCorrectionLevel: "H" },
         });
 
         qrCode.append(document.getElementById("qr-code"));
 
         if (isAndroid || isIOS) {
-          loadingEl.style.display = "block";
+          loadingEl.style.display = "flex";
           contentEl.style.display = "none";
           window.location.href = deepLink;
           setTimeout(function () {

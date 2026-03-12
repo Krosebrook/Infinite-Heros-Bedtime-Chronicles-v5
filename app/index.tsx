@@ -437,8 +437,9 @@ export default function HomeScreen() {
               </View>
               {suggestionLoading ? (
                 <View style={s.suggestionLoadingWrap}>
+                  <Text style={s.suggestionStepLabel}>STEP 1 OF 3</Text>
                   <ActivityIndicator size="small" color={theme.accent} />
-                  <Text style={s.suggestionLoadingText}>Dreaming up ideas...</Text>
+                  <Text style={s.suggestionLoadingText}>Dreaming up ingredients...</Text>
                 </View>
               ) : suggestion ? (
                 <>
@@ -1137,11 +1138,19 @@ const s = StyleSheet.create({
     justifyContent: "center",
   },
   suggestionLoadingWrap: {
-    flexDirection: "row",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    paddingVertical: 10,
+    gap: 6,
+    paddingVertical: 12,
+  },
+  suggestionStepLabel: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 10,
+    letterSpacing: 1.5,
+    color: "rgba(255,255,255,0.3)",
+    textTransform: "uppercase" as const,
+    marginBottom: 2,
   },
   suggestionLoadingText: {
     fontFamily: "PlusJakartaSans_500Medium",

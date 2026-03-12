@@ -823,6 +823,9 @@ export default function StoryScreen() {
           </View>
         )}
         {storyState !== "ready" && <View style={{ width: 40 }} />}
+        <Pressable hitSlop={12} style={styles.iconBtn} testID="story-settings-gear">
+          <Ionicons name="settings-outline" size={20} color="rgba(255,255,255,0.6)" />
+        </Pressable>
       </View>
 
       {timerRemaining !== null && timerRemaining > 0 && (

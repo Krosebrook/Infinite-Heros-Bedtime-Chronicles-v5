@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Infinity Bedtime Chronicles - Home</title>
+<!-- Tailwind CSS v3 CDN -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Google Fonts: Plus Jakarta Sans -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            'midnight-blue': '#05051e',
+            'deep-indigo': '#0f0fbd',
+            'magic-purple': '#6366f1',
+            'glass-white': 'rgba(255, 255, 255, 0.05)',
+            'glass-border': 'rgba(255, 255, 255, 0.1)',
+          },
+          fontFamily: {
+            sans: ['Plus Jakarta Sans', 'sans-serif'],
+          },
+          borderRadius: {
+            'theme': '12px',
+          },
+        }
+      }
+    }
+  </script>
+<style data-purpose="custom-animations">
+    @keyframes glow {
+      0%, 100% { box-shadow: 0 0 10px rgba(99, 102, 241, 0.3); }
+      50% { box-shadow: 0 0 20px rgba(99, 102, 241, 0.6); }
+    }
+    .animate-glow {
+      animation: glow 3s ease-in-out infinite;
+    }
+    .hide-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .hide-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .gradient-overlay {
+      background: linear-gradient(to top, rgba(5, 5, 30, 0.9) 0%, rgba(5, 5, 30, 0) 100%);
+    }
+  </style>
+</head>
+<body class="bg-midnight-blue text-white font-sans selection:bg-deep-indigo overflow-x-hidden">
+<!-- BEGIN: MainHeader -->
+<header class="sticky top-0 z-50 bg-midnight-blue/80 backdrop-blur-md border-b border-glass-border px-6 py-4 flex items-center justify-between">
+<div class="flex items-center gap-2">
+<div class="w-8 h-8 flex items-center justify-center text-magic-purple">
+<svg fill="currentColor" height="24" viewbox="0 0 24 24" width="24" xmlns="http://www.w3.org/2000/svg"><path d="M12 .587l3.668 7.431 8.2 1.192-5.934 5.787 1.4 8.168L12 18.896l-7.334 3.869 1.4-8.168L.132 9.21l8.2-1.192L12 .587z"></path></svg>
+</div>
+<h1 class="text-lg font-extrabold tracking-tight">Infinity Bedtime</h1>
+</div>
+<button class="w-10 h-10 rounded-full bg-glass-white border border-glass-border flex items-center justify-center overflow-hidden" data-purpose="user-profile-toggle">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAuRyjtejJO7nBt__efPaJ7tkj9o6kPh3cAZnWArZTPk-x4Io79d-8_D_oWSNf4K3RhJNhiFDBs0-dl_Ymv7F4x6lJmFU3h6y9xfWWLaxvbO9hpSs32jJWUQJwuy8-oXA3TJ81ZGnx0YIktxMDSJJs4z8wjNsUQmyuB13NhSww-H_ay2vIq2O-ID69D2_QLr2ZayAAitNLjib5KlNNNNgJzcVQgNJvg7QWg-D7fW4lX92No8-ivppsdTMx68-bolj3Xr3ZXAYLBlUI"/>
+</button>
+</header>
+<!-- END: MainHeader -->
+<main class="pb-32">
+<!-- BEGIN: SearchBar -->
+<section class="px-6 py-4">
+<div class="relative group">
+<div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+<svg class="w-5 h-5 text-gray-400 group-focus-within:text-magic-purple transition-colors" fill="none" stroke="currentColor" viewbox="0 0 24 24"><path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</div>
+<input class="block w-full pl-11 pr-4 py-3 bg-glass-white border border-glass-border rounded-theme focus:ring-2 focus:ring-magic-purple focus:border-transparent transition-all outline-none text-sm placeholder:text-gray-500" placeholder="Search for a magical tale..." type="text"/>
+</div>
+</section>
+<!-- END: SearchBar -->
+<!-- BEGIN: CategoriesScroll -->
+<section class="py-4">
+<div class="flex overflow-x-auto gap-4 px-6 hide-scrollbar" data-purpose="category-list">
+<!-- Cosmic -->
+<div class="flex-shrink-0 flex flex-col items-center gap-2">
+<div class="w-20 h-28 rounded-theme overflow-hidden border border-glass-border">
+<img alt="Cosmic" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCoHIXC2j5dLuAUwWmjXCBZ7ljYy_Bi877vkWafA3X9ePSVVq30KJ1wMaseM4jaRIj_V1_3nwFcl8_TezFepa_8WdTTmAUVZsT8mAJL7WMNCU7_-HtkS-QbizbWlK1hmzGyL7-IzPOXjuWVzTwBhEvrBSvr3j9cRlKo7WLJYBUsuVbxuTIWmyXug6YT1HuKYm389A3ds5-N7kCFd4MmqaMZ6njl90D479b-xsZXictVRt3amRB3OG3mGdA8X9l-WYi799PWMyFynOA"/>
+</div>
+<span class="text-xs font-medium text-gray-400">Cosmic</span>
+</div>
+<!-- Magical -->
+<div class="flex-shrink-0 flex flex-col items-center gap-2">
+<div class="w-20 h-28 rounded-theme overflow-hidden border border-magic-purple/50 ring-2 ring-magic-purple/20">
+<img alt="Magical" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCh2sQ2ECLipMYrShvdsfdPtiakSRclXi56W1Y6Esvhpnf6U3522G4DSjmbJbuoELf4COnFzPJ47vSDmI4OjVQYaJV_kp09yMmW_uyxfaWixT5xrShzru01TuDAlsFnKpE5ZLyc40JTXcxQzW_jV46LO2S5Rj0lZ1p4YIsHVaJxRLIS_EGYrxThQj5QKTP0R3KiASWDuAgMTYuE67hvb3rWZJ-zRzFlALRxou72yauM9QMUzfSHj5ZMJUnD5-4fhqKC4uNckmO0l5E"/>
+</div>
+<span class="text-xs font-medium text-white">Magical</span>
+</div>
+<!-- Winter -->
+<div class="flex-shrink-0 flex flex-col items-center gap-2">
+<div class="w-20 h-28 rounded-theme overflow-hidden border border-glass-border">
+<img alt="Winter" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAUe3-XYKOEFeejm_QX5QdcmGyrylGoFxTCpXEeV9LXliNuTPWWsyHTXwx5bVkQi8DbpuWTZAACY8IZOse7KTB84o0EjtgsW5EsV0PxI1jTGji93Fk5W3D9e2gBQITwnUwR9Utbd6uREnLieIw6NS1ToRagSgL_S-wdycLHNNHyBbJUEv2oXU_DgyzZiHIBN5vcnFy-EPZ02aHdvyvqB1VAWKRsmivbxAU7tuuhIJ78zCF-bzbWMBzlmK9h8lfk2iXgmyhwizsFZ0c"/>
+</div>
+<span class="text-xs font-medium text-gray-400">Winter</span>
+</div>
+<!-- Oceanic -->
+<div class="flex-shrink-0 flex flex-col items-center gap-2">
+<div class="w-20 h-28 rounded-theme overflow-hidden border border-glass-border">
+<img alt="Oceanic" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvv2BUwlNuuERC8kra__qRpsoneD-qi4vN_6SGDdZThn-dijqBmiHW49OweLrRP09dTKCm1hyEzQAEI_FpfpyOAsQide6tUpsO1YYWog40LG4BdecwqjVxSRhAX6D8NE4U5JQqhnucxrtna0L1SEx4LQDdF3emjuQLkOWz2ZHNzxkeoRSLkm0BxTL_xyeVSkb-FSVg-e4hv9Q3JPtT3z3g6S7-8z001ogQdRU4RzegQp1wGKhR4ynWvEb863ITEZvt06EMq9YkSQ4"/>
+</div>
+<span class="text-xs font-medium text-gray-400">Oceanic</span>
+</div>
+<!-- Desert -->
+<div class="flex-shrink-0 flex flex-col items-center gap-2">
+<div class="w-20 h-28 rounded-theme overflow-hidden border border-glass-border">
+<img alt="Desert" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDjMW5r7GRjJGjq7j-bUiKnHnjSYhTI0C6642ayMzNgpn7QgO1w5ZWuBc0A3BM4sdQSds_OPMs8CjoDYqk9HYesFMl3RXka53BTTiEtaaqQ_-uUs6cEig7_XDRlN09a5xMJOQZ5TAFjCIggp5UB-_VCBJN6kUmvm_PqdCcu2WoMpBjdD3EAE2TXzLZhRR9L8Ep-zrAZ0z0NSRXK-T4mh85NvxRg8-GbG1KR6QWHlVNc-Oh5cttqzATEewDQc8yzlnCevPnKxAkstyU"/>
+</div>
+<span class="text-xs font-medium text-gray-400">Desert</span>
+</div>
+</div>
+</section>
+<!-- END: CategoriesScroll -->
+<!-- BEGIN: Tabs -->
+<section class="px-6 py-4">
+<div class="flex gap-6 border-b border-glass-border">
+<button class="pb-3 text-sm font-bold text-white border-b-2 border-magic-purple">New Arrivals</button>
+<button class="pb-3 text-sm font-medium text-gray-500">Favorites</button>
+<button class="pb-3 text-sm font-medium text-gray-500">AI Crafted</button>
+</div>
+</section>
+<!-- END: Tabs -->
+<!-- BEGIN: MainContentGrid -->
+<section class="px-6 grid grid-cols-2 gap-x-4 gap-y-6 mt-2" data-purpose="stories-grid">
+<!-- Story Card 1 -->
+<div class="flex flex-col gap-2">
+<div class="relative aspect-[3/4] rounded-theme overflow-hidden group">
+<img alt="The Starry Whales" class="w-full h-full object-cover transform transition-transform group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB1jLdKFdhpel1Kh5sjxf5LPi-lM2_IJkVTr3vU_S39m-NjISPDYMTdLYYVPsp3_scPtcgN0ZEfMckmFjCYwIN6gu3CKClELppPt-PwJlFfJwv6QTe7fUBtMmn5GNGgep8WrL7OKBM-Bri0iHWfxxCH5qKhVrUw7fwZ9PSzQ_s3xuWk1E-Fd7cU3yjwk8i37ZCOJwk712gYoQjBwx5VN3FKP0kA2UZXYWo7f_Eij0xQzUuxYc-zGK516RKEqOs5QZo6jRO7v2QOT7M"/>
+<div class="absolute inset-0 gradient-overlay"></div>
+<div class="absolute bottom-3 left-3">
+<span class="px-2 py-1 bg-deep-indigo text-[10px] font-bold uppercase tracking-wider rounded-md">Editor's Pick</span>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-sm line-clamp-1">The Starry Whales</h3>
+<p class="text-[10px] text-gray-400">12 min read • Cosmic</p>
+</div>
+</div>
+<!-- Story Card 2 -->
+<div class="flex flex-col gap-2">
+<div class="relative aspect-[3/4] rounded-theme overflow-hidden group">
+<img alt="The Candy Cloud" class="w-full h-full object-cover transform transition-transform group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD2GS92MzDaZVymbMgwKOCZKTtbIVUYkfHQ1w5fTXKId1EPGnaozVj0VaDS1zxyzYCf04HhNG1tjaJYozBoaOcXAHeI8eTHUhYfuMqH82pKU7UNngPaoKM5rMz7H2o1yzdeoLMuhZBhHDAT8M5IH47OoXfUg-SRMUZxdanBa9ZY5WoiXLVSzxC0mIjnFwTnGZKXbQF7F3O_mj6ro4NrM-adLqhSjADoyPrZKJOZaFx1u-umCBTuIate5BXvjuYy5QxZJ5KNljFRYjI"/>
+<div class="absolute inset-0 gradient-overlay"></div>
+</div>
+<div>
+<h3 class="font-bold text-sm line-clamp-1">The Candy Cloud...</h3>
+<p class="text-[10px] text-gray-400">8 min read • Dreamy</p>
+</div>
+</div>
+<!-- Story Card 3 -->
+<div class="flex flex-col gap-2">
+<div class="relative aspect-[3/4] rounded-theme overflow-hidden group">
+<img alt="The Moon Guardian" class="w-full h-full object-cover transform transition-transform group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDtfI-7kVmM7mYeMB4oWZvFg5HRNksluebRPnvVXwEYg4t-E-z6WZbxwi91Qd488YuGHywpXf46ZlFYrumXXNCT5vY8ZZpULkGhkJ_grugOjkQx-uXES3SHW9xLcEmcJUgc-4OEZvmyv6oxoHnHG64P99AiTorTBvG-b5jtfjXgJWniclY3yJ0YD9y3o3UECbUOJnwRjYmcKs-DMdTgHgakILlhd_Zr96NEUr5qHtlRm9WFJ_i4rkidMBj6Y7sVcKv7wnU4ChJzSRI"/>
+<div class="absolute inset-0 gradient-overlay"></div>
+</div>
+<div>
+<h3 class="font-bold text-sm line-clamp-1">The Moon Guardian</h3>
+<p class="text-[10px] text-gray-400">15 min read • Fantasy</p>
+</div>
+</div>
+<!-- Story Card 4 -->
+<div class="flex flex-col gap-2">
+<div class="relative aspect-[3/4] rounded-theme overflow-hidden group">
+<img alt="The Firefly Symphony" class="w-full h-full object-cover transform transition-transform group-hover:scale-105" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB-TjwLefFbFIWiGY08lsY9llMmP3KhFm1AYHidfGwvoZOJAEzXIphdIkIORdAaNEZ5fpI15-mONHWGEoLfV3PXbFROgoDvjFN-CWqIRtFfx4YccUU9iTmRKqnvzoPqCwsUl3HMYKkw-aARSgwzor_fa2JuUHdv25h51Rx5HrvTYH51xOEIEM6CP1q8MB-GS3JM2W25R72CRaEfBcvv9auvrNU0-QeE3gcXOgdOqAxA1ey1TOPlnHMOJVFYjT0huC6-8wyzyrKHwnw"/>
+<div class="absolute inset-0 gradient-overlay"></div>
+<div class="absolute bottom-3 left-3">
+<span class="px-2 py-1 bg-magic-purple text-[10px] font-bold uppercase tracking-wider rounded-md">AI Crafted</span>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-sm line-clamp-1">The Firefly Symphony</h3>
+<p class="text-[10px] text-gray-400">10 min read • Magical</p>
+</div>
+</div>
+</section>
+<!-- END: MainContentGrid -->
+</main>
+<!-- BEGIN: BottomNavigation -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 bg-midnight-blue/95 backdrop-blur-xl border-t border-glass-border px-6 pt-3 pb-8 flex items-center justify-between">
+<!-- Home -->
+<a class="flex flex-col items-center gap-1 group" href="#">
+<div class="text-magic-purple">
+<svg class="h-6 w-6" fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>
+</div>
+<span class="text-[10px] font-bold text-magic-purple uppercase">Home</span>
+</a>
+<!-- Library -->
+<a class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition-colors" href="#">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="text-[10px] font-bold uppercase">Library</span>
+</a>
+<!-- Create Button -->
+<div class="relative -top-6">
+<button class="w-14 h-14 bg-magic-purple rounded-2xl flex items-center justify-center shadow-lg shadow-magic-purple/40 animate-glow" data-purpose="create-story-btn">
+<svg class="h-8 w-8 text-white" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M12 4v16m8-8H4" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+</button>
+<span class="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[10px] font-bold text-white uppercase mt-1">Create</span>
+</div>
+<!-- Saved -->
+<a class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition-colors" href="#">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="text-[10px] font-bold uppercase">Saved</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center gap-1 text-gray-500 hover:text-white transition-colors" href="#">
+<svg class="h-6 w-6" fill="none" stroke="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"></path></svg>
+<span class="text-[10px] font-bold uppercase">Profile</span>
+</a>
+</nav>
+<!-- END: BottomNavigation -->
+</body></html>

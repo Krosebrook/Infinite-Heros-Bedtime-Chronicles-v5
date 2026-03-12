@@ -1,0 +1,50 @@
+#3 - Home Screen Library Redesign + Story Details Page
+What & Why
+The current home screen is a story creation wizard (hero → mode → duration → voice → generate). The new mockups show a fundamentally different approach: a story library/browse experience as the home screen, with story creation accessible via a "Create" button. This also adds a new Story Details page where users personalize a story before starting it.
+
+Done looks like
+Home screen shows a header with "Infinity Bedtime Chronicles" branding, star icon, and profile avatar
+A search bar with "Search for a magical tale..." placeholder
+Horizontal scrolling category thumbnails with image backgrounds (Cosmic, Magical, Winter, Oceanic, Dreamy)
+Tab bar with "New Arrivals", "Favorites", "AI Crafted" sections
+2-column story card grid with cover images, titles, read times, and category labels (some with "Editor's Pick" or "AI Crafted" badges)
+5-tab bottom navigation: Home, Library, Create (prominent center button), Saved, Profile
+Tapping a story card navigates to a new Story Details screen
+Story Details screen shows: hero illustration, tags (Premium Story, Ages 5-8), title, duration/genre meta, summary text, "Personalize the Magic" section with name input, adventure setting grid (4 options with icons), narration tone pills (Gentle & Calm, Energetic, Funny), technical detail chips (Audio, Illustrations, Language), and a "Start Journey" CTA button
+Tapping "Create" in the bottom nav opens the existing story creation flow (the current hero selection wizard moved to a create screen or modal)
+The dark cosmic theme, Plus Jakarta Sans typography, and glassmorphism styling are maintained throughout
+The story reader top bar refinements match the mockup (back arrow + centered branding/chapter + settings gear)
+Out of scope
+Backend API changes for story library data (use local/mock data for the browse experience)
+AI-powered story recommendations or search functionality
+Actual image generation for category thumbnails and story covers (use placeholder images)
+Changes to the story generation backend logic
+Tasks
+Restructure app routing — Convert from flat Stack to a tab-based layout with 5 tabs (Home, Library, Create, Saved, Profile). Move current story creation flow to a "Create" tab or accessible screen. Add a new story-details route.
+
+Build the new Home screen — Replace current index.tsx with the library/browse layout: header with branding + profile avatar, search bar, horizontal category scroll with image thumbnails and labels, tab switcher (New Arrivals / Favorites / AI Crafted), and 2-column story card grid with cover images, titles, duration labels, and category badges.
+
+Build the Story Details screen — New screen with hero illustration section (gradient overlay, tags, title, meta), summary section, "Personalize the Magic" form (name input, 2×2 adventure setting grid with icons, narration tone pills), technical detail chips, and a "Start Journey" bottom CTA bar.
+
+Update bottom navigation — Implement the 5-tab bottom nav bar matching the mockup: Home (filled icon), Library (book icon), Create (prominent raised blue button), Saved (heart icon), Profile (person icon). Active state with label and icon color change.
+
+Preserve the existing story creation flow — Move the current hero/mode/duration/voice/speed wizard to the Create tab so that functionality is preserved and accessible from the bottom nav.
+
+Refine story reader styling — Adjust story.tsx top bar to precisely match mockup: back arrow left, centered "INFINITY BEDTIME CHRONICLES" + chapter subtitle, settings gear right. Ensure bottom Previous/Next + progress counter matches the clean mockup layout.
+
+Relevant files
+app/_layout.tsx
+app/index.tsx
+app/story.tsx
+app/completion.tsx
+app/trophies.tsx
+constants/colors.ts
+constants/heroes.ts
+components/SettingsModal.tsx
+components/ProfileModal.tsx
+components/MemoryJar.tsx
+attached_assets/code_1773344860280.html
+attached_assets/screen_1773344860281.png
+attached_assets/code_1773344860281.html
+attached_assets/screen_1773344860282.png
+attached_assets/code_1773344860282.html

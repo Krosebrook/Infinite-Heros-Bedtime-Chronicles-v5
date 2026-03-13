@@ -779,19 +779,26 @@ export default function StoryScreen() {
         </Pressable>
 
         <View style={styles.topBarCenter}>
-          <Text style={[styles.brandingText, { color: theme.accent }]}>INFINITY HEROES</Text>
-          <Text style={styles.brandingSubtext}>Bedtime Chronicles</Text>
+          {storyState === "ready" && storyData ? (
+            <>
+              <Text style={[styles.chapterLabel, { color: theme.accent }]}>
+                CHAPTER {String(currentPartIndex + 1).padStart(2, "0")}
+              </Text>
+              <Text style={styles.chapterTitle} numberOfLines={1}>
+                {storyData.title}
+              </Text>
+            </>
+          ) : (
+            <>
+              <Text style={[styles.brandingText, { color: theme.accent }]}>INFINITY HEROES</Text>
+              <Text style={styles.brandingSubtext}>Bedtime Chronicles</Text>
+            </>
+          )}
         </View>
 
-        {storyState === "ready" && storyData && (
-          <View style={[styles.chapterBadge, { backgroundColor: `${theme.accent}33`, borderColor: `${theme.accent}4D` }]}>
-            <Ionicons name="book" size={12} color={theme.accent} />
-            <Text style={[styles.chapterBadgeText, { color: theme.accent }]}>
-              Chapter {currentPartIndex + 1}
-            </Text>
-          </View>
-        )}
-        {storyState !== "ready" && <View style={{ width: 40 }} />}
+        <Pressable onPress={() => Haptics.selectionAsync()} hitSlop={12} style={styles.iconBtn}>
+          <Ionicons name="share-outline" size={20} color="rgba(255,255,255,0.8)" />
+        </Pressable>
       </View>
 
       {timerRemaining !== null && timerRemaining > 0 && (
@@ -835,58 +842,41 @@ export default function StoryScreen() {
         <>
           <ScrollView
             ref={scrollRef}
-            contentContainerStyle={[styles.storyContent, { paddingBottom: bottomInset + 160 }]}
+            contentContainerStyle={[styles.storyScrollContent, { paddingBottom: bottomInset + 160 }]}
             showsVerticalScrollIndicator={false}
           >
-            {storyData && (
-              <Animated.View entering={FadeInDown.duration(600)} style={styles.titleWrap}>
-                <Text style={[styles.storyTitleText, { textShadowColor: `${theme.accent}40` }]}>
-                  {storyData.title}
-                </Text>
-                <View style={[styles.titleUnderline, { backgroundColor: theme.accent }]} />
-              </Animated.View>
-            )}
-
-            {sceneLoading && (
-              <Animated.View entering={FadeIn.duration(300)} style={styles.sceneLoadingWrap}>
-                <ActivityIndicator size="small" color={theme.accent} />
-                <Text style={styles.sceneLoadingText}>Painting the scene...</Text>
-              </Animated.View>
-            )}
-
-            {sceneImage && !sceneLoading && (
-              <Animated.View entering={FadeIn.duration(600)} style={styles.sceneImageWrap}>
-                <Image source={{ uri: sceneImage }} style={styles.sceneImage} resizeMode="cover" />
-                <LinearGradient
-                  colors={["transparent", "rgba(0,0,0,0.5)"]}
-                  style={styles.sceneImageOverlay}
-                />
-                <View style={styles.sceneProgressOverlay}>
-                  <View style={styles.sceneProgressRow}>
-                    <View style={styles.sceneProgressBg}>
-                      <View style={[styles.sceneProgressFill, { width: `${progressPct}%`, backgroundColor: theme.accent }]} />
-                    </View>
-                    <Text style={styles.sceneProgressLabel}>{Math.round(progressPct)}% READ</Text>
-                  </View>
+            <View style={styles.sceneHeroWrap}>
+              {sceneImage && !sceneLoading ? (
+                <Animated.View entering={FadeIn.duration(600)} style={StyleSheet.absoluteFill}>
+                  <Image source={{ uri: sceneImage }} style={styles.sceneHeroImage} resizeMode="cover" />
+                </Animated.View>
+              ) : sceneLoading ? (
+                <View style={styles.sceneHeroPlaceholder}>
+                  <ActivityIndicator size="small" color={theme.accent} />
+                  <Text style={styles.sceneLoadingText}>Painting the scene...</Text>
                 </View>
-              </Animated.View>
-            )}
-
-            {sceneError && !sceneLoading && !sceneImage && (
-              <Animated.View entering={FadeIn.duration(400)} style={styles.sceneErrorWrap}>
-                <Ionicons name="image-outline" size={28} color="rgba(255,255,255,0.2)" />
-                <Text style={styles.sceneErrorText}>Scene unavailable</Text>
-                <Pressable
-                  onPress={() => {
-                    if (currentPart) loadSceneImage(currentPart.text);
-                  }}
-                  style={[styles.sceneRetryBtn, { borderColor: `${theme.accent}40` }]}
-                >
-                  <Ionicons name="refresh" size={14} color={theme.accent} />
-                  <Text style={[styles.sceneRetryText, { color: theme.accent }]}>Retry</Text>
-                </Pressable>
-              </Animated.View>
-            )}
+              ) : sceneError ? (
+                <View style={styles.sceneHeroPlaceholder}>
+                  <Ionicons name="image-outline" size={32} color="rgba(255,255,255,0.15)" />
+                  <Pressable
+                    onPress={() => { if (currentPart) loadSceneImage(currentPart.text); }}
+                    style={[styles.sceneRetryBtn, { borderColor: `${theme.accent}40` }]}
+                  >
+                    <Ionicons name="refresh" size={14} color={theme.accent} />
+                    <Text style={[styles.sceneRetryText, { color: theme.accent }]}>Retry</Text>
+                  </Pressable>
+                </View>
+              ) : (
+                <View style={styles.sceneHeroPlaceholder}>
+                  <Ionicons name="sparkles" size={32} color={`${theme.accent}40`} />
+                </View>
+              )}
+              <LinearGradient
+                colors={["rgba(5,5,30,0.2)", "rgba(5,5,30,0.6)", theme.gradient[0]]}
+                locations={[0, 0.6, 1]}
+                style={styles.sceneHeroOverlay}
+              />
+            </View>
 
             {videoEnabled && videoJobId && (
               <ErrorBoundary FallbackComponent={({ resetError }) => (
@@ -903,7 +893,7 @@ export default function StoryScreen() {
               </ErrorBoundary>
             )}
 
-            <View style={styles.parchmentCard}>
+            <View style={styles.textSection}>
               {paragraphs.map((paragraph, index) => (
                 <Animated.View
                   key={`${currentPartIndex}-${index}`}
@@ -924,6 +914,20 @@ export default function StoryScreen() {
                 </Animated.View>
               ))}
             </View>
+
+            {storyData && (
+              <Animated.View entering={FadeIn.duration(400)} style={styles.progressInfoWrap}>
+                <View style={styles.progressBarTrack}>
+                  <View style={[styles.progressBarFillNew, { width: `${progressPct}%`, backgroundColor: theme.accent }]} />
+                </View>
+                <View style={styles.progressInfoRow}>
+                  <Text style={styles.progressInfoText}>{Math.round(progressPct)}% Completed</Text>
+                  <Text style={styles.progressInfoText}>
+                    {storyData.parts.length - currentPartIndex - 1} {storyData.parts.length - currentPartIndex - 1 === 1 ? "chapter" : "chapters"} remaining
+                  </Text>
+                </View>
+              </Animated.View>
+            )}
 
             {hasChoices && (
               <View style={styles.choicesSection}>
@@ -946,7 +950,7 @@ export default function StoryScreen() {
           {storyState === "ready" && storyData && (
             <Animated.View
               entering={FadeInUp.duration(400)}
-              style={[styles.floatingControlsWrap, { bottom: bottomInset + 24 }]}
+              style={[styles.bottomControlBar, { paddingBottom: bottomInset + 12 }]}
             >
               {isLastPart ? (
                 <Pressable
@@ -968,65 +972,66 @@ export default function StoryScreen() {
                   </LinearGradient>
                 </Pressable>
               ) : (
-                <View style={styles.floatingPill}>
-                  <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.pillSpeedBtn} testID="speed-cycle-btn">
-                    <Text style={[styles.pillSpeedText, { color: theme.accent }]}>
+                <View style={styles.controlBar}>
+                  <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.controlBarBtn} testID="speed-cycle-btn">
+                    <Text style={[styles.controlAaText, { color: theme.accent }]}>
                       {SPEED_LABELS[playbackSpeed]}
                     </Text>
-                    <Ionicons name={SPEED_ICONS[playbackSpeed]} size={16} color={theme.accent} />
                   </Pressable>
 
-                  <View style={[styles.pillDivider, { backgroundColor: `${theme.accent}1A` }]} />
+                  <Pressable onPress={() => Haptics.selectionAsync()} hitSlop={8} style={styles.controlBarBtn}>
+                    <Ionicons name="bookmark-outline" size={20} color="rgba(255,255,255,0.5)" />
+                  </Pressable>
 
-                  <View style={styles.pillCenterControls}>
-                    <Pressable onPress={handlePrevPart} hitSlop={8} style={styles.pillNavBtn} disabled={currentPartIndex === 0}>
-                      <Ionicons name="play-back" size={20} color={currentPartIndex === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.5)"} />
-                    </Pressable>
+                  <Pressable onPress={handlePrevPart} hitSlop={8} style={styles.controlBarBtn} disabled={currentPartIndex === 0}>
+                    <Ionicons name="play-back" size={20} color={currentPartIndex === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)"} />
+                  </Pressable>
 
-                    <Pressable
-                      onPress={speakCurrentPart}
-                      hitSlop={8}
-                      style={[styles.pillPlayBtn, { backgroundColor: theme.accent }]}
-                      disabled={audioLoading}
-                    >
-                      {audioLoading ? (
-                        <ActivityIndicator size="small" color="#FFF" />
-                      ) : (
-                        <Ionicons
-                          name={isSpeaking ? "pause" : "play"}
-                          size={28}
-                          color="#FFF"
-                          style={!isSpeaking ? { marginLeft: 3 } : undefined}
-                        />
-                      )}
-                    </Pressable>
+                  <Pressable
+                    onPress={speakCurrentPart}
+                    hitSlop={8}
+                    style={[styles.controlPlayBtn, { backgroundColor: theme.accent }]}
+                    disabled={audioLoading}
+                  >
+                    {audioLoading ? (
+                      <ActivityIndicator size="small" color="#FFF" />
+                    ) : (
+                      <Ionicons
+                        name={isSpeaking ? "pause" : "play"}
+                        size={24}
+                        color="#FFF"
+                        style={!isSpeaking ? { marginLeft: 2 } : undefined}
+                      />
+                    )}
+                  </Pressable>
 
-                    <Pressable onPress={handleNextPart} hitSlop={8} style={styles.pillNavBtn}>
-                      <Ionicons name="play-forward" size={20} color="rgba(255,255,255,0.5)" />
-                    </Pressable>
-                  </View>
+                  <Pressable onPress={handleNextPart} hitSlop={8} style={styles.controlBarBtn}>
+                    <Ionicons name="play-forward" size={20} color="rgba(255,255,255,0.6)" />
+                  </Pressable>
 
-                  <View style={[styles.pillDivider, { backgroundColor: `${theme.accent}1A` }]} />
+                  <Pressable onPress={speakCurrentPart} hitSlop={8} style={styles.controlBarBtn}>
+                    <Ionicons name="headset-outline" size={20} color={isSpeaking ? theme.accent : "rgba(255,255,255,0.5)"} />
+                  </Pressable>
 
                   <Pressable
                     onPress={toggleBgMusic}
                     hitSlop={8}
-                    style={styles.pillMusicBtn}
+                    style={styles.controlBarBtn}
                     disabled={musicLoading}
                   >
                     {musicLoading ? (
                       <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
                     ) : (
-                      <>
+                      <View style={styles.musicBtnWrap}>
                         <Ionicons
                           name={musicMuted ? "musical-note-outline" : "musical-notes"}
-                          size={18}
+                          size={20}
                           color={musicMuted ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.6)"}
                         />
                         {musicPlaying && !musicMuted && (
                           <View style={styles.musicDot} />
                         )}
-                      </>
+                      </View>
                     )}
                   </Pressable>
                 </View>
@@ -1054,13 +1059,13 @@ const styles = StyleSheet.create({
     width: 40,
     height: 40,
     borderRadius: 20,
-    backgroundColor: Colors.cardBg,
+    backgroundColor: "rgba(0,0,0,0.35)",
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    borderColor: "rgba(255,255,255,0.1)",
     alignItems: "center",
     justifyContent: "center",
   },
-  topBarCenter: { flex: 1, alignItems: "center" },
+  topBarCenter: { flex: 1, alignItems: "center", paddingHorizontal: 8 },
   brandingText: {
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 13,
@@ -1072,20 +1077,17 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.4)",
     marginTop: 1,
   },
-  chapterBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 5,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 20,
-    borderWidth: 1,
-  },
-  chapterBadgeText: {
+  chapterLabel: {
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 10,
     letterSpacing: 2,
-    textTransform: "uppercase",
+    textTransform: "uppercase" as const,
+  },
+  chapterTitle: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 14,
+    color: "rgba(255,255,255,0.85)",
+    marginTop: 2,
   },
   timerBar: {
     flexDirection: "row",
@@ -1132,98 +1134,41 @@ const styles = StyleSheet.create({
     gap: 8,
     marginTop: 16,
   },
-  storyContent: { paddingHorizontal: 24, paddingTop: 8 },
-  titleWrap: {
-    alignItems: "center",
-    marginBottom: 24,
+  storyScrollContent: {
+    paddingTop: 0,
   },
-  storyTitleText: {
-    fontFamily: "PlusJakartaSans_800ExtraBold",
-    fontSize: 26,
-    color: Colors.textPrimary,
-    textAlign: "center",
-    lineHeight: 34,
-    marginBottom: 10,
-    textShadowOffset: { width: 0, height: 2 },
-    textShadowRadius: 20,
+  sceneHeroWrap: {
+    width: "100%",
+    height: 280,
+    backgroundColor: "rgba(5,5,30,0.8)",
+    position: "relative",
+    overflow: "hidden",
   },
-  titleUnderline: {
-    width: 40,
-    height: 3,
-    borderRadius: 2,
+  sceneHeroImage: {
+    width: "100%",
+    height: "100%",
   },
-  sceneLoadingWrap: {
+  sceneHeroPlaceholder: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-    backgroundColor: Colors.cardBg,
-    borderRadius: 20,
-    paddingVertical: 30,
-    marginBottom: 20,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
+    gap: 12,
+  },
+  sceneHeroOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: "70%",
   },
   sceneLoadingText: {
     fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 12,
     color: Colors.textMuted,
   },
-  sceneImageWrap: {
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-  },
-  sceneImage: { width: "100%", height: 220, borderRadius: 20 },
-  sceneImageOverlay: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    height: 60,
-  },
-  sceneProgressOverlay: {
-    position: "absolute",
-    bottom: 12,
-    left: 12,
-    right: 12,
-  },
-  sceneProgressRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    backgroundColor: "rgba(2, 2, 26, 0.6)",
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  sceneProgressBg: {
-    flex: 1,
-    height: 5,
-    borderRadius: 3,
-    backgroundColor: "rgba(255,255,255,0.2)",
-    overflow: "hidden",
-  },
-  sceneProgressFill: {
-    height: 5,
-    borderRadius: 3,
-  },
-  sceneProgressLabel: {
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 9,
-    color: "rgba(255,255,255,0.7)",
-    letterSpacing: 0.5,
-  },
-  parchmentCard: {
-    backgroundColor: Colors.cardBg,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    padding: 20,
-    marginBottom: 20,
+  textSection: {
+    paddingHorizontal: 24,
+    paddingTop: 20,
   },
   dropCap: {
     fontFamily: "PlusJakartaSans_800ExtraBold",
@@ -1243,7 +1188,33 @@ const styles = StyleSheet.create({
     lineHeight: 38,
     color: "rgba(220, 210, 240, 0.85)",
   },
-  choicesSection: { marginTop: 12, gap: 12 },
+  progressInfoWrap: {
+    marginHorizontal: 24,
+    marginTop: 8,
+    marginBottom: 20,
+    gap: 10,
+  },
+  progressBarTrack: {
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.1)",
+    overflow: "hidden",
+  },
+  progressBarFillNew: {
+    height: 4,
+    borderRadius: 2,
+  },
+  progressInfoRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  progressInfoText: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.4)",
+  },
+  choicesSection: { marginTop: 12, gap: 12, paddingHorizontal: 24 },
   choicesLabel: {
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 16,
@@ -1277,58 +1248,37 @@ const styles = StyleSheet.create({
     color: "#FFF",
     flex: 1,
   },
-  floatingControlsWrap: {
+  bottomControlBar: {
     position: "absolute",
-    left: 16,
-    right: 16,
+    bottom: 0,
+    left: 0,
+    right: 0,
+    paddingHorizontal: 16,
+    paddingTop: 12,
+    backgroundColor: "rgba(10, 10, 30, 0.95)",
+    borderTopWidth: 1,
+    borderTopColor: "rgba(255,255,255,0.06)",
     zIndex: 50,
   },
-  floatingPill: {
+  controlBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(16, 17, 34, 0.92)",
-    borderRadius: 999,
-    paddingVertical: 8,
-    paddingHorizontal: 8,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.15)",
-    elevation: 10,
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 6 },
-    shadowOpacity: 0.4,
-    shadowRadius: 16,
+    justifyContent: "space-around",
   },
-  pillSpeedBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 4,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-  pillSpeedText: {
-    fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 11,
-  },
-  pillDivider: {
-    width: 1,
-    height: 28,
-  },
-  pillCenterControls: {
-    flex: 1,
-    flexDirection: "row",
+  controlBarBtn: {
+    width: 44,
+    height: 44,
     alignItems: "center",
     justifyContent: "center",
-    gap: 4,
-    paddingHorizontal: 8,
   },
-  pillNavBtn: {
-    padding: 8,
+  controlAaText: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 14,
   },
-  pillPlayBtn: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  controlPlayBtn: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     alignItems: "center",
     justifyContent: "center",
     elevation: 6,
@@ -1337,18 +1287,16 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.4,
     shadowRadius: 10,
   },
-  pillMusicBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    flexDirection: "row",
+  musicBtnWrap: {
     alignItems: "center",
-    gap: 4,
+    justifyContent: "center",
   },
   musicDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 3,
+    width: 5,
+    height: 5,
+    borderRadius: 2.5,
     backgroundColor: "#22C55E",
+    marginTop: 2,
   },
   finishButton: {
     borderRadius: 28,
@@ -1456,6 +1404,13 @@ const styles = StyleSheet.create({
     color: "rgba(255,255,255,0.7)",
     letterSpacing: 0.3,
   },
+  sceneImageOverlay: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    height: 60,
+  },
   sceneErrorWrap: {
     alignItems: "center",
     justifyContent: "center",
@@ -1485,27 +1440,5 @@ const styles = StyleSheet.create({
   sceneRetryText: {
     fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 12,
-  },
-  controlsRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: 12,
-  },
-  progressArea: { alignItems: "center", gap: 6 },
-  progressLabel: {
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 11,
-    letterSpacing: 0.5,
-  },
-  progressBarBg: {
-    width: 120,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: "rgba(255,255,255,0.1)",
-  },
-  progressBarFill: {
-    height: 4,
-    borderRadius: 2,
   },
 });

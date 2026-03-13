@@ -373,6 +373,7 @@ export default function StoryScreen() {
   const soundRef = useRef<Audio.Sound | null>(null);
   const bgMusicRef = useRef<Audio.Sound | null>(null);
   const sceneCacheRef = useRef<Record<number, string>>({});
+  const sceneRetryCountRef = useRef(0);
 
   const MUSIC_VOLUME = storyMode === "sleep" ? 0.12 : 0.15;
 
@@ -605,14 +606,32 @@ export default function StoryScreen() {
   }, [hero, videoEnabled]);
 
   useEffect(() => {
+    sceneRetryCountRef.current = 0;
     if (storyState === "ready" && storyData && storyData.parts[currentPartIndex]) {
       const partText = storyData.parts[currentPartIndex].text;
-      loadSceneImage(partText, currentPartIndex);
+      if (sceneCacheRef.current[currentPartIndex]) {
+        setSceneImage(sceneCacheRef.current[currentPartIndex]);
+        setSceneLoading(false);
+        setSceneError(false);
+      } else {
+        loadSceneImage(partText, currentPartIndex);
+      }
       if (videoEnabled) {
         triggerVideoGeneration(partText);
       }
     }
   }, [currentPartIndex, storyState]);
+
+  useEffect(() => {
+    if (sceneError && storyData && storyData.parts[currentPartIndex] && sceneRetryCountRef.current < 2) {
+      const retryDelay = (sceneRetryCountRef.current + 1) * 4000;
+      const timeout = setTimeout(() => {
+        sceneRetryCountRef.current += 1;
+        loadSceneImage(storyData.parts[currentPartIndex].text, currentPartIndex);
+      }, retryDelay);
+      return () => clearTimeout(timeout);
+    }
+  }, [sceneError, currentPartIndex]);
 
   useEffect(() => {
     if (storyState === "ready" && storyMode === "sleep" && storyData) {

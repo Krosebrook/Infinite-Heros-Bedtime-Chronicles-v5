@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -132,10 +133,11 @@ function PulsingBadge({ emoji, color }: { emoji: string; color: string }) {
 }
 
 export default function CompletionScreen() {
-  const { heroId, mode, storyJson } = useLocalSearchParams<{
+  const { heroId, mode, storyJson, isFirstStory } = useLocalSearchParams<{
     heroId: string;
     mode: string;
     storyJson: string;
+    isFirstStory: string;
   }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -156,6 +158,9 @@ export default function CompletionScreen() {
 
   useEffect(() => {
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    if (isFirstStory === "true") {
+      AsyncStorage.setItem("@infinity_heroes_onboarding_complete", "true").catch(() => {});
+    }
 
     const trackCompletion = async () => {
       if (!activeProfile || !hero) return;

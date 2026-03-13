@@ -348,6 +348,8 @@ export default function StoryScreen() {
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [audioLoading, setAudioLoading] = useState(false);
+  const [audioPosition, setAudioPosition] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(defaultSpeed);
   const [sceneImage, setSceneImage] = useState<string | null>(null);
   const [sceneLoading, setSceneLoading] = useState(false);
@@ -425,6 +427,8 @@ export default function StoryScreen() {
       soundRef.current = null;
     }
     setIsSpeaking(false);
+    setAudioPosition(0);
+    setAudioDuration(0);
   }, []);
 
   const hero = HEROES.find((h) => h.id === heroId);
@@ -657,10 +661,16 @@ export default function StoryScreen() {
       soundRef.current = sound;
 
       sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.isLoaded && status.didJustFinish) {
-          sound.unloadAsync();
-          soundRef.current = null;
-          setIsSpeaking(false);
+        if (status.isLoaded) {
+          setAudioPosition(status.positionMillis || 0);
+          setAudioDuration(status.durationMillis || 0);
+          if (status.didJustFinish) {
+            sound.unloadAsync();
+            soundRef.current = null;
+            setIsSpeaking(false);
+            setAudioPosition(0);
+            setAudioDuration(0);
+          }
         }
       });
 
@@ -686,6 +696,13 @@ export default function StoryScreen() {
       } catch {}
     }
   }, [playbackSpeed]);
+
+  const seekAudio = useCallback(async (fraction: number) => {
+    if (!soundRef.current || audioDuration === 0) return;
+    try {
+      await soundRef.current.setPositionAsync(Math.floor(fraction * audioDuration));
+    } catch {}
+  }, [audioDuration]);
 
   const handleChoiceSelect = (choiceIndex: number) => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -867,9 +884,15 @@ export default function StoryScreen() {
                   </Pressable>
                 </View>
               ) : (
-                <View style={styles.sceneHeroPlaceholder}>
-                  <Ionicons name="sparkles" size={32} color={`${theme.accent}40`} />
-                </View>
+                <Pressable
+                  style={styles.sceneHeroPlaceholder}
+                  onPress={() => { if (currentPart) loadSceneImage(currentPart.text); }}
+                >
+                  <Ionicons name="image-outline" size={28} color={`${theme.accent}30`} />
+                  <Text style={[styles.sceneGenerateText, { color: `${theme.accent}70` }]}>
+                    Tap to illustrate
+                  </Text>
+                </Pressable>
               )}
               <LinearGradient
                 colors={["rgba(5,5,30,0.2)", "rgba(5,5,30,0.6)", theme.gradient[0]]}
@@ -972,7 +995,31 @@ export default function StoryScreen() {
                   </LinearGradient>
                 </Pressable>
               ) : (
-                <View style={styles.controlBar}>
+                <>
+                {isSpeaking && audioDuration > 0 && (
+                <View style={styles.seekBarWrap}>
+                  <View style={styles.seekBarTrack}>
+                    <View
+                      style={[
+                        styles.seekBarFill,
+                        {
+                          width: `${audioDuration > 0 ? (audioPosition / audioDuration) * 100 : 0}%`,
+                          backgroundColor: theme.accent,
+                        },
+                      ]}
+                    />
+                  </View>
+                  <View style={styles.seekBarTimes}>
+                    <Text style={styles.seekBarTime}>
+                      {Math.floor(audioPosition / 60000)}:{String(Math.floor((audioPosition % 60000) / 1000)).padStart(2, "0")}
+                    </Text>
+                    <Text style={styles.seekBarTime}>
+                      {Math.floor(audioDuration / 60000)}:{String(Math.floor((audioDuration % 60000) / 1000)).padStart(2, "0")}
+                    </Text>
+                  </View>
+                </View>
+              )}
+              <View style={styles.controlBar}>
                   <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.controlBarBtn} testID="speed-cycle-btn">
                     <Text style={[styles.controlAaText, { color: theme.accent }]}>
                       {SPEED_LABELS[playbackSpeed]}
@@ -1035,6 +1082,7 @@ export default function StoryScreen() {
                     )}
                   </Pressable>
                 </View>
+                </>
               )}
             </Animated.View>
           )}
@@ -1440,5 +1488,35 @@ const styles = StyleSheet.create({
   sceneRetryText: {
     fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 12,
+  },
+  sceneGenerateText: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 12,
+    marginTop: 4,
+  },
+  seekBarWrap: {
+    paddingHorizontal: 16,
+    paddingTop: 10,
+    paddingBottom: 4,
+  },
+  seekBarTrack: {
+    height: 3,
+    borderRadius: 2,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    overflow: "hidden",
+  },
+  seekBarFill: {
+    height: "100%",
+    borderRadius: 2,
+  },
+  seekBarTimes: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginTop: 4,
+  },
+  seekBarTime: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 10,
+    color: "rgba(255,255,255,0.3)",
   },
 });

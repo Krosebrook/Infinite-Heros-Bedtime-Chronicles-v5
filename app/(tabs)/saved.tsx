@@ -13,7 +13,7 @@ import {
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, router } from "expo-router";
 import Animated, { FadeInDown } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { StarField } from "@/components/StarField";
@@ -97,6 +97,19 @@ export default function SavedScreen() {
       <Animated.View entering={FadeInDown.duration(300).delay(index * 80)}>
         <Pressable
           style={styles.storyRow}
+          onPress={() => {
+            router.push({
+              pathname: "/story",
+              params: {
+                heroId: item.heroId,
+                mode: item.mode,
+                duration: "medium",
+                voice: "moonbeam",
+                speed: "medium",
+                replayJson: JSON.stringify(item.story),
+              },
+            });
+          }}
           onLongPress={() => handleUnfavorite(item.id, item.story.title)}
           testID={`saved-story-${item.id}`}
         >

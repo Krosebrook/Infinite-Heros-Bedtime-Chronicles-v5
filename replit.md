@@ -10,8 +10,10 @@ Preferred communication style: Simple, everyday language.
 
 ### Frontend (Expo / React Native)
 - **Framework**: Expo SDK 54 with React Native 0.81, new architecture.
-- **Routing**: Expo Router v6 with file-based routing and tab navigation. Uses `app/(tabs)/` group for 5-tab layout (Home, Library, Create, Saved, Profile). Key screens: `(tabs)/index.tsx` (library/browse home), `(tabs)/create.tsx` (story creation wizard), `story-details.tsx` (story personalization), `story.tsx` (story generation/reader), `completion.tsx` (post-story celebration), `trophies.tsx` (badge display).
-- **State Management**: TanStack React Query for server state, React Context for profile state, and local component state.
+- **Routing**: Expo Router v6 with file-based routing and tab navigation. Uses `app/(tabs)/` group for 5-tab layout (Home, Library, Create, Saved, Profile). Key screens: `(tabs)/index.tsx` (library/browse home), `(tabs)/create.tsx` (story creation wizard), `story-details.tsx` (story personalization), `story.tsx` (story generation/reader), `completion.tsx` (post-story celebration), `trophies.tsx` (badge display), `welcome.tsx` (onboarding), `quick-create.tsx` (fast story creation), `settings.tsx` (app settings).
+- **Onboarding**: First-launch flow — `welcome.tsx` (cosmic splash with CTA) → `quick-create.tsx` (theme picker + child name + story gen). Completion writes `@infinity_heroes_onboarding_complete` to AsyncStorage. `_layout.tsx` checks this on startup and redirects to `/welcome` if not set.
+- **Settings**: `lib/SettingsContext.tsx` provides `SettingsProvider` + `useSettings()` hook with 4 groups: Audio (volume, speed, voice, auto-play), Story (length, age range, theme, auto-images), Playback & Reading (extend mode, auto-next, text size), Library (sort order, favorites only, auto-save). Persisted via AsyncStorage (`@infinity_heroes_app_settings`). Settings screen at `app/settings.tsx`, gear icon in `(tabs)/index.tsx` header.
+- **State Management**: TanStack React Query for server state, React Context for profile state + app settings, and local component state.
 - **Local Storage**: AsyncStorage for profiles, badges, streaks, parent controls, and saved stories.
 - **Typography**: Plus Jakarta Sans (400 Regular through 800 ExtraBold) via `@expo-google-fonts/plus-jakarta-sans`.
 - **Styling**: React Native StyleSheet with midnight/indigo/purple glassmorphism theme (`constants/colors.ts`). Key colors: accent `#6366f1`, cardBg `rgba(255,255,255,0.05)`, cardBorder `rgba(255,255,255,0.1)`.

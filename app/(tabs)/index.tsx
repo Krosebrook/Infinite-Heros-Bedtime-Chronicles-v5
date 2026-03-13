@@ -152,15 +152,25 @@ export default function HomeScreen() {
                 {activeProfile?.name || "Little Explorer"} ✨
               </Text>
             </View>
-            <Pressable
-              style={styles.profileBtn}
-              testID="profile-btn"
-              onPress={() => router.push("/(tabs)/profile")}
-            >
-              <Text style={styles.profileEmoji}>
-                {activeProfile?.avatar || "👤"}
-              </Text>
-            </Pressable>
+            <View style={styles.headerRight}>
+              <Pressable
+                onPress={() => router.push("/settings")}
+                hitSlop={10}
+                style={styles.gearBtn}
+                testID="settings-btn"
+              >
+                <Ionicons name="settings-outline" size={20} color="rgba(255,255,255,0.5)" />
+              </Pressable>
+              <Pressable
+                style={styles.profileBtn}
+                testID="profile-btn"
+                onPress={() => router.push("/(tabs)/profile")}
+              >
+                <Text style={styles.profileEmoji}>
+                  {activeProfile?.avatar || "👤"}
+                </Text>
+              </Pressable>
+            </View>
           </View>
         </Animated.View>
 
@@ -336,6 +346,21 @@ const styles = StyleSheet.create({
     fontSize: 22,
     color: "#FFFFFF",
     letterSpacing: -0.3,
+  },
+  headerRight: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  gearBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: "rgba(255,255,255,0.05)",
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.08)",
   },
   profileBtn: {
     width: 44,

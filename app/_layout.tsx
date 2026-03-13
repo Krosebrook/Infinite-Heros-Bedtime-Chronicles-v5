@@ -1,12 +1,14 @@
 import { QueryClientProvider } from "@tanstack/react-query";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
 import * as SplashScreen from "expo-splash-screen";
 import React, { useEffect } from "react";
 import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 import { queryClient } from "@/lib/query-client";
 import { ProfileProvider } from "@/lib/ProfileContext";
+import { SettingsProvider } from "@/lib/SettingsContext";
 import { StatusBar } from "expo-status-bar";
 import {
   Nunito_400Regular,
@@ -26,6 +28,8 @@ import {
 } from "@expo-google-fonts/plus-jakarta-sans";
 import Colors from "@/constants/colors";
 
+const ONBOARDING_KEY = "@infinity_heroes_onboarding_complete";
+
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
@@ -38,6 +42,18 @@ function RootLayoutNav() {
       }}
     >
       <Stack.Screen name="(tabs)" />
+      <Stack.Screen
+        name="welcome"
+        options={{ animation: "fade", gestureEnabled: false }}
+      />
+      <Stack.Screen
+        name="quick-create"
+        options={{ animation: "slide_from_bottom", presentation: "modal" }}
+      />
+      <Stack.Screen
+        name="settings"
+        options={{ animation: "slide_from_right" }}
+      />
       <Stack.Screen
         name="story-details"
         options={{ animation: "slide_from_right" }}
@@ -90,6 +106,13 @@ export default function RootLayout() {
   useEffect(() => {
     if (fontsLoaded || fontError) {
       SplashScreen.hideAsync();
+      AsyncStorage.getItem(ONBOARDING_KEY)
+        .then((done) => {
+          if (!done) {
+            router.replace("/welcome");
+          }
+        })
+        .catch(() => {});
     }
   }, [fontsLoaded, fontError]);
 
@@ -99,12 +122,14 @@ export default function RootLayout() {
     <ErrorBoundary>
       <QueryClientProvider client={queryClient}>
         <ProfileProvider>
-          <GestureHandlerRootView style={{ flex: 1 }}>
-            <KeyboardProvider>
-              <StatusBar style="light" />
-              <RootLayoutNav />
-            </KeyboardProvider>
-          </GestureHandlerRootView>
+          <SettingsProvider>
+            <GestureHandlerRootView style={{ flex: 1 }}>
+              <KeyboardProvider>
+                <StatusBar style="light" />
+                <RootLayoutNav />
+              </KeyboardProvider>
+            </GestureHandlerRootView>
+          </SettingsProvider>
         </ProfileProvider>
       </QueryClientProvider>
     </ErrorBoundary>

@@ -9,6 +9,7 @@ export interface TextGenerationRequest {
   maxTokens?: number;
   jsonMode?: boolean;
   thinkingBudget?: number;
+  responseSchema?: Record<string, unknown>;
 }
 
 export interface TextGenerationResponse {

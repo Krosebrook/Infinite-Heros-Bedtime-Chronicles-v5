@@ -75,10 +75,10 @@ const STORY_DATA: Record<string, {
 };
 
 const ADVENTURE_SETTINGS = [
-  { id: "enchanted-forest", label: "Enchanted Forest", icon: "leaf" as IoniconsName, color: "#22c55e" },
-  { id: "crystal-caves", label: "Crystal Caves", icon: "diamond" as IoniconsName, color: "#8b5cf6" },
-  { id: "starship", label: "Starship", icon: "rocket" as IoniconsName, color: "#3b82f6" },
-  { id: "underwater", label: "Underwater Palace", icon: "water" as IoniconsName, color: "#06b6d4" },
+  { id: "enchanted-forest", label: "Enchanted Forest", prompt: "an enchanted forest filled with glowing mushrooms and talking animals", icon: "leaf" as IoniconsName, color: "#22c55e" },
+  { id: "crystal-caves", label: "Crystal Caves", prompt: "sparkling crystal caves beneath a magical mountain", icon: "diamond" as IoniconsName, color: "#8b5cf6" },
+  { id: "starship", label: "Starship", prompt: "aboard a magical starship sailing through the cosmos", icon: "rocket" as IoniconsName, color: "#3b82f6" },
+  { id: "underwater", label: "Underwater Palace", prompt: "a shimmering underwater palace beneath the waves", icon: "water" as IoniconsName, color: "#06b6d4" },
 ];
 
 const TONES = [
@@ -87,6 +87,31 @@ const TONES = [
   { id: "funny", label: "Funny & Silly" },
   { id: "mysterious", label: "Mysterious" },
 ];
+
+const SIDEKICKS = [
+  { id: "none", label: "Solo", icon: "person-outline" as IoniconsName, prompt: "none" },
+  { id: "owl", label: "Wise Owl", icon: "eye-outline" as IoniconsName, prompt: "a wise old owl with spectacles and ancient knowledge" },
+  { id: "dragon", label: "Dragon", icon: "flame-outline" as IoniconsName, prompt: "a friendly little dragon who breathes rainbow sparks" },
+  { id: "fairy", label: "Fairy", icon: "sparkles-outline" as IoniconsName, prompt: "a mischievous fairy who loves to play pranks" },
+  { id: "robot", label: "Robot Dog", icon: "hardware-chip-outline" as IoniconsName, prompt: "a loyal robot dog with a wagging antenna tail" },
+  { id: "bear", label: "Magic Bear", icon: "paw-outline" as IoniconsName, prompt: "a talking bear who tells riddles and loves honey cakes" },
+];
+
+const PROBLEMS = [
+  { id: "lost-treasure", label: "Find a Lost Treasure" },
+  { id: "help-friend", label: "Help a Friend in Need" },
+  { id: "ancient-puzzle", label: "Solve an Ancient Puzzle" },
+  { id: "missing-magic", label: "Restore Missing Magic" },
+  { id: "new-land", label: "Explore a New Land" },
+];
+
+const PROBLEM_PROMPTS: Record<string, string> = {
+  "lost-treasure": "finding a legendary lost treasure hidden somewhere in the setting",
+  "help-friend": "helping a friend who is lost, lonely, or needs the hero's special power",
+  "ancient-puzzle": "solving an ancient magical puzzle that only the bravest hero can unlock",
+  "missing-magic": "restoring lost magic that has made the world a little dimmer and sadder",
+  "new-land": "exploring an unknown land and making peace with the mysterious creatures who live there",
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -102,17 +127,28 @@ export default function StoryDetailsScreen() {
   const [childName, setChildName] = useState(activeProfile?.name || "");
   const [selectedSetting, setSelectedSetting] = useState("enchanted-forest");
   const [selectedTone, setSelectedTone] = useState("gentle");
+  const [selectedSidekick, setSelectedSidekick] = useState("none");
+  const [selectedProblem, setSelectedProblem] = useState("lost-treasure");
 
   const handleStartJourney = () => {
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+    const settingData = ADVENTURE_SETTINGS.find((s) => s.id === selectedSetting);
+    const sidekickData = SIDEKICKS.find((s) => s.id === selectedSidekick);
     router.push({
       pathname: "/story",
       params: {
         heroId: story.heroId,
         duration: "medium",
-        voice: "moonbeam",
+        voice: story.mode === "sleep" ? "moonbeam" : "captain",
         mode: story.mode,
-        speed: "medium",
+        speed: story.mode === "sleep" ? "gentle" : "medium",
+        ...(childName.trim() ? { childName: childName.trim() } : {}),
+        ...(story.mode === "classic" ? {
+          setting: settingData?.prompt || selectedSetting,
+          tone: selectedTone,
+          sidekick: sidekickData?.prompt || "none",
+          problem: PROBLEM_PROMPTS[selectedProblem] || selectedProblem,
+        } : {}),
       },
     });
   };
@@ -257,7 +293,62 @@ export default function StoryDetailsScreen() {
             </View>
           </Animated.View>
 
-          <Animated.View entering={FadeInDown.duration(400).delay(450)}>
+          {story.mode === "classic" && (
+            <>
+              <Animated.View entering={FadeInDown.duration(400).delay(450)}>
+                <Text style={styles.subsectionTitle}>Sidekick Companion</Text>
+                <View style={styles.sidekickRow}>
+                  {SIDEKICKS.map((sk) => {
+                    const isActive = selectedSidekick === sk.id;
+                    return (
+                      <Pressable
+                        key={sk.id}
+                        style={[styles.sidekickCard, isActive && styles.sidekickCardActive]}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setSelectedSidekick(sk.id);
+                        }}
+                        testID={`sidekick-${sk.id}`}
+                      >
+                        <View style={[styles.sidekickIcon, isActive && styles.sidekickIconActive]}>
+                          <Ionicons name={sk.icon} size={18} color={isActive ? "#FFF" : Colors.textMuted} />
+                        </View>
+                        <Text style={[styles.sidekickLabel, isActive && styles.sidekickLabelActive]}>
+                          {sk.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </Animated.View>
+
+              <Animated.View entering={FadeInDown.duration(400).delay(550)}>
+                <Text style={styles.subsectionTitle}>Today's Challenge</Text>
+                <View style={styles.problemRow}>
+                  {PROBLEMS.map((p) => {
+                    const isActive = selectedProblem === p.id;
+                    return (
+                      <Pressable
+                        key={p.id}
+                        style={[styles.problemChip, isActive && styles.problemChipActive]}
+                        onPress={() => {
+                          Haptics.selectionAsync();
+                          setSelectedProblem(p.id);
+                        }}
+                        testID={`problem-${p.id}`}
+                      >
+                        <Text style={[styles.problemChipText, isActive && styles.problemChipTextActive]}>
+                          {p.label}
+                        </Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </Animated.View>
+            </>
+          )}
+
+          <Animated.View entering={FadeInDown.duration(400).delay(650)}>
             <View style={styles.detailChipsRow}>
               <View style={styles.detailChip}>
                 <Ionicons name="volume-high-outline" size={14} color={Colors.accent} />
@@ -499,6 +590,73 @@ const styles = StyleSheet.create({
   },
   tonePillTextActive: {
     color: Colors.accent,
+  },
+  sidekickRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 24,
+  },
+  sidekickCard: {
+    alignItems: "center",
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+    minWidth: 72,
+  },
+  sidekickCardActive: {
+    backgroundColor: `${Colors.accent}18`,
+    borderColor: `${Colors.accent}60`,
+  },
+  sidekickIcon: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
+    backgroundColor: "rgba(255,255,255,0.07)",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  sidekickIconActive: {
+    backgroundColor: Colors.accent,
+  },
+  sidekickLabel: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.45)",
+    textAlign: "center",
+  },
+  sidekickLabelActive: {
+    color: "#FFF",
+  },
+  problemRow: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 24,
+  },
+  problemChip: {
+    paddingHorizontal: 13,
+    paddingVertical: 9,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  problemChipActive: {
+    backgroundColor: "rgba(249,115,22,0.15)",
+    borderColor: "rgba(249,115,22,0.5)",
+  },
+  problemChipText: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 12,
+    color: "rgba(255,255,255,0.45)",
+  },
+  problemChipTextActive: {
+    color: "#F97316",
   },
   detailChipsRow: {
     flexDirection: "row",

@@ -319,7 +319,7 @@ function ChoiceButton({
 }
 
 export default function StoryScreen() {
-  const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer, speed: initialSpeed, replayJson } =
+  const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer, speed: initialSpeed, replayJson, setting, tone, childName, sidekick, problem } =
     useLocalSearchParams<{
       heroId: string;
       duration: string;
@@ -330,6 +330,11 @@ export default function StoryScreen() {
       sleepTimer: string;
       speed: string;
       replayJson: string;
+      setting: string;
+      tone: string;
+      childName: string;
+      sidekick: string;
+      problem: string;
     }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -484,6 +489,15 @@ export default function StoryScreen() {
       if (storyMode === "madlibs" && madlibWords) {
         try { bodyData.madlibWords = JSON.parse(madlibWords); } catch {}
       }
+
+      if (storyMode === "sleep" && soundscape) bodyData.soundscape = soundscape;
+      if (storyMode === "classic") {
+        if (setting) bodyData.setting = setting;
+        if (tone) bodyData.tone = tone;
+        if (sidekick) bodyData.sidekick = sidekick;
+        if (problem) bodyData.problem = problem;
+      }
+      if (childName) bodyData.childName = childName;
 
       const res = await fetch(url.toString(), {
         method: "POST",

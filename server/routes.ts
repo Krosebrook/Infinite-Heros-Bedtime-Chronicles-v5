@@ -73,6 +73,65 @@ function sanitizeString(val: unknown, maxLen: number): string {
 
 const aiRouter = getAIRouter();
 
+const ART_STYLES = [
+  'soft watercolor illustration with dreamy washes and gentle color bleeds',
+  'bold cel-shaded cartoon style with thick outlines and flat vibrant colors',
+  'textured paper cutout collage with layered shapes and handmade feel',
+  'warm gouache painting style with rich opaque colors and visible brushstrokes',
+  'playful crayon drawing style with textured strokes and childlike energy',
+  'luminous digital painting with glowing light effects and soft gradients',
+  'retro storybook illustration style reminiscent of 1960s picture books',
+  'whimsical ink and wash style with fine linework and splashy color accents',
+  'cozy pastel illustration with muted tones and rounded soft forms',
+  'vibrant pop art style with halftone dots and high contrast primary colors',
+  'gentle chalk on dark paper illustration with soft dusty textures',
+  'modern flat design with geometric shapes and clean bold colors',
+];
+
+function getRandomStyle(): string {
+  return ART_STYLES[Math.floor(Math.random() * ART_STYLES.length)];
+}
+
+const STORY_RESPONSE_SCHEMA = {
+  type: 'object' as const,
+  properties: {
+    title: { type: 'string' as const },
+    parts: {
+      type: 'array' as const,
+      items: {
+        type: 'object' as const,
+        properties: {
+          text: { type: 'string' as const },
+          choices: { type: 'array' as const, items: { type: 'string' as const } },
+          partIndex: { type: 'number' as const },
+        },
+        required: ['text', 'choices', 'partIndex'] as const,
+      },
+    },
+    vocabWord: {
+      type: 'object' as const,
+      properties: {
+        word: { type: 'string' as const },
+        definition: { type: 'string' as const },
+      },
+      required: ['word', 'definition'] as const,
+    },
+    joke: { type: 'string' as const },
+    lesson: { type: 'string' as const },
+    tomorrowHook: { type: 'string' as const },
+    rewardBadge: {
+      type: 'object' as const,
+      properties: {
+        emoji: { type: 'string' as const },
+        title: { type: 'string' as const },
+        description: { type: 'string' as const },
+      },
+      required: ['emoji', 'title', 'description'] as const,
+    },
+  },
+  required: ['title', 'parts', 'vocabWord', 'joke', 'lesson', 'tomorrowHook', 'rewardBadge'] as const,
+};
+
 const CHILD_SAFETY_RULES = `
 CRITICAL SAFETY RULES (non-negotiable):
 - NEVER include violence, weapons, fighting, battles, or physical conflict of any kind
@@ -170,11 +229,42 @@ function getStoryUserPrompt(
   heroDescription: string,
   wordCount: string,
   partCount: number,
-  madlibWords?: Record<string, string>
+  madlibWords?: Record<string, string>,
+  soundscape?: string,
+  setting?: string,
+  tone?: string,
+  childName?: string,
+  sidekick?: string,
+  problem?: string,
 ): string {
   let prompt = `Create a bedtime story featuring the hero "${heroName}" who is the "${heroTitle}" with the power of "${heroPower}".
 Hero background: ${heroDescription}
 Total story length: approximately ${wordCount} words spread across ${partCount} parts.`;
+
+  if (childName) {
+    prompt += `\nThe story is being told for a child named "${childName}" — weave their name naturally into the narrative when it feels right.`;
+  }
+
+  if (mode === "classic") {
+    if (setting) {
+      prompt += `\nAdventure setting: The story takes place in ${setting}. Bring this location to life with vivid sensory details.`;
+    }
+    if (tone) {
+      const toneDescriptions: Record<string, string> = {
+        gentle: "gentle and soothing — calming language, soft pacing, warm and cozy atmosphere",
+        adventurous: "adventurous and exciting — energetic pacing, bold descriptions, heroic moments",
+        funny: "funny and silly — include humor, playful wordplay, unexpected comic twists",
+        mysterious: "mysterious and wonder-filled — intriguing atmosphere, surprising discoveries, a sense of magic",
+      };
+      prompt += `\nNarration tone: ${toneDescriptions[tone] || tone}.`;
+    }
+    if (sidekick && sidekick !== "none") {
+      prompt += `\nSidekick companion: ${sidekick} accompanies the hero throughout the adventure. Give them a distinct personality and meaningful role in the story.`;
+    }
+    if (problem) {
+      prompt += `\nCentral challenge: The story revolves around ${problem}. This is the main obstacle the hero must resolve.`;
+    }
+  }
 
   if (mode === "madlibs" && madlibWords) {
     const wordsList = Object.entries(madlibWords)
@@ -185,7 +275,19 @@ Total story length: approximately ${wordCount} words spread across ${partCount} 
   }
 
   if (mode === "sleep") {
-    prompt += `\n\nThis is a Sleep Mode story. Make it extremely calming with progressive relaxation cues. No choices needed — parts flow naturally.`;
+    const soundscapeDescriptions: Record<string, string> = {
+      rain: "the soft patter of rain on the windowsill",
+      ocean: "the gentle rhythm of ocean waves",
+      crickets: "the peaceful chirping of crickets in the night",
+      wind: "a soft breeze rustling through the leaves",
+      fire: "the warm crackling of a cozy fire",
+      forest: "the quiet sounds of a moonlit forest",
+    };
+    const soundAnchor = soundscape && soundscapeDescriptions[soundscape]
+      ? soundscapeDescriptions[soundscape]
+      : "peaceful quiet";
+    prompt += `\n\nThis is a Sleep Mode story. Make it extremely calming with progressive relaxation cues. No choices needed — parts flow naturally into deeper calm.
+Sensory anchor: Weave in the sounds of "${soundAnchor}" throughout the story — the hero hears it and it deepens their sense of peace and safety.`;
   }
 
   return prompt;
@@ -216,6 +318,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const duration = sanitizeString(req.body.duration, 20);
       const mode = sanitizeString(req.body.mode, 20);
       const madlibWords = req.body.madlibWords;
+      const soundscape = sanitizeString(req.body.soundscape, 30) || undefined;
+      const setting = sanitizeString(req.body.setting, 100) || undefined;
+      const tone = sanitizeString(req.body.tone, 50) || undefined;
+      const childName = sanitizeString(req.body.childName, 50) || undefined;
+      const sidekick = sanitizeString(req.body.sidekick, 100) || undefined;
+      const problem = sanitizeString(req.body.problem, 100) || undefined;
 
       if (!heroName) {
         return res.status(400).json({ error: "Hero name is required" });
@@ -227,7 +335,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const partCount = getPartCount(storyDuration);
 
       const systemPrompt = getStorySystemPrompt(storyMode, partCount);
-      const userPrompt = getStoryUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, partCount, madlibWords);
+      const userPrompt = getStoryUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, partCount, madlibWords, soundscape, setting, tone, childName, sidekick, problem);
 
       const aiResponse = await aiRouter.generateText("story", {
         systemPrompt,
@@ -235,6 +343,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         temperature: storyMode === "sleep" ? 0.7 : 0.9,
         maxTokens: 8192,
         jsonMode: true,
+        responseSchema: STORY_RESPONSE_SCHEMA,
       });
 
       const content = aiResponse.text;
@@ -288,6 +397,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const duration = sanitizeString(req.body.duration, 20);
       const mode = sanitizeString(req.body.mode, 20);
       const madlibWords = req.body.madlibWords;
+      const soundscape = sanitizeString(req.body.soundscape, 30) || undefined;
+      const setting = sanitizeString(req.body.setting, 100) || undefined;
+      const tone = sanitizeString(req.body.tone, 50) || undefined;
+      const childName = sanitizeString(req.body.childName, 50) || undefined;
+      const sidekick = sanitizeString(req.body.sidekick, 100) || undefined;
+      const problem = sanitizeString(req.body.problem, 100) || undefined;
 
       if (!heroName) {
         return res.status(400).json({ error: "Hero name is required" });
@@ -299,7 +414,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       const partCount = getPartCount(storyDuration);
 
       const systemPrompt = getStorySystemPrompt(storyMode, partCount);
-      const userPrompt = getStoryUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, partCount, madlibWords);
+      const userPrompt = getStoryUserPrompt(storyMode, heroName, heroTitle, heroPower, heroDescription, wordCount, partCount, madlibWords, soundscape, setting, tone, childName, sidekick, problem);
 
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
@@ -354,8 +469,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ error: "Hero name is required" });
       }
 
-      const prompt = `Create a cute, friendly, child-safe cartoon avatar of a superhero character named "${heroName}" who is "${heroTitle}" with the power of "${heroPower}". ${heroDescription}. 
-Style: Adorable Pixar/Disney-inspired character design, round friendly features, big expressive eyes, vibrant colors, cosmic/starry background, suitable for ages 3-9. No scary elements, no weapons. Circular portrait composition.`;
+      const artStyle = getRandomStyle();
+      const prompt = `A children's book illustration portrait of a superhero named "${heroName}" who is "${heroTitle}" with the power of "${heroPower}". ${heroDescription}.
+Style: ${artStyle}. Close-up friendly portrait, expressive eyes, child-safe content, suitable for ages 3-9. No scary elements, no weapons. Circular portrait composition with a cosmic/starry background.`;
 
       const result = await aiRouter.generateImage("avatar", { prompt });
       console.log(`[Avatar] Generated by ${result.provider} (${result.model})`);
@@ -382,9 +498,10 @@ Style: Adorable Pixar/Disney-inspired character design, round friendly features,
       }
 
       const summary = sceneText.substring(0, 300);
-      const prompt = `Create a magical, child-friendly illustration for a bedtime story scene. The hero is "${heroName}": ${heroDescription?.substring(0, 100) || ""}.
+      const sceneStyle = getRandomStyle();
+      const prompt = `Children's storybook scene illustration for a bedtime story. The hero is "${heroName}": ${heroDescription?.substring(0, 100) || ""}.
 Scene: ${summary}
-Style: Dreamy watercolor illustration, soft pastel colors, gentle lighting, magical atmosphere, suitable for ages 3-9. No scary elements. Warm, cozy, wonder-filled. Landscape composition with soft edges.`;
+Style: ${sceneStyle}. Wide landscape composition, magical atmosphere, child-safe content, suitable for ages 3-9. No scary elements. Warm, cozy, wonder-filled.`;
 
       const result = await aiRouter.generateImage("scene", { prompt });
       console.log(`[Scene] Generated by ${result.provider} (${result.model})`);

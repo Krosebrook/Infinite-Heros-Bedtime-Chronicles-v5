@@ -37,6 +37,11 @@ export const geminiProvider: AIProvider = {
       config.responseMimeType = "application/json";
     }
 
+    if (req.responseSchema) {
+      config.responseMimeType = "application/json";
+      config.responseSchema = req.responseSchema;
+    }
+
     if (req.thinkingBudget !== undefined) {
       config.thinkingConfig = { thinkingBudget: req.thinkingBudget };
     }

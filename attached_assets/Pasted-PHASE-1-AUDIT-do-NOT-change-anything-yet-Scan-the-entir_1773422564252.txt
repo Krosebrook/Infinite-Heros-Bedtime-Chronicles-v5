@@ -1,0 +1,49 @@
+PHASE 1: AUDIT (do NOT change anything yet)
+Scan the entire codebase and produce an inventory table with these columns:
+| # | File Path | Line # | Current Model String | Provider | What It's Used For (infer from surrounding code context — e.g., "chat completion", "embedding", "image generation", "classification", "summarization", "voice/TTS", "transcription", "code generation", "moderation", "structured extraction") | Hardcoded or Env Var? | Env Var Name (if applicable) |
+Check ALL of these locations:
+
+All .env, .env.*, .env.local, .env.production files
+All config/settings files (JSON, YAML, TOML, JS, TS, Python)
+All source files making API calls
+Constants, enums, types, interfaces, dropdown/select options
+Database seeds, migrations, stored config
+README, .env.example, docs, comments
+Docker/deployment/serverless configs
+Any workflow or webhook config files
+package.json / requirements.txt / pyproject.toml for SDK versions
+
+For each entry, also note:
+
+Is the model string still valid with the provider's current API? (check against latest docs)
+If deprecated, what is the recommended replacement from that provider?
+What tier is the current model serving? (budget/fast, mid-tier, premium/powerful)
+
+PHASE 2: PROPOSE (still don't change anything)
+Present a replacement plan as a second table:
+| # | File Path | Current Model | Proposed Replacement | Reason | Tier Match (budget→budget, premium→premium) | Any Breaking Changes? (different response format, token limits, pricing tier, API version requirement) |
+Rules for proposals:
+
+Preserve intent. If something uses a cheap/fast model for a lightweight task, replace it with the current cheap/fast equivalent — NOT the most powerful model available.
+Preserve provider. Don't switch a Google call to OpenAI or vice versa unless the API is fully deprecated with no replacement.
+Flag ambiguous cases. If you can't determine what a model reference is used for, flag it for manual review instead of guessing.
+Flag pricing changes. If the replacement model is significantly more expensive than the original, note this.
+Flag API version dependencies. If the new model requires a newer SDK version or different API endpoint, note this.
+Group by app/feature area so I can approve or reject changes per feature, not one by one.
+
+Use these as your reference for current valid models:
+Anthropic: claude-opus-4-6 (premium), claude-sonnet-4-6 (mid), claude-haiku-4-5-20251001 (budget)
+OpenAI: gpt-4o (premium), gpt-4o-mini (budget), o3 (reasoning-premium), o4-mini (reasoning-budget), dall-e-3 (image), whisper-1 (transcription), tts-1 / tts-1-hd (voice)
+Google: gemini-2.5-pro (premium), gemini-2.0-flash (budget/fast)
+Mistral: mistral-large-latest (premium), mistral-small-latest (budget)
+Embeddings: text-embedding-3-small (budget), text-embedding-3-large (premium), text-embedding-004 (Google)
+If the codebase uses any provider NOT listed above (Cohere, Replicate, Together, Groq, Perplexity, DeepSeek, xAI/Grok, etc.), look up the current valid model names from their docs and include them in your proposal.
+PHASE 3: AWAIT APPROVAL
+Stop here. Show me both tables. Do not make any changes until I review and approve the replacement plan. I may want to override specific choices.
+PHASE 4: EXECUTE (only after I say "approved" or give specific overrides)
+
+Apply all approved changes
+Update all AI/LLM SDK packages to latest versions
+List every change made: file, line, old → new
+Run the app and test that previously failing calls now succeed
+Flag any new errors or warnings

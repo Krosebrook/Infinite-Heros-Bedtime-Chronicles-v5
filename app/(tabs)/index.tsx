@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useCallback } from "react";
 import {
   View,
   Text,
@@ -14,78 +14,91 @@ import { Ionicons } from "@expo/vector-icons";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { useFocusEffect } from "expo-router";
 import Animated, { FadeInDown, FadeIn } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { StarField } from "@/components/StarField";
 import { useProfile } from "@/lib/ProfileContext";
+import { getAllStories, getFavorites } from "@/lib/storage";
+import { CachedStory } from "@/constants/types";
+import { HEROES } from "@/constants/heroes";
 
 const CATEGORIES = [
   {
     id: "cosmic",
     label: "Cosmic",
-    color: "#1a237e",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuBIOKJARSbpH3XoJuixmaeO192K9kjRVQ1cSy4HtEcEuEjYEZZGqfn6F5Dewj8W_KaXzXmq9hCmyIVoQ8en-fSKIEzWOR_M7OJJ54fhyWIhQfzuaUOtFurySxFd1xgWfXH54tI_jv-9-i7PtvP_oUzJrcAnUMtRawLle2ivePGjkvAyHe5epQ9dxX0MfWXjmhS1r4iibuOnsD3hWf7GSeYpFVXI9j9uYGWVilXy2EllZ6SS6ici1o-H4lFmaTq113tBsI0rEC",
+    icon: "planet-outline" as const,
+    color: "#6366f1",
+    bg: "rgba(99,102,241,0.12)",
   },
   {
     id: "magical",
     label: "Magical",
-    color: "#1b5e20",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAhDB631M-vLrCeBAlpf2IOQscUeN8Sjxnm7n0TsKW2WG2SsOMu9zyMHfUBetoqpRn3qR_t0toNNuqZ8uXiXwADmpxDpAL8kjZx8nTNV3iEIZ_SoczN4ggeL9-8TYgTI6z9bqITlOXFiWtKDQRQZ2rO1xtt15M6p_VIHMiNsSVjgJCEPruZJxWva783KTHus-cdRQCGTVc0sHGMTc6C0IGu7W1PKSLP6NimsLpIV5yMkTib3YVsw-e9rw4CgVJ6c_RXj04mR",
-  },
-  {
-    id: "winter",
-    label: "Winter",
-    color: "#0d47a1",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDzLJOJXgyvRM_hVP7B8VhVyW-tyCHeLmfm9QXmk6O6B_7vblb19izZPBAAcjVjiDiDtcdpr3a3AJH9RyiT5dis4EKy28RglLQv1W4zGoY-Buvo40T9fLEubemXkvHyoQvjsMfNfG9uH0rBp5mVs4QvMMWMfuordBql6dt_kaMMHWf2nX52IYzV4rBEYvbT4kcotM9RSCwy4yFNhIP3IVFZIS6UNyX2YnH-sMU4GQBQMrVCw7orE5OYuaFWoPMIdkD5JeoweYRs9zM",
-  },
-  {
-    id: "oceanic",
-    label: "Oceanic",
-    color: "#006064",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAkpvSxcLcwXtCUTDOJztawVqDdTLqqIYUvVKx0pERU1KcNLZvxdedll9VpQgmrIWQL6D8CGj3_S_kfRXdLl1UWqT0-VqCB0EgyH8zfAMGASBeEAQg25KKPhnLexhQnV9y64lPlFfuM9quz2wlGPl-XlLI8pyhcta1Zj9DnI2r0v3pNnQpc_kdX4uM80HwFtZnNnBjV8TdG_ET-W7KjfgAezMlqlEcvXaspz51xRePI0He5NbZ_1-9YAqqBvi",
+    icon: "sparkles-outline" as const,
+    color: "#a855f7",
+    bg: "rgba(168,85,247,0.12)",
   },
   {
     id: "dreamy",
     label: "Dreamy",
-    color: "#4a148c",
-    image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDVCPpx1C5l9uVA_ARgxN07-9zv7umumEX3ExmL4NVK3dhNKlFUJIVo3reOZZxVZm9O36tcC9chAYnE1efAZlxx-khnnHVeC9ICy9fGmOb4YmUT-JtlM1sH9a02rnqoIRb6LDE3bWQnEuA--lioHOve0VIuFUQ-Ib_c_bOYS4t9hZqDo_wFLsLIiTJir18NY2y25peblBBLgy1YU_v5yIRiFzdxTVaCw0yDJk2WaxKes2vygIBxVu7B8UaT36f5dfFgRyyczUfcx",
+    icon: "moon-outline" as const,
+    color: "#ec4899",
+    bg: "rgba(236,72,153,0.12)",
+  },
+  {
+    id: "adventure",
+    label: "Adventure",
+    icon: "compass-outline" as const,
+    color: "#f59e0b",
+    bg: "rgba(245,158,11,0.12)",
+  },
+  {
+    id: "ocean",
+    label: "Ocean",
+    icon: "water-outline" as const,
+    color: "#06b6d4",
+    bg: "rgba(6,182,212,0.12)",
   },
 ];
 
-const TABS = ["New Arrivals", "Favorites", "All Crafted"] as const;
-
-const STORIES = [
+const FEATURED_STORIES = [
   {
     id: "1",
     title: "The Starry Whales",
-    duration: "12 min read",
+    duration: "12 min",
     category: "Cosmic",
-    badge: "Editor's Pick",
+    badge: "Featured",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuC7yhyLj6n8bFSX8_d1U62Y2R02hWfFHIZdY5YPhSb3Y3VVVMuKgMoqGGfREzX6KVUaKVa-CFbzEIiI8LRNK-89koByLPx6qvtNbznH8X9Lql6r9uHIDaS306SXdsPex3pWn0YNJjmWF2jnTSg8Bc2YiKfekZrijs6EfelrhUWiiEoJBG9I1nQkxGicIetp_4b_GJ2F5F_4WtXgsvxYUy43i7UBN85rJsM2rXrFN3f64c1IzqC7CsZ",
   },
   {
     id: "2",
     title: "The Candy Cloud Kingdom",
-    duration: "8 min read",
+    duration: "8 min",
     category: "Dreamy",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuCsy6pS96BchFV2Rd9FYbAgmUtK8y3g7_bdGiEZgz1ldkMXcKQ10d_OqXfgXFJnPGwEX18QTU9yj_qAZurNUaqVxOjM-q5L7YO7qfiPGB2C8PntKlXsDy2fBqOFzFvR9FkItYsaL62q2F7SsXNhDfvJfA_3vDGd0XOz6yqJ-g_-5JnjkvFBsVUBwOQbDScpoQVCNwUdA4gHyJI646dv7ipngkbi9KJ3SqgckbOo6ajxo2v1nGw8FH7NNiUjPj3xoCym_DCc1Tx5DaA",
   },
   {
     id: "3",
     title: "The Moon Guardian",
-    duration: "15 min read",
+    duration: "15 min",
     category: "Fantasy",
+    badge: "Popular",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuAKIeynr-pNPnxzh6yPj8bsFB8g1-td1o4GmLNz5jmpIg_t7gDbOxIbtILsQs4Dx-XBlWmcnkNehMZSnWWew6N1Dx4Y9_cLNY0PZAI0_12iS05d-Gb_j8j5IegKvVFrJs2tJl838VkEvGOxh1g91RhvPMLR_P86wQV6ytV-2CBV--S6HxIXXGGupUbHyWlc0k9K1McwymOGo0nMcSty8qBgqufJy7Z5QMuY89oQZTAiXXaoifXAWzSD-_zNGIYkk7RZLqYd2qqC7sI",
   },
   {
     id: "4",
     title: "The Firefly Symphony",
-    duration: "10 min read",
+    duration: "10 min",
     category: "Magical",
-    badge: "AI Crafted",
     image: "https://lh3.googleusercontent.com/aida-public/AB6AXuDhqNuQqkzTwGAhJw53iBqASKJM5WmTUyAsitylylLBDCiyiQySuD4c8uEy4IIX-M_slVeWQDKu81udgQBk3xczFzHl9VX-INVoRf4cv2CqCUaGgGiE__OkqcQjDJUi1X8I0VaC9Eah58JI7u2dX4VSYsqol-sdue-70Ewk8zopVPKYIBICUMELN7J_ft8R0pndpPkXAqAG2ZW53p4Fu8mUW3ywyRMq8UTU62BEoET9xphRhr4HW7uI-NoFHbr_J",
   },
 ];
+
+const MODE_LABELS: Record<string, { label: string; color: string }> = {
+  classic: { label: "Classic", color: "#6366f1" },
+  sleep: { label: "Sleep", color: "#A855F7" },
+  madlibs: { label: "Mad Libs", color: "#F97316" },
+};
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -93,12 +106,29 @@ const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
 export default function HomeScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
-  const [activeTab, setActiveTab] = useState<typeof TABS[number]>("New Arrivals");
+  const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
   const [searchText, setSearchText] = useState("");
   const { activeProfile } = useProfile();
+  const [recentStories, setRecentStories] = useState<CachedStory[]>([]);
+  useFocusEffect(
+    useCallback(() => {
+      const load = async () => {
+        const stories = await getAllStories();
+        setRecentStories(stories.slice(0, 4));
+      };
+      load();
+    }, [])
+  );
 
   const handleStoryPress = (storyId: string) => {
     router.push({ pathname: "/story-details", params: { storyId } });
+  };
+
+  const getGreeting = () => {
+    const hour = new Date().getHours();
+    if (hour < 12) return "Good morning";
+    if (hour < 17) return "Good afternoon";
+    return "Good evening";
   };
 
   return (
@@ -111,16 +141,22 @@ export default function HomeScreen() {
 
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={{ paddingBottom: 100 }}
+        contentContainerStyle={{ paddingBottom: 100 + bottomInset }}
         showsVerticalScrollIndicator={false}
       >
         <Animated.View entering={FadeIn.duration(400)}>
-          <View style={[styles.header, { paddingTop: topInset + 8 }]}>
-            <View style={styles.headerIcon}>
-              <Ionicons name="sparkles" size={22} color={Colors.accent} />
+          <View style={[styles.header, { paddingTop: topInset + 12 }]}>
+            <View>
+              <Text style={styles.greeting}>{getGreeting()}</Text>
+              <Text style={styles.headerName}>
+                {activeProfile?.name || "Little Explorer"} ✨
+              </Text>
             </View>
-            <Text style={styles.headerTitle}>Infinity Bedtime Chronicles</Text>
-            <Pressable style={styles.profileBtn} testID="profile-btn">
+            <Pressable
+              style={styles.profileBtn}
+              testID="profile-btn"
+              onPress={() => router.push("/(tabs)/profile")}
+            >
               <Text style={styles.profileEmoji}>
                 {activeProfile?.avatar || "👤"}
               </Text>
@@ -131,11 +167,11 @@ export default function HomeScreen() {
         <Animated.View entering={FadeInDown.duration(400).delay(100)}>
           <View style={styles.searchWrap}>
             <View style={styles.searchBar}>
-              <Ionicons name="search" size={20} color="rgba(255,255,255,0.35)" />
+              <Ionicons name="search" size={18} color="rgba(255,255,255,0.3)" />
               <TextInput
                 style={styles.searchInput}
-                placeholder="Search for a magical tale..."
-                placeholderTextColor="rgba(255,255,255,0.35)"
+                placeholder="Search stories..."
+                placeholderTextColor="rgba(255,255,255,0.3)"
                 value={searchText}
                 onChangeText={setSearchText}
                 testID="search-input"
@@ -151,13 +187,9 @@ export default function HomeScreen() {
             contentContainerStyle={styles.categoriesScroll}
           >
             {CATEGORIES.map((cat) => (
-              <Pressable key={cat.id} style={styles.categoryItem} testID={`category-${cat.id}`}>
-                <View style={styles.categoryImageWrap}>
-                  <Image
-                    source={{ uri: cat.image }}
-                    style={styles.categoryImage}
-                    resizeMode="cover"
-                  />
+              <Pressable key={cat.id} style={styles.categoryChip} testID={`category-${cat.id}`}>
+                <View style={[styles.categoryIconWrap, { backgroundColor: cat.bg }]}>
+                  <Ionicons name={cat.icon} size={18} color={cat.color} />
                 </View>
                 <Text style={styles.categoryLabel}>{cat.label}</Text>
               </Pressable>
@@ -165,29 +197,76 @@ export default function HomeScreen() {
           </ScrollView>
         </Animated.View>
 
-        <Animated.View entering={FadeInDown.duration(400).delay(300)}>
-          <View style={styles.tabsRow}>
-            {TABS.map((tab) => {
-              const isActive = tab === activeTab;
-              return (
-                <Pressable
-                  key={tab}
-                  onPress={() => setActiveTab(tab)}
-                  style={[styles.tabItem, isActive && styles.tabItemActive]}
-                  testID={`tab-${tab}`}
-                >
-                  <Text style={[styles.tabText, isActive && styles.tabTextActive]}>
-                    {tab}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-        </Animated.View>
+        {recentStories.length > 0 && (
+          <Animated.View entering={FadeInDown.duration(400).delay(250)}>
+            <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>Continue Reading</Text>
+              <Pressable onPress={() => router.push("/(tabs)/library")}>
+                <Text style={styles.seeAll}>See All</Text>
+              </Pressable>
+            </View>
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.recentScroll}
+            >
+              {recentStories.map((story) => {
+                const hero = HEROES.find((h) => h.id === story.heroId);
+                const modeInfo = MODE_LABELS[story.mode] || MODE_LABELS.classic;
+                return (
+                  <Pressable
+                    key={story.id}
+                    style={styles.recentCard}
+                    onPress={() => {
+                      router.push({
+                        pathname: "/story",
+                        params: {
+                          heroId: story.heroId,
+                          mode: story.mode,
+                          duration: "medium",
+                          voice: "moonbeam",
+                          speed: "medium",
+                          replayJson: JSON.stringify(story.story),
+                        },
+                      });
+                    }}
+                  >
+                    {story.scenes?.[0] ? (
+                      <Image
+                        source={{ uri: story.scenes[0] }}
+                        style={styles.recentImage}
+                        resizeMode="cover"
+                      />
+                    ) : (
+                      <LinearGradient
+                        colors={[hero?.color || "#6366f1", "#1a1a3e"]}
+                        style={styles.recentImage}
+                      />
+                    )}
+                    <LinearGradient
+                      colors={["transparent", "rgba(0,0,0,0.8)"]}
+                      style={styles.recentOverlay}
+                    />
+                    <View style={styles.recentInfo}>
+                      <View style={[styles.recentModeBadge, { backgroundColor: `${modeInfo.color}CC` }]}>
+                        <Text style={styles.recentModeText}>{modeInfo.label}</Text>
+                      </View>
+                      <Text style={styles.recentTitle} numberOfLines={1}>{story.story.title}</Text>
+                      <Text style={styles.recentMeta}>{hero?.name || "Hero"}</Text>
+                    </View>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </Animated.View>
+        )}
 
-        <Animated.View entering={FadeInDown.duration(400).delay(400)}>
+        <Animated.View entering={FadeInDown.duration(400).delay(350)}>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Discover Stories</Text>
+          </View>
           <View style={styles.storyGrid}>
-            {STORIES.map((story) => (
+            {FEATURED_STORIES.map((story) => (
               <Pressable
                 key={story.id}
                 style={styles.storyCard}
@@ -201,22 +280,25 @@ export default function HomeScreen() {
                     resizeMode="cover"
                   />
                   <LinearGradient
-                    colors={["transparent", "transparent", "rgba(0,0,0,0.75)"]}
-                    locations={[0, 0.4, 1]}
+                    colors={["transparent", "transparent", "rgba(0,0,0,0.8)"]}
+                    locations={[0, 0.35, 1]}
                     style={styles.storyImageOverlay}
                   />
                   {story.badge && (
                     <View style={styles.storyBadge}>
-                      <Text style={styles.storyBadgeText}>{story.badge.toUpperCase()}</Text>
+                      <Text style={styles.storyBadgeText}>{story.badge}</Text>
                     </View>
                   )}
                   <View style={styles.storyInfoOverlay}>
                     <Text style={styles.storyTitle} numberOfLines={2}>
                       {story.title}
                     </Text>
-                    <Text style={styles.storyMeta}>
-                      {story.duration} • {story.category}
-                    </Text>
+                    <View style={styles.storyMetaRow}>
+                      <Ionicons name="time-outline" size={11} color="rgba(255,255,255,0.5)" />
+                      <Text style={styles.storyMeta}>{story.duration}</Text>
+                      <View style={styles.metaDot} />
+                      <Text style={styles.storyMeta}>{story.category}</Text>
+                    </View>
                   </View>
                 </View>
               </Pressable>
@@ -239,117 +321,162 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingBottom: 12,
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 16,
   },
-  headerIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    alignItems: "center",
-    justifyContent: "center",
+  greeting: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.45)",
+    marginBottom: 2,
   },
-  headerTitle: {
-    flex: 1,
+  headerName: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 17,
+    fontSize: 22,
     color: "#FFFFFF",
-    textAlign: "center",
-    letterSpacing: 0.3,
+    letterSpacing: -0.3,
   },
   profileBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    backgroundColor: "rgba(99, 102, 241, 0.2)",
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "rgba(99, 102, 241, 0.15)",
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    borderWidth: 1.5,
+    borderColor: "rgba(99, 102, 241, 0.25)",
   },
   profileEmoji: {
-    fontSize: 20,
+    fontSize: 22,
   },
   searchWrap: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
+    paddingHorizontal: 20,
+    marginBottom: 16,
   },
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(99, 102, 241, 0.08)",
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    height: 50,
-    borderWidth: 1.5,
-    borderColor: "rgba(99, 102, 241, 0.2)",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12,
+    paddingHorizontal: 14,
+    height: 44,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
     gap: 10,
   },
   searchInput: {
     flex: 1,
     fontFamily: "PlusJakartaSans_400Regular",
-    fontSize: 15,
+    fontSize: 14,
     color: "#FFFFFF",
   },
   categoriesScroll: {
-    paddingHorizontal: 16,
-    paddingVertical: 10,
-    gap: 14,
+    paddingHorizontal: 20,
+    paddingBottom: 16,
+    gap: 10,
   },
-  categoryItem: {
+  categoryChip: {
+    flexDirection: "row",
     alignItems: "center",
     gap: 8,
-    width: 90,
+    paddingRight: 14,
+    paddingLeft: 6,
+    paddingVertical: 6,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
   },
-  categoryImageWrap: {
-    width: 90,
-    height: 110,
-    borderRadius: 14,
-    overflow: "hidden",
-    borderWidth: 1.5,
-    borderColor: "rgba(99, 102, 241, 0.25)",
-  },
-  categoryImage: {
-    width: "100%",
-    height: "100%",
+  categoryIconWrap: {
+    width: 30,
+    height: 30,
+    borderRadius: 15,
+    alignItems: "center",
+    justifyContent: "center",
   },
   categoryLabel: {
     fontFamily: "PlusJakartaSans_600SemiBold",
     fontSize: 12,
     color: "rgba(255,255,255,0.7)",
   },
-  tabsRow: {
+  sectionHeader: {
     flexDirection: "row",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(99, 102, 241, 0.12)",
-    marginTop: 16,
-    paddingHorizontal: 16,
-    gap: 28,
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    marginBottom: 14,
+    marginTop: 8,
   },
-  tabItem: {
-    paddingBottom: 12,
-    paddingTop: 8,
-    borderBottomWidth: 2,
-    borderBottomColor: "transparent",
-  },
-  tabItemActive: {
-    borderBottomColor: Colors.accent,
-  },
-  tabText: {
-    fontFamily: "PlusJakartaSans_600SemiBold",
-    fontSize: 14,
-    color: "rgba(255,255,255,0.4)",
-  },
-  tabTextActive: {
-    color: Colors.accent,
+  sectionTitle: {
     fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 18,
+    color: "#FFFFFF",
+    letterSpacing: -0.3,
+  },
+  seeAll: {
+    fontFamily: "PlusJakartaSans_600SemiBold",
+    fontSize: 13,
+    color: Colors.accent,
+  },
+  recentScroll: {
+    paddingHorizontal: 20,
+    gap: 12,
+    paddingBottom: 8,
+  },
+  recentCard: {
+    width: 200,
+    height: 130,
+    borderRadius: 16,
+    overflow: "hidden",
+    position: "relative",
+  },
+  recentImage: {
+    width: "100%",
+    height: "100%",
+    borderRadius: 16,
+  },
+  recentOverlay: {
+    ...StyleSheet.absoluteFillObject,
+    borderRadius: 16,
+  },
+  recentInfo: {
+    position: "absolute",
+    bottom: 0,
+    left: 0,
+    right: 0,
+    padding: 12,
+  },
+  recentModeBadge: {
+    alignSelf: "flex-start",
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 6,
+    marginBottom: 6,
+  },
+  recentModeText: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 9,
+    color: "#FFF",
+    letterSpacing: 0.5,
+    textTransform: "uppercase" as const,
+  },
+  recentTitle: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 14,
+    color: "#FFF",
+    marginBottom: 2,
+  },
+  recentMeta: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.5)",
   },
   storyGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
-    paddingHorizontal: 16,
-    paddingTop: 20,
-    gap: 14,
+    paddingHorizontal: 20,
+    gap: 12,
   },
   storyCard: {
     width: CARD_WIDTH,
@@ -359,8 +486,6 @@ const styles = StyleSheet.create({
     aspectRatio: 3 / 4,
     borderRadius: 16,
     overflow: "hidden",
-    borderWidth: 1.5,
-    borderColor: "rgba(99, 102, 241, 0.15)",
   },
   storyImage: {
     width: "100%",
@@ -371,38 +496,48 @@ const styles = StyleSheet.create({
   },
   storyBadge: {
     position: "absolute",
-    top: 12,
-    left: 12,
-    backgroundColor: "rgba(99, 102, 241, 0.85)",
-    paddingHorizontal: 10,
-    paddingVertical: 4,
+    top: 10,
+    left: 10,
+    backgroundColor: "rgba(99, 102, 241, 0.9)",
+    paddingHorizontal: 8,
+    paddingVertical: 3,
     borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.6)",
   },
   storyBadgeText: {
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 9,
     color: "#FFFFFF",
-    letterSpacing: 1,
+    letterSpacing: 0.5,
+    textTransform: "uppercase" as const,
   },
   storyInfoOverlay: {
     position: "absolute",
     bottom: 0,
     left: 0,
     right: 0,
-    padding: 14,
-    gap: 3,
+    padding: 12,
+    gap: 4,
   },
   storyTitle: {
     fontFamily: "PlusJakartaSans_700Bold",
-    fontSize: 15,
+    fontSize: 14,
     color: "#FFFFFF",
-    lineHeight: 20,
+    lineHeight: 19,
+  },
+  storyMetaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
   },
   storyMeta: {
     fontFamily: "PlusJakartaSans_400Regular",
     fontSize: 11,
-    color: "rgba(255,255,255,0.55)",
+    color: "rgba(255,255,255,0.5)",
+  },
+  metaDot: {
+    width: 3,
+    height: 3,
+    borderRadius: 1.5,
+    backgroundColor: "rgba(255,255,255,0.25)",
   },
 });

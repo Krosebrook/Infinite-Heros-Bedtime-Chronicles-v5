@@ -35,7 +35,6 @@
         -webkit-font-smoothing: antialiased;
       }
 
-      /* Star field */
       .stars {
         position: fixed; inset: 0; opacity: 0.2; pointer-events: none; z-index: 0;
         background-image:
@@ -51,7 +50,6 @@
         background-size: 550px 300px;
       }
 
-      /* Gradient mesh */
       .mesh {
         position: fixed; inset: 0; pointer-events: none; z-index: 0;
         background:
@@ -62,14 +60,12 @@
 
       .page { position: relative; z-index: 1; max-width: 520px; margin: 0 auto; }
 
-      /* Loading overlay for Expo Go redirect */
-      .loading { display: none; position: fixed; inset: 0; z-index: 100; background: var(--bg); display: none; align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
+      .loading { display: none; position: fixed; inset: 0; z-index: 100; background: var(--bg); align-items: center; justify-content: center; flex-direction: column; gap: 16px; }
       .loading.active { display: flex; }
       .spinner { border: 2px solid rgba(99,102,241,0.2); border-top-color: var(--accent); border-radius: 50%; width: 32px; height: 32px; animation: spin 0.8s linear infinite; }
       @keyframes spin { to { transform: rotate(360deg); } }
       .loading-text { font-size: 15px; color: var(--text-muted); font-family: var(--font-body); }
 
-      /* Nav */
       .nav {
         display: flex; align-items: center; justify-content: space-between;
         padding: 18px 24px; position: relative; z-index: 10;
@@ -91,14 +87,13 @@
       }
       .nav-cta:hover { background: rgba(99,102,241,0.25); }
 
-      /* Hero */
       .hero { padding: 56px 24px 40px; text-align: center; }
-      .hero-pill {
+      .hero-eyebrow {
         display: inline-flex; align-items: center; gap: 8px;
         background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2);
         border-radius: 20px; padding: 6px 16px; margin-bottom: 28px;
       }
-      .hero-pill span {
+      .hero-eyebrow span {
         font-size: 11px; color: var(--accent-light); font-weight: 600;
         letter-spacing: 1.5px; text-transform: uppercase;
       }
@@ -116,7 +111,6 @@
         color: rgba(203,213,225,0.85); max-width: 420px; margin: 0 auto 32px;
       }
 
-      /* CTA buttons */
       .cta-stack { display: flex; flex-direction: column; gap: 12px; max-width: 320px; margin: 0 auto; }
       .btn-primary {
         background: linear-gradient(135deg, #6366f1, #4f46e5); border: none;
@@ -127,35 +121,57 @@
       .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 12px 40px rgba(99,102,241,0.45); }
       .cta-sub { font-size: 13px; color: rgba(148,163,184,0.5); font-family: var(--font-body); }
 
-      /* Phone mockup */
-      .phone-wrap { margin-top: 48px; position: relative; max-width: 280px; margin-left: auto; margin-right: auto; }
+      .phone-wrap { margin-top: 48px; position: relative; max-width: 260px; margin-left: auto; margin-right: auto; }
       .phone-frame {
         background: linear-gradient(180deg, rgba(99,102,241,0.08), rgba(168,85,247,0.04));
-        border: 1px solid rgba(99,102,241,0.15); border-radius: 28px; padding: 12px;
+        border: 1px solid rgba(99,102,241,0.15); border-radius: 32px; padding: 10px;
+        box-shadow: 0 24px 80px rgba(99,102,241,0.08);
       }
       .phone-screen {
-        background: #0a0a2e; border-radius: 20px; overflow: hidden;
-        aspect-ratio: 9/16; display: flex; flex-direction: column;
-        align-items: center; justify-content: center; gap: 16px; padding: 24px;
+        background: linear-gradient(180deg, #0d0d28, #0a0a2e); border-radius: 24px; overflow: hidden;
+        aspect-ratio: 9/19; display: flex; flex-direction: column; padding: 0; position: relative;
       }
-      .phone-screen .icon { font-size: 48px; opacity: 0.7; }
-      .phone-screen .title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
-      .phone-screen .meta { font-size: 12px; color: var(--text-muted); }
-      .phone-progress { width: 100%; height: 4px; background: rgba(99,102,241,0.2); border-radius: 2px; overflow: hidden; margin-top: 8px; }
-      .phone-progress-fill { width: 65%; height: 100%; background: var(--accent); border-radius: 2px; }
+      .phone-notch {
+        width: 80px; height: 22px; background: #000; border-radius: 0 0 14px 14px;
+        margin: 0 auto; position: relative; z-index: 2;
+      }
+      .phone-header {
+        padding: 12px 16px 8px; display: flex; justify-content: space-between; align-items: center;
+      }
+      .phone-header-title { font-weight: 700; font-size: 11px; color: #fff; }
+      .phone-header-avatar { width: 22px; height: 22px; border-radius: 11px; background: rgba(99,102,241,0.3); display: flex; align-items: center; justify-content: center; font-size: 10px; }
+      .phone-card {
+        margin: 4px 12px; padding: 10px; border-radius: 12px;
+        background: rgba(99,102,241,0.08); border: 1px solid rgba(99,102,241,0.12);
+        display: flex; gap: 10px; align-items: center;
+      }
+      .phone-card-img {
+        width: 44px; height: 44px; border-radius: 10px; flex-shrink: 0;
+        background: linear-gradient(135deg, rgba(99,102,241,0.3), rgba(168,85,247,0.3));
+        display: flex; align-items: center; justify-content: center; font-size: 20px;
+      }
+      .phone-card-title { font-size: 10px; font-weight: 700; color: #fff; margin-bottom: 2px; }
+      .phone-card-meta { font-size: 8px; color: var(--text-muted); }
+      .phone-tabs {
+        display: flex; justify-content: space-around; padding: 8px 16px 6px;
+        border-top: 1px solid rgba(255,255,255,0.04); margin-top: auto;
+      }
+      .phone-tab { text-align: center; }
+      .phone-tab-dot { width: 18px; height: 18px; border-radius: 9px; background: rgba(255,255,255,0.06); display: flex; align-items: center; justify-content: center; font-size: 9px; margin: 0 auto 2px; }
+      .phone-tab-dot.active { background: rgba(99,102,241,0.3); }
+      .phone-tab-label { font-size: 7px; color: rgba(255,255,255,0.3); }
+      .phone-tab-label.active { color: var(--accent-light); }
       .phone-glow {
         position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
         width: 140%; height: 140%; background: radial-gradient(circle, rgba(99,102,241,0.06), transparent 60%);
         border-radius: 50%; pointer-events: none; z-index: -1;
       }
 
-      /* Trust strip */
       .trust { padding: 36px 24px; text-align: center; border-top: 1px solid var(--border); }
       .trust-grid { display: flex; justify-content: center; gap: 36px; }
       .trust-num { font-weight: 800; font-size: 24px; color: var(--accent-light); letter-spacing: -0.5px; }
       .trust-label { font-size: 11px; color: var(--text-dim); margin-top: 3px; font-family: var(--font-body); }
 
-      /* Features */
       .features { padding: 20px 24px 36px; display: flex; flex-direction: column; gap: 14px; }
       .feature-card {
         display: flex; gap: 14px; padding: 20px; border-radius: 16px;
@@ -170,7 +186,6 @@
       .feature-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
       .feature-desc { font-size: 13px; color: var(--text-muted); line-height: 1.6; font-family: var(--font-body); }
 
-      /* How it works */
       .how { padding: 36px 24px 40px; border-top: 1px solid var(--border); }
       .how h3 { font-weight: 800; font-size: 24px; margin-bottom: 24px; letter-spacing: -0.5px; }
       .how-step { display: flex; gap: 16px; margin-bottom: 22px; align-items: flex-start; }
@@ -178,7 +193,6 @@
       .how-title { font-weight: 700; font-size: 16px; margin-bottom: 4px; }
       .how-desc { font-size: 14px; color: var(--text-muted); line-height: 1.6; font-family: var(--font-body); }
 
-      /* Social proof */
       .social-proof {
         margin: 0 24px; padding: 24px 20px; border-radius: 20px;
         background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.06));
@@ -199,7 +213,6 @@
         line-height: 1.65; font-style: italic; margin: 0;
       }
 
-      /* Testimonials */
       .testimonials { padding: 36px 24px; }
       .testimonials-label {
         font-size: 11px; color: var(--accent); font-weight: 600;
@@ -224,7 +237,6 @@
       .testimonial-name { font-weight: 600; font-size: 13px; }
       .testimonial-role { font-size: 11px; color: var(--text-dim); }
 
-      /* App download / QR section */
       .app-section {
         margin: 24px 24px 0; padding: 28px 24px; border-radius: 20px;
         background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(168,85,247,0.06));
@@ -262,13 +274,16 @@
       .store-icon { width: 16px; height: 16px; }
       .store-link .store-icon { width: 14px; height: 14px; }
 
-      /* Bottom CTA */
       .bottom-cta { padding: 40px 24px 60px; text-align: center; }
       .bottom-cta h2 { font-weight: 800; font-size: 24px; letter-spacing: -0.5px; margin-bottom: 10px; }
       .bottom-cta p { font-size: 14px; color: var(--text-muted); margin-bottom: 24px; font-family: var(--font-body); }
       .btn-primary-full { width: 100%; max-width: 320px; }
 
-      /* Responsive */
+      .footer {
+        padding: 24px; text-align: center; border-top: 1px solid var(--border);
+      }
+      .footer-text { font-size: 11px; color: var(--text-dim); font-family: var(--font-body); }
+
       @media (min-width: 768px) {
         .page { max-width: 680px; }
         .hero h1 { font-size: 48px; }
@@ -284,7 +299,6 @@
         .hero h1 { font-size: 52px; }
       }
 
-      /* Subtle entrance animations */
       @keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
       .animate { animation: fadeUp 0.5s ease-out both; }
       .delay-1 { animation-delay: 0.1s; }
@@ -306,7 +320,6 @@
     <div id="content">
       <div class="page">
 
-        <!-- Nav -->
         <nav class="nav animate">
           <div class="nav-brand">
             <div class="nav-logo">✨</div>
@@ -318,35 +331,58 @@
           <button class="nav-cta" onclick="document.getElementById('app-download').scrollIntoView({behavior:'smooth'})">Get the App</button>
         </nav>
 
-        <!-- Hero -->
         <section class="hero animate delay-1">
-          <div class="hero-pill">
+          <div class="hero-eyebrow">
             <span>AI-Powered Bedtime Stories</span>
           </div>
           <h1>
-            Bedtime stories as <span class="gradient-text">infinite</span> as imagination
+            Stories as <span class="gradient-text">infinite</span> as their imagination
           </h1>
           <p>
-            Every night, a new adventure. AI generates unique bedtime tales personalized to your child's favorite heroes, read aloud in soothing voices.
+            Every night, a brand-new adventure. AI creates unique bedtime tales starring your child's favorite heroes, narrated in soothing voices they'll love.
           </p>
           <div class="cta-stack">
             <button class="btn-primary" onclick="document.getElementById('app-download').scrollIntoView({behavior:'smooth'})">
               Start Free — No Card Needed
             </button>
-            <span class="cta-sub">3,000+ families already dreaming</span>
+            <span class="cta-sub">Join 3,000+ families already dreaming</span>
           </div>
 
-          <!-- Phone Mockup -->
           <div class="phone-wrap">
             <div class="phone-frame">
               <div class="phone-screen">
-                <div class="icon">🌙</div>
-                <div style="text-align:center">
-                  <div class="title">The Starry Whales</div>
-                  <div class="meta">12 min read · Cosmic</div>
+                <div class="phone-notch"></div>
+                <div class="phone-header">
+                  <div class="phone-header-title">Good evening ✨</div>
+                  <div class="phone-header-avatar">👧</div>
                 </div>
-                <div class="phone-progress">
-                  <div class="phone-progress-fill"></div>
+                <div class="phone-card">
+                  <div class="phone-card-img">🐋</div>
+                  <div>
+                    <div class="phone-card-title">The Starry Whales</div>
+                    <div class="phone-card-meta">12 min · Cosmic</div>
+                  </div>
+                </div>
+                <div class="phone-card">
+                  <div class="phone-card-img">🌙</div>
+                  <div>
+                    <div class="phone-card-title">The Moon Guardian</div>
+                    <div class="phone-card-meta">15 min · Fantasy</div>
+                  </div>
+                </div>
+                <div class="phone-card">
+                  <div class="phone-card-img">🔥</div>
+                  <div>
+                    <div class="phone-card-title">The Firefly Symphony</div>
+                    <div class="phone-card-meta">10 min · Magical</div>
+                  </div>
+                </div>
+                <div class="phone-tabs">
+                  <div class="phone-tab"><div class="phone-tab-dot active">🏠</div><div class="phone-tab-label active">Home</div></div>
+                  <div class="phone-tab"><div class="phone-tab-dot">📚</div><div class="phone-tab-label">Library</div></div>
+                  <div class="phone-tab"><div class="phone-tab-dot">✨</div><div class="phone-tab-label">Create</div></div>
+                  <div class="phone-tab"><div class="phone-tab-dot">💾</div><div class="phone-tab-label">Saved</div></div>
+                  <div class="phone-tab"><div class="phone-tab-dot">👤</div><div class="phone-tab-label">Profile</div></div>
                 </div>
               </div>
             </div>
@@ -354,7 +390,6 @@
           </div>
         </section>
 
-        <!-- Trust Strip -->
         <section class="trust animate delay-2">
           <div class="trust-grid">
             <div>
@@ -372,39 +407,37 @@
           </div>
         </section>
 
-        <!-- Features -->
         <section class="features animate delay-3">
           <div class="feature-card">
             <div class="feature-icon" style="background:rgba(99,102,241,0.12)">✨</div>
             <div>
               <div class="feature-title">Unique Every Time</div>
-              <div class="feature-desc">AI generates a brand new story each night — never the same tale twice.</div>
+              <div class="feature-desc">AI generates a brand-new story each night — never the same tale twice.</div>
             </div>
           </div>
           <div class="feature-card">
             <div class="feature-icon" style="background:rgba(168,85,247,0.12)">🎙️</div>
             <div>
               <div class="feature-title">Natural Narration</div>
-              <div class="feature-desc">Premium ElevenLabs voices read with warmth and emotion.</div>
+              <div class="feature-desc">Premium ElevenLabs voices read with warmth and emotion at adjustable speed.</div>
             </div>
           </div>
           <div class="feature-card">
             <div class="feature-icon" style="background:rgba(236,72,153,0.12)">🌙</div>
             <div>
               <div class="feature-title">Sleep Science Built-In</div>
-              <div class="feature-desc">Gentle pacing, ambient sounds, and auto-dim for perfect sleep.</div>
+              <div class="feature-desc">Gentle pacing, ambient music, and calming tones for perfect sleep.</div>
             </div>
           </div>
           <div class="feature-card">
             <div class="feature-icon" style="background:rgba(34,197,94,0.12)">🛡️</div>
             <div>
               <div class="feature-title">Parent-Approved Safety</div>
-              <div class="feature-desc">Every story filtered for age-appropriate, positive content.</div>
+              <div class="feature-desc">Every story filtered for age-appropriate, positive content ages 3-9.</div>
             </div>
           </div>
         </section>
 
-        <!-- How It Works -->
         <section class="how animate delay-3">
           <h3>Three taps to dreamland</h3>
           <div class="how-step">
@@ -418,19 +451,18 @@
             <div class="how-num">02</div>
             <div>
               <div class="how-title">Set the Mood</div>
-              <div class="how-desc">Classic adventure, sleep mode, or silly Mad Libs — you decide.</div>
+              <div class="how-desc">Classic adventure, sleep mode, or silly Mad Libs — you decide the vibe.</div>
             </div>
           </div>
           <div class="how-step">
             <div class="how-num">03</div>
             <div>
               <div class="how-title">Dream Away</div>
-              <div class="how-desc">AI crafts a unique tale, narrated with music and ambient sounds.</div>
+              <div class="how-desc">AI crafts a unique tale, narrated aloud with music and scene illustrations.</div>
             </div>
           </div>
         </section>
 
-        <!-- Social Proof -->
         <section class="social-proof animate delay-4">
           <div class="avatar-row">
             <div class="avatar-stack">
@@ -448,7 +480,6 @@
           </p>
         </section>
 
-        <!-- Testimonials -->
         <section class="testimonials animate delay-4">
           <div class="testimonials-label">What Parents Say</div>
           <div class="testimonial-cards">
@@ -475,7 +506,6 @@
           </div>
         </section>
 
-        <!-- App Download / QR -->
         <section class="app-section animate delay-5" id="app-download">
           <h3>Open on your phone</h3>
           <p class="sub">Scan the QR code or download Expo Go to get started</p>
@@ -493,14 +523,17 @@
           </div>
         </section>
 
-        <!-- Bottom CTA -->
         <section class="bottom-cta animate delay-5">
           <h2>Tonight's adventure awaits</h2>
-          <p>Free to start. Cancel anytime. No bedtime tantrums.</p>
+          <p>Free to start. No card needed. No bedtime tantrums.</p>
           <button class="btn-primary btn-primary-full" onclick="document.getElementById('app-download').scrollIntoView({behavior:'smooth'})">
             Download Infinity Heroes
           </button>
         </section>
+
+        <footer class="footer">
+          <div class="footer-text">Made with ✨ by Infinity Heroes</div>
+        </footer>
 
       </div>
     </div>

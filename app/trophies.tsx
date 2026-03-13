@@ -20,6 +20,15 @@ import { useProfile } from "@/lib/ProfileContext";
 import { EarnedBadge, StreakData, BADGE_DEFINITIONS } from "@/constants/types";
 import { getBadges, getStreak, getStoriesForProfile } from "@/lib/storage";
 
+const BADGE_GRADIENTS: [string, string][] = [
+  ["rgba(100,103,242,0.4)", "rgba(147,51,234,0.4)"],
+  ["rgba(59,130,246,0.4)", "rgba(99,102,241,0.4)"],
+  ["rgba(249,115,22,0.4)", "rgba(239,68,68,0.4)"],
+  ["rgba(16,185,129,0.4)", "rgba(6,182,212,0.4)"],
+  ["rgba(236,72,153,0.4)", "rgba(168,85,247,0.4)"],
+  ["rgba(245,158,11,0.4)", "rgba(239,68,68,0.4)"],
+];
+
 export default function TrophiesScreen() {
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -51,18 +60,16 @@ export default function TrophiesScreen() {
   return (
     <View style={styles.container}>
       <LinearGradient
-        colors={["#0f0fbd", "#05051e", Colors.primary]}
-        start={{ x: 0, y: 0 }}
-        end={{ x: 0, y: 0.5 }}
+        colors={["#02021a", "#0a0a2e", "#02021a"]}
         style={StyleSheet.absoluteFill}
       />
       <StarField />
 
       <View style={[styles.topBar, { paddingTop: topInset + 8 }]}>
         <Pressable onPress={() => router.back()} hitSlop={12} style={styles.backBtn}>
-          <Ionicons name="chevron-back" size={24} color="rgba(255,255,255,0.8)" />
+          <Ionicons name="chevron-back" size={22} color={Colors.accent} />
         </Pressable>
-        <Text style={styles.topTitle}>Trophy Shelf</Text>
+        <Text style={styles.topTitle}>TROPHY ROOM</Text>
         <View style={{ width: 40 }} />
       </View>
 
@@ -72,7 +79,7 @@ export default function TrophiesScreen() {
       >
         {isLoading ? (
           <View style={styles.loadingWrap}>
-            <ActivityIndicator size="large" color="#FFD54F" />
+            <ActivityIndicator size="large" color={Colors.accent} />
           </View>
         ) : !activeProfile ? (
           <Animated.View entering={FadeIn.duration(400)} style={styles.noProfile}>
@@ -84,87 +91,78 @@ export default function TrophiesScreen() {
           </Animated.View>
         ) : (
           <>
-            <Animated.View entering={FadeIn.duration(500)} style={styles.profileHeader}>
-              <View style={styles.profileAvatar}>
-                <Text style={styles.profileAvatarText}>{activeProfile.avatarEmoji}</Text>
-              </View>
-              <Text style={styles.profileName}>{activeProfile.name}'s Trophies</Text>
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.statsRow}>
+            <Animated.View entering={FadeInDown.duration(400).delay(100)} style={styles.statsGrid}>
               <View style={styles.statCard}>
+                <Text style={styles.statLabel}>TOTAL STORIES</Text>
                 <Text style={styles.statValue}>{totalStories}</Text>
-                <Text style={styles.statLabel}>Stories</Text>
               </View>
-              <View style={[styles.statCard, styles.statCardAccent]}>
+              <View style={styles.statCard}>
+                <Text style={styles.statLabel}>CURRENT STREAK</Text>
                 <View style={styles.streakRow}>
                   <Text style={styles.statValue}>{streak?.currentStreak || 0}</Text>
-                  {(streak?.currentStreak || 0) >= 3 && (
+                  {(streak?.currentStreak || 0) >= 1 && (
                     <Text style={styles.fireEmoji}>🔥</Text>
                   )}
                 </View>
-                <Text style={styles.statLabel}>Day Streak</Text>
               </View>
               <View style={styles.statCard}>
+                <Text style={styles.statLabel}>BEST STREAK</Text>
                 <Text style={styles.statValue}>{streak?.longestStreak || 0}</Text>
-                <Text style={styles.statLabel}>Best Streak</Text>
               </View>
               <View style={styles.statCard}>
+                <Text style={styles.statLabel}>TOTAL BADGES</Text>
                 <Text style={styles.statValue}>{badges.length}</Text>
-                <Text style={styles.statLabel}>Badges</Text>
               </View>
             </Animated.View>
 
             <Animated.View entering={FadeInDown.duration(400).delay(200)}>
               <View style={styles.sectionHeader}>
-                <Ionicons name="trophy" size={16} color="#FFD54F" />
-                <Text style={styles.sectionLabel}>EARNED BADGES</Text>
+                <Ionicons name="sparkles" size={18} color={Colors.accent} />
+                <Text style={styles.sectionLabel}>Cosmic Achievements</Text>
               </View>
 
-              {badges.length === 0 ? (
+              {badges.length === 0 && (
                 <View style={styles.emptyBadges}>
                   <Text style={styles.emptyBadgeText}>
                     Complete stories to start earning badges!
                   </Text>
                 </View>
-              ) : (
-                <View style={styles.badgeGrid}>
-                  {badges.map((b, i) => (
-                    <Animated.View
-                      key={b.id}
-                      entering={ZoomIn.duration(300).delay(i * 80)}
-                      style={styles.badgeCard}
-                    >
-                      <Text style={styles.badgeEmoji}>{b.emoji}</Text>
-                      <Text style={styles.badgeTitle}>{b.title}</Text>
-                      <Text style={styles.badgeDesc}>{b.description}</Text>
-                      <Text style={styles.badgeDate}>
-                        {new Date(b.earnedAt).toLocaleDateString()}
-                      </Text>
-                    </Animated.View>
-                  ))}
-                </View>
               )}
-            </Animated.View>
-
-            <Animated.View entering={FadeInDown.duration(400).delay(300)}>
-              <View style={styles.sectionHeader}>
-                <Ionicons name="lock-closed-outline" size={16} color="rgba(255,255,255,0.3)" />
-                <Text style={styles.sectionLabel}>LOCKED BADGES</Text>
-              </View>
 
               <View style={styles.badgeGrid}>
+                {badges.map((b, i) => (
+                  <Animated.View
+                    key={b.id}
+                    entering={ZoomIn.duration(300).delay(i * 80)}
+                    style={styles.badgeCard}
+                  >
+                    <View style={[styles.badgeCircle, { backgroundColor: "transparent" }]}>
+                      <LinearGradient
+                        colors={BADGE_GRADIENTS[i % BADGE_GRADIENTS.length]}
+                        style={styles.badgeCircleGradient}
+                      >
+                        <Text style={styles.badgeEmoji}>{b.emoji}</Text>
+                      </LinearGradient>
+                      <View style={styles.badgeCircleRing} />
+                    </View>
+                    <Text style={styles.badgeTitle}>{b.title}</Text>
+                    <Text style={styles.badgeDesc}>{b.description}</Text>
+                  </Animated.View>
+                ))}
+
                 {BADGE_DEFINITIONS.filter((d) => !earnedIds.has(d.id)).map((d, i) => (
                   <Animated.View
                     key={d.id}
                     entering={FadeInDown.duration(300).delay(i * 50)}
                     style={[styles.badgeCard, styles.badgeCardLocked]}
                   >
-                    <Text style={[styles.badgeEmoji, { opacity: 0.3 }]}>❓</Text>
-                    <Text style={[styles.badgeTitle, { color: "rgba(255,255,255,0.25)" }]}>
+                    <View style={styles.lockedCircle}>
+                      <Text style={styles.lockedQuestion}>?</Text>
+                    </View>
+                    <Text style={[styles.badgeTitle, styles.lockedTitle]}>
                       {d.title}
                     </Text>
-                    <Text style={[styles.badgeDesc, { color: "rgba(255,255,255,0.15)" }]}>
+                    <Text style={[styles.badgeDesc, styles.lockedDesc]}>
                       {d.description}
                     </Text>
                   </Animated.View>
@@ -179,79 +177,190 @@ export default function TrophiesScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: Colors.primary },
+  container: { flex: 1, backgroundColor: "#02021a" },
   topBar: {
-    flexDirection: "row", alignItems: "center", justifyContent: "space-between",
-    paddingHorizontal: 16, paddingBottom: 8, zIndex: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingHorizontal: 20,
+    paddingBottom: 12,
+    zIndex: 10,
   },
   backBtn: {
-    width: 40, height: 40, borderRadius: 20,
-    backgroundColor: Colors.cardBg,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(100,103,242,0.1)",
     borderWidth: 1,
-    borderColor: Colors.cardBorder,
-    alignItems: "center", justifyContent: "center",
+    borderColor: "rgba(100,103,242,0.2)",
+    alignItems: "center",
+    justifyContent: "center",
   },
   topTitle: {
-    fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 22,
-    color: "#FFD54F", letterSpacing: 1,
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontSize: 28,
+    color: Colors.accent,
+    letterSpacing: 3,
   },
   scrollContent: { paddingHorizontal: 20 },
   noProfile: {
-    alignItems: "center", paddingVertical: 80, gap: 12,
+    alignItems: "center",
+    paddingVertical: 80,
+    gap: 12,
   },
-  noProfileTitle: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 20, color: "rgba(255,255,255,0.5)" },
+  noProfileTitle: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 20,
+    color: "rgba(255,255,255,0.5)",
+  },
   noProfileSub: {
-    fontFamily: "PlusJakartaSans_400Regular", fontSize: 14,
-    color: "rgba(255,255,255,0.3)", textAlign: "center", paddingHorizontal: 32,
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 14,
+    color: "rgba(255,255,255,0.3)",
+    textAlign: "center",
+    paddingHorizontal: 32,
   },
-  profileHeader: { alignItems: "center", marginBottom: 20, marginTop: 8 },
-  profileAvatar: {
-    width: 64, height: 64, borderRadius: 32,
-    backgroundColor: "rgba(255,255,255,0.08)",
-    alignItems: "center", justifyContent: "center",
-    borderWidth: 2, borderColor: "rgba(255,215,0,0.3)",
-    marginBottom: 10,
-  },
-  profileAvatarText: { fontSize: 30 },
-  profileName: { fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 22, color: "#FFF" },
-  statsRow: {
-    flexDirection: "row", gap: 10, marginBottom: 24,
+  statsGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 10,
+    marginBottom: 28,
+    marginTop: 8,
   },
   statCard: {
-    flex: 1, alignItems: "center", paddingVertical: 14,
-    borderRadius: 14, backgroundColor: "rgba(255,255,255,0.04)",
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.06)",
+    width: "47%" as `${number}%`,
+    paddingVertical: 16,
+    paddingHorizontal: 14,
+    borderRadius: 14,
+    backgroundColor: "rgba(100,103,242,0.06)",
+    borderWidth: 1,
+    borderColor: "rgba(100,103,242,0.15)",
+    gap: 4,
   },
-  statCardAccent: { borderColor: "#FFD54F40", backgroundColor: "rgba(255,213,79,0.06)" },
-  statValue: { fontFamily: "PlusJakartaSans_800ExtraBold", fontSize: 28, color: "#FFD54F" },
-  statLabel: { fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 10, color: "rgba(255,255,255,0.4)", letterSpacing: 0.5 },
-  streakRow: { flexDirection: "row", alignItems: "center", gap: 4 },
-  fireEmoji: { fontSize: 16 },
+  statLabel: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 9,
+    color: "rgba(100,103,242,0.7)",
+    letterSpacing: 1.5,
+  },
+  statValue: {
+    fontFamily: "PlusJakartaSans_800ExtraBold",
+    fontSize: 28,
+    color: "#FFFFFF",
+  },
+  streakRow: { flexDirection: "row", alignItems: "center", gap: 6 },
+  fireEmoji: { fontSize: 20 },
   sectionHeader: {
-    flexDirection: "row", alignItems: "center", gap: 8,
-    marginBottom: 14, marginTop: 8,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 16,
   },
   sectionLabel: {
-    fontFamily: "PlusJakartaSans_700Bold", fontSize: 12,
-    color: "rgba(255,255,255,0.5)", letterSpacing: 2,
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 18,
+    color: "#FFFFFF",
   },
   emptyBadges: {
-    paddingVertical: 24, alignItems: "center",
-    backgroundColor: "rgba(255,255,255,0.02)", borderRadius: 16,
-    borderWidth: 1, borderColor: "rgba(255,255,255,0.05)", marginBottom: 20,
+    paddingVertical: 24,
+    alignItems: "center",
+    backgroundColor: "rgba(255,255,255,0.02)",
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.05)",
+    marginBottom: 20,
   },
-  emptyBadgeText: { fontFamily: "PlusJakartaSans_500Medium", fontSize: 13, color: "rgba(255,255,255,0.3)" },
-  loadingWrap: { flex: 1, justifyContent: "center", alignItems: "center", paddingVertical: 80 },
-  badgeGrid: { flexDirection: "row", flexWrap: "wrap", gap: 10, marginBottom: 20 },
+  emptyBadgeText: {
+    fontFamily: "PlusJakartaSans_500Medium",
+    fontSize: 13,
+    color: "rgba(255,255,255,0.3)",
+  },
+  loadingWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    paddingVertical: 80,
+  },
+  badgeGrid: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 20,
+  },
   badgeCard: {
-    width: "47%" as `${number}%`, alignItems: "center" as const, gap: 4,
-    paddingVertical: 16, paddingHorizontal: 12,
-    borderRadius: 16, backgroundColor: "rgba(255,255,255,0.04)",
-    borderWidth: 1.5, borderColor: "rgba(255,215,79,0.15)",
+    width: "47%" as `${number}%`,
+    alignItems: "center" as const,
+    gap: 6,
+    paddingVertical: 20,
+    paddingHorizontal: 12,
+    borderRadius: 16,
+    backgroundColor: "rgba(100,103,242,0.05)",
+    borderWidth: 1,
+    borderColor: "rgba(100,103,242,0.2)",
   },
-  badgeCardLocked: { borderColor: "rgba(255,255,255,0.04)" },
-  badgeEmoji: { fontSize: 32, marginBottom: 4 },
-  badgeTitle: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 13, color: "#FFD54F", textAlign: "center" },
-  badgeDesc: { fontFamily: "PlusJakartaSans_400Regular", fontSize: 10, color: "rgba(255,255,255,0.4)", textAlign: "center" },
-  badgeDate: { fontFamily: "PlusJakartaSans_400Regular", fontSize: 9, color: "rgba(255,255,255,0.2)", marginTop: 4 },
+  badgeCardLocked: {
+    opacity: 0.5,
+    borderColor: "rgba(255,255,255,0.06)",
+    backgroundColor: "rgba(255,255,255,0.02)",
+  },
+  badgeCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  badgeCircleGradient: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  badgeCircleRing: {
+    position: "absolute",
+    width: 86,
+    height: 86,
+    borderRadius: 43,
+    borderWidth: 2,
+    borderColor: "rgba(100,103,242,0.25)",
+  },
+  badgeEmoji: { fontSize: 38 },
+  badgeTitle: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 14,
+    color: "#FFFFFF",
+    textAlign: "center",
+  },
+  badgeDesc: {
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 11,
+    color: "rgba(255,255,255,0.4)",
+    textAlign: "center",
+    lineHeight: 15,
+  },
+  lockedCircle: {
+    width: 80,
+    height: 80,
+    borderRadius: 40,
+    backgroundColor: "rgba(30,30,50,0.8)",
+    borderWidth: 2,
+    borderColor: "rgba(100,100,140,0.3)",
+    borderStyle: "dashed",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 6,
+  },
+  lockedQuestion: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 28,
+    color: "rgba(255,255,255,0.2)",
+  },
+  lockedTitle: {
+    color: "rgba(255,255,255,0.4)",
+  },
+  lockedDesc: {
+    color: "rgba(255,255,255,0.2)",
+  },
 });

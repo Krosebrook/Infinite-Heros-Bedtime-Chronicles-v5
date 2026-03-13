@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&amp;family=Bangers&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#6467f2",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#02021a",
+                        "glass": "rgba(255, 255, 255, 0.05)",
+                        "glass-border": "rgba(255, 255, 255, 0.1)",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"],
+                        "bangers": ["Bangers"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .star-field {
+            background-image: 
+                radial-gradient(1px 1px at 20px 30px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 40px 70px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 50px 160px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 90px 40px, #fff, rgba(0,0,0,0)),
+                radial-gradient(1px 1px at 130px 80px, #fff, rgba(0,0,0,0)),
+                radial-gradient(2px 2px at 160px 120px, #fff, rgba(0,0,0,0));
+            background-repeat: repeat;
+            background-size: 200px 200px;
+        }
+        .glass-card {
+            background: rgba(100, 103, 242, 0.05);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(100, 103, 242, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen relative overflow-x-hidden">
+<!-- Cosmic Background Layer -->
+<div class="fixed inset-0 z-0 star-field opacity-40"></div>
+<div class="fixed inset-0 z-0 bg-gradient-to-b from-primary/10 via-transparent to-primary/5 pointer-events-none"></div>
+<div class="relative z-10 flex flex-col min-h-screen max-w-2xl mx-auto border-x border-primary/10 bg-background-light/50 dark:bg-background-dark/50 backdrop-blur-sm">
+<!-- Header -->
+<header class="flex items-center p-6 gap-4">
+<button class="flex items-center justify-center size-10 rounded-full glass-card hover:bg-primary/20 transition-colors">
+<span class="material-symbols-outlined text-primary">arrow_back_ios_new</span>
+</button>
+<h1 class="font-bangers text-4xl tracking-wider text-primary drop-shadow-[0_2px_10px_rgba(100,103,242,0.4)]">
+                Trophy Room
+            </h1>
+</header>
+<!-- Stats Grid -->
+<div class="grid grid-cols-2 md:grid-cols-4 gap-3 px-6 pb-8">
+<div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+<p class="text-[10px] uppercase tracking-widest text-primary/70 font-bold">Total Stories</p>
+<p class="text-2xl font-bold dark:text-white">42</p>
+</div>
+<div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+<p class="text-[10px] uppercase tracking-widest text-primary/70 font-bold">Current Streak</p>
+<p class="text-2xl font-bold dark:text-white">12 🔥</p>
+</div>
+<div class="glass-card rounded-xl p-4 flex flex-col gap-1 border-primary/40">
+<p class="text-[10px] uppercase tracking-widest text-primary/70 font-bold">Best Streak</p>
+<p class="text-2xl font-bold dark:text-white">28</p>
+</div>
+<div class="glass-card rounded-xl p-4 flex flex-col gap-1">
+<p class="text-[10px] uppercase tracking-widest text-primary/70 font-bold">Total Badges</p>
+<p class="text-2xl font-bold dark:text-white">8</p>
+</div>
+</div>
+<!-- Badges Section -->
+<div class="px-6 pb-24">
+<h2 class="text-lg font-bold mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-primary">auto_awesome</span>
+                Cosmic Achievements
+            </h2>
+<div class="grid grid-cols-2 gap-4">
+<!-- Earned Badge 1 -->
+<div class="glass-card rounded-xl p-4 flex flex-col items-center text-center group hover:border-primary/60 transition-all duration-300">
+<div class="size-24 mb-3 rounded-full bg-gradient-to-tr from-primary/40 to-purple-500/40 flex items-center justify-center text-5xl relative shadow-[0_0_20px_rgba(100,103,242,0.3)]">
+                        🚀
+                        <div class="absolute inset-0 rounded-full border-2 border-primary/30 group-hover:scale-110 transition-transform"></div>
+</div>
+<h3 class="font-bold text-slate-100 mb-1">First Flight</h3>
+<p class="text-xs text-slate-400 leading-tight">Completed your very first bedtime chronicle.</p>
+</div>
+<!-- Earned Badge 2 -->
+<div class="glass-card rounded-xl p-4 flex flex-col items-center text-center group hover:border-primary/60 transition-all duration-300">
+<div class="size-24 mb-3 rounded-full bg-gradient-to-tr from-blue-500/40 to-indigo-500/40 flex items-center justify-center text-5xl relative shadow-[0_0_20px_rgba(59,130,246,0.3)]">
+                        ⭐
+                        <div class="absolute inset-0 rounded-full border-2 border-primary/30 group-hover:scale-110 transition-transform"></div>
+</div>
+<h3 class="font-bold text-slate-100 mb-1">Star Explorer</h3>
+<p class="text-xs text-slate-400 leading-tight">Read 5 stories set in deep space galaxies.</p>
+</div>
+<!-- Earned Badge 3 -->
+<div class="glass-card rounded-xl p-4 flex flex-col items-center text-center group hover:border-primary/60 transition-all duration-300">
+<div class="size-24 mb-3 rounded-full bg-gradient-to-tr from-orange-500/40 to-red-500/40 flex items-center justify-center text-5xl relative shadow-[0_0_20px_rgba(249,115,22,0.3)]">
+                        🦸
+                        <div class="absolute inset-0 rounded-full border-2 border-primary/30 group-hover:scale-110 transition-transform"></div>
+</div>
+<h3 class="font-bold text-slate-100 mb-1">Midnight Hero</h3>
+<p class="text-xs text-slate-400 leading-tight">Maintained a 7-day reading streak.</p>
+</div>
+<!-- Locked Badge 1 -->
+<div class="glass-card rounded-xl p-4 flex flex-col items-center text-center grayscale opacity-50">
+<div class="size-24 mb-3 rounded-full bg-slate-800 flex items-center justify-center text-4xl text-slate-500 border-2 border-dashed border-slate-600">
+                        ?
+                    </div>
+<h3 class="font-bold text-slate-100 mb-1">Moon Walker</h3>
+<p class="text-xs text-slate-500 leading-tight">Unlock by reading 20 total stories.</p>
+</div>
+<!-- Locked Badge 2 -->
+<div class="glass-card rounded-xl p-4 flex flex-col items-center text-center grayscale opacity-50">
+<div class="size-24 mb-3 rounded-full bg-slate-800 flex items-center justify-center text-4xl text-slate-500 border-2 border-dashed border-slate-600">
+                        ?
+                    </div>
+<h3 class="font-bold text-slate-100 mb-1">Supernova</h3>
+<p class="text-xs text-slate-500 leading-tight">Reach a 30-day bedtime streak.</p>
+</div>
+<!-- Locked Badge 3 -->
+<div class="glass-card rounded-xl p-4 flex flex-col items-center text-center grayscale opacity-50">
+<div class="size-24 mb-3 rounded-full bg-slate-800 flex items-center justify-center text-4xl text-slate-500 border-2 border-dashed border-slate-600">
+                        ?
+                    </div>
+<h3 class="font-bold text-slate-100 mb-1">Galactic Sage</h3>
+<p class="text-xs text-slate-500 leading-tight">Complete every story in the Nebula pack.</p>
+</div>
+</div>
+</div>
+<!-- Bottom Nav -->
+<nav class="fixed bottom-0 left-0 right-0 z-50 flex justify-center pb-6 px-4">
+<div class="flex items-center gap-2 glass-card rounded-full px-4 py-2 max-w-md w-full shadow-2xl shadow-primary/20">
+<a class="flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<span class="text-[10px] font-medium">Stories</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-0.5 text-primary" href="#">
+<div class="bg-primary/20 rounded-full p-2 mb-[-4px]">
+<span class="material-symbols-outlined font-bold" style="font-variation-settings: 'FILL' 1">emoji_events</span>
+</div>
+<span class="text-[10px] font-bold">Trophies</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-0.5 text-slate-400 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</a>
+</div>
+</nav>
+</div>
+</body></html>

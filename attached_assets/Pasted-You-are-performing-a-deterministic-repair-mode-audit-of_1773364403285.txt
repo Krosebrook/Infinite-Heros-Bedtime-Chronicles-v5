@@ -1,0 +1,120 @@
+You are performing a **deterministic repair-mode audit** of a Stitch-generated website project. This is NOT a creative task — it is a forensic scan, mapping, and fix operation. Do not skip files. Do not hallucinate files. Only work with what exists.
+
+## PHASE 1: FULL RECURSIVE SCAN
+
+1. Run `find . -type f | sort` from the project root. Capture every file.
+2. Separate results into three categories:
+   - **Images**: `.png`, `.jpg`, `.jpeg`, `.gif`, `.svg`, `.webp`, `.ico`, `.avif`
+   - **Code**: `.html`, `.css`, `.js`, `.jsx`, `.ts`, `.tsx`, `.json`, `.mjs`
+   - **Other**: fonts, configs, markdown, data files, etc.
+3. Output the **complete file tree** with indentation showing directory structure.
+
+## PHASE 2: IMAGE ASSET MAP
+
+For every image file found, create a row in this table:
+
+| # | Filename | Path | Inferred Purpose | Referenced in Code? | Where Referenced | Status |
+|---|----------|------|-------------------|---------------------|------------------|--------|
+
+**Inferred Purpose categories**: hero-image, background, logo, icon, section-visual, card-image, avatar, decorative, favicon, og-image, placeholder, unknown
+
+**Status values**: `ACTIVE` (referenced and rendering), `BROKEN` (referenced but wrong path/name), `ORPHANED` (exists but never referenced), `MISSING` (referenced in code but file doesn't exist)
+
+### How to determine "Referenced in Code":
+```bash
+# For each image filename, run:
+grep -rl "FILENAME" --include="*.html" --include="*.css" --include="*.js" --include="*.jsx" --include="*.tsx" --include="*.ts" --include="*.json" .
+```
+
+Also check for:
+- CSS `background-image: url(...)` references
+- HTML `src="..."` and `srcset="..."` attributes
+- JS/JSX dynamic imports or require statements
+- Inline styles with image paths
+- `content: url(...)` in CSS
+- `<link rel="icon"...>` or `<meta property="og:image"...>`
+
+## PHASE 3: CODE-SIDE REFERENCE SCAN
+
+For every code file, extract ALL image references:
+```bash
+grep -n -E "(src=|url\(|background|import.*\.(png|jpg|svg|webp|gif)|require.*\.(png|jpg|svg|webp|gif))" FILE
+```
+
+Build a reverse map:
+
+| Code File | Line # | Image Referenced | Reference Type | File Exists? | Path Correct? |
+|-----------|--------|------------------|----------------|--------------|---------------|
+
+**Reference Types**: img-src, css-bg, css-url, js-import, inline-style, meta-tag, link-tag, dynamic-ref
+
+## PHASE 4: DIAGNOSE ALL ISSUES
+
+Classify every problem found into one of these categories:
+
+### 4A. BROKEN REFERENCES (code points to wrong path or nonexistent file)
+- List each broken reference
+- Show: file, line number, what it references, what's wrong
+- Propose fix (correct path, correct filename)
+
+### 4B. ORPHANED ASSETS (image exists but no code references it)
+- List each orphaned image
+- Infer where it SHOULD be used based on: filename, dimensions, content, project structure
+- Propose insertion point (which component/section/page)
+
+### 4C. MISSING ASSETS (code references an image that doesn't exist)
+- List each missing reference
+- Check if a similarly-named file exists (typo detection)
+- Propose fix (rename match, remove reference, or flag for manual upload)
+
+### 4D. PATH/STRUCTURE ISSUES
+- Inconsistent image directories (images scattered vs centralized)
+- Mixed casing in filenames vs references
+- Relative vs absolute path mismatches
+- Missing alt text on img tags
+
+## PHASE 5: PROPOSE FIXES (BEFORE APPLYING)
+
+Present a numbered fix list:
+
+```
+FIX-001: [BROKEN] src/components/Hero.jsx line 12 → change "../assets/hero.png" to "./images/hero-bg.png"
+FIX-002: [ORPHANED] images/about-team.jpg → insert into About section, src/pages/About.jsx after line 45
+FIX-003: [PATH] Standardize all image paths to use /images/ directory
+...
+```
+
+## PHASE 6: APPLY ALL FIXES
+
+After listing all fixes:
+1. Reorganize images into a consistent folder structure if needed (propose structure first)
+2. Fix every broken import/reference
+3. Insert every orphaned image into its correct component
+4. Remove dead references to truly missing assets
+5. Add `alt` text to any `<img>` tags missing it (infer from filename/context)
+6. Verify no CSS `background-image` URLs are broken
+
+## PHASE 7: VERIFICATION
+
+After all fixes applied:
+```bash
+# Re-run the grep scan to confirm zero broken references
+grep -rn -E "src=[\"'][^\"']*\.(png|jpg|svg|webp|gif)" --include="*.html" --include="*.jsx" --include="*.tsx" . | while read line; do
+  file=$(echo "$line" | grep -oP '(?<=src=[\""])[^"'"'"']*')
+  if [ ! -f "$file" ]; then
+    echo "STILL BROKEN: $line"
+  fi
+done
+```
+
+Output a final summary:
+
+```
+AUDIT COMPLETE
+==============
+Total images found:     XX
+Active (in use):        XX
+Fixed (were broken):    XX
+Inserted (were orphan): XX
+Removed (dead refs):    XX
+Still unresolved:       XX (with exp...

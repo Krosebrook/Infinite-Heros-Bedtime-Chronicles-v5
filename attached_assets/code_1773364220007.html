@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>NovaMarket | Minimalist Brutalist</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;700;900&amp;family=Space+Mono&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#ec5b13",
+                        "background-light": "#f8f6f6",
+                        "background-dark": "#1a1a1a",
+                    },
+                    fontFamily: {
+                        "display": ["Public Sans", "sans-serif"],
+                        "mono": ["Space Mono", "monospace"]
+                    },
+                    borderRadius: {"DEFAULT": "0px", "lg": "0px", "xl": "0px", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .brutalist-border { border: 2px solid black; }
+        .dark .brutalist-border { border: 2px solid white; }
+        .brutalist-shadow { box-shadow: 4px 4px 0px 0px #000; }
+        .dark .brutalist-shadow { box-shadow: 4px 4px 0px 0px #fff; }
+        .brutalist-shadow-orange { box-shadow: 4px 4px 0px 0px #ec5b13; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header Section -->
+<header class="flex items-center bg-background-light dark:bg-background-dark border-b-4 border-slate-900 dark:border-slate-100 p-4 justify-between sticky top-0 z-50">
+<div class="flex size-12 shrink-0 items-center justify-center brutalist-border bg-white dark:bg-slate-900">
+<span class="material-symbols-outlined text-3xl font-bold">menu</span>
+</div>
+<h2 class="text-slate-900 dark:text-slate-100 text-2xl font-black leading-tight tracking-tighter flex-1 px-4 italic">NOVAMARKET</h2>
+<div class="flex items-center justify-end">
+<button class="flex size-12 cursor-pointer items-center justify-center bg-primary text-white brutalist-border brutalist-shadow">
+<span class="material-symbols-outlined font-bold">shopping_bag</span>
+</button>
+</div>
+</header>
+<!-- Hero Section -->
+<main class="flex-1">
+<div class="p-4 pt-8">
+<h1 class="text-slate-900 dark:text-slate-100 tracking-tighter text-6xl font-black leading-[0.9] uppercase mb-4">
+                    Bold<br/><span class="text-primary underline decoration-4 underline-offset-8">Curation</span>
+</h1>
+<p class="font-mono text-sm uppercase tracking-widest mb-8 opacity-70">Ver: 2.0_Minimalist_Brutalist</p>
+</div>
+<!-- Search Section -->
+<div class="px-4 py-3">
+<label class="flex flex-col w-full">
+<div class="flex w-full items-stretch brutalist-border h-14 bg-white dark:bg-slate-900 brutalist-shadow">
+<div class="flex items-center justify-center px-4 border-r-2 border-slate-900 dark:border-slate-100 bg-slate-100 dark:bg-slate-800">
+<span class="material-symbols-outlined text-slate-900 dark:text-slate-100">search</span>
+</div>
+<input class="form-input flex-1 border-none bg-transparent focus:ring-0 text-slate-900 dark:text-slate-100 px-4 font-mono text-sm placeholder:text-slate-400" placeholder="SEARCH_RAW_CATALOGUE" value=""/>
+</div>
+</label>
+</div>
+<!-- Filter Categories -->
+<div class="flex gap-4 p-4 overflow-x-auto no-scrollbar">
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 brutalist-border bg-primary text-white px-4 brutalist-shadow-orange">
+<p class="font-mono text-xs font-bold uppercase">New_Arrivals</p>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 brutalist-border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4">
+<p class="font-mono text-xs font-bold uppercase">Archive</p>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+<button class="flex h-10 shrink-0 items-center justify-center gap-x-2 brutalist-border bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 px-4">
+<p class="font-mono text-xs font-bold uppercase">Essentials</p>
+<span class="material-symbols-outlined text-sm">expand_more</span>
+</button>
+</div>
+<!-- Content Grid -->
+<div class="grid grid-cols-2 gap-4 p-4">
+<div class="flex flex-col gap-2">
+<div class="aspect-square brutalist-border brutalist-shadow bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Model wearing high contrast minimalist streetwear" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAGO0FhIjJc6_gfyoaYMdVvxBgXYvRXJ2WdXQMjclOmJJgVQZkhiCaLD3xf8ruoNTRKCypj_RHnjV0y2sS_KBTtJM3Lk4bjltLtyQphdZYZ-FrW5AipRDGRXV02hkXObFOhGe1kqGpJfQvd74NlpjsQtW2_cVH71cox_JnGayPkVhZ2_oTDX0Omyy114joAHV9D3dbsLLmYW4MqPGYWq5cPCKCZjocysUsNIKQbYc9v7NyA2pTyeogiNvkCBblu0pVek7Om2V8NRJw"/>
+<div class="absolute top-2 left-2 bg-primary text-white font-mono text-[10px] px-2 py-1">LIMITED</div>
+</div>
+<div class="flex flex-col p-1">
+<p class="font-black text-lg leading-tight uppercase">Raw Hoodie</p>
+<p class="font-mono text-xs text-primary">$180.00</p>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="aspect-square brutalist-border brutalist-shadow bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Brutalist architecture inspired fashion accessory" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8BUvEIH3JTuxi8tO-ylFterT2NRgaJE2soe_bx9Ik643gPv2Z2tDcJ1j8rD3JPsZNRq9aiW6EHHb8_NcxErqM1lYslF6TD059DAZw-I-IW9wjb5EMOAzzAhLPVQI0kwlioYhW39kUKVHRij0khf5f0FWmzr4T-EGeVR3y_dhO0_zNdmITD_oi_QUc5yyqZhbNjJGDuArWZvFNBjsY2Sxc0DTreDCsKOAcDkO5Pse6YUb879-Nfe2GXU8SfKKqpsrnFgtiE9v3hC4"/>
+</div>
+<div class="flex flex-col p-1">
+<p class="font-black text-lg leading-tight uppercase">Slab Pouch</p>
+<p class="font-mono text-xs text-primary">$45.00</p>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="aspect-square brutalist-border brutalist-shadow bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Monochrome geometric object on white background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBGPWq2CvxXF1-w7totJMuw71L2bOS4y_PGuyFTIpTluDtbbo6ygpRrFNxyxne8_SAXIm6riWwl5YQbzQMw6Re4egmXGDuavkiZ2CQAfc_FrMKb0cKxc6N5nZjZIjAGaon_r1BPjlUZvigzJWhb52BRcQ4141LEiayHlOn8AOFaEZabTFy1p7eLC9YLT0QHgGhO-vx_38vYe9MIwP272JFZogV_qmaiaEaWHB__sXdToYWU6Q1Q35IxUWokbAnehUBT-EOB9U0AFtY"/>
+</div>
+<div class="flex flex-col p-1">
+<p class="font-black text-lg leading-tight uppercase">Core Sole</p>
+<p class="font-mono text-xs text-primary">$210.00</p>
+</div>
+</div>
+<div class="flex flex-col gap-2">
+<div class="aspect-square brutalist-border brutalist-shadow bg-slate-200 dark:bg-slate-800 relative overflow-hidden">
+<img class="w-full h-full object-cover grayscale contrast-125" data-alt="Detail of heavy fabric texture in black and white" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBmDZHS7cLk8hAC5WU0N98hImmmGbyVB9V4_JMxxqQS61kGzuB6qVjuOVBQMRlU9rbuK8h1YIENnl5UzI2VbDS_W9OkRLzsYVzeuAOwwgYqRqJZsO3hAS5KA2OfYv-zaHkrgGzF0Uq4--XlU50JdRqmNlDWUymMnhICQI_nFqJZWiedoWdws5kZ3H7XiBOiYd52EFlu1zJ5B1dDF7NdfjKLfw5unVCl5p_SMkKy7icvwixG-GwE0ItBK1z4gkWRkrCMjb5Z2LQ3hBY"/>
+</div>
+<div class="flex flex-col p-1">
+<p class="font-black text-lg leading-tight uppercase">NVM Denim</p>
+<p class="font-mono text-xs text-primary">$320.00</p>
+</div>
+</div>
+</div>
+<!-- Announcement Bar -->
+<div class="mx-4 my-8 p-4 brutalist-border bg-slate-900 dark:bg-slate-100 text-white dark:text-slate-900">
+<p class="font-mono text-sm leading-tight">SYSTEM_MSG: WORLDWIDE SHIPPING AVAILABLE. FREE OVER $200. NO RETURNS ON ARCHIVE PIECES.</p>
+</div>
+<div class="h-20"></div>
+</main>
+<!-- Bottom Navigation -->
+<nav class="fixed bottom-0 w-full bg-background-light dark:bg-background-dark border-t-4 border-slate-900 dark:border-slate-100 px-4 pb-6 pt-3 flex gap-4 justify-between items-center z-50">
+<a class="flex flex-1 flex-col items-center justify-center bg-primary text-white h-12 brutalist-border brutalist-shadow-orange" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 h-12 brutalist-border" href="#">
+<span class="material-symbols-outlined text-2xl">grid_view</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 h-12 brutalist-border" href="#">
+<span class="material-symbols-outlined text-2xl">favorite</span>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 h-12 brutalist-border" href="#">
+<span class="material-symbols-outlined text-2xl">person</span>
+</a>
+</nav>
+</div>
+</body></html>

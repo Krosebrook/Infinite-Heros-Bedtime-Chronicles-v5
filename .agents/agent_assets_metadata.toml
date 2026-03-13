@@ -1,0 +1,8 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "eEllkrsXjsu5YrzlmwG1u"
+uri = "file://.local/audit-report.md"
+type = "text"
+title = "Full Project Audit Report"

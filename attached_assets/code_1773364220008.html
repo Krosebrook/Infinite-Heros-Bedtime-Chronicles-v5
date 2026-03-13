@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#0f0fbd",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101022",
+                    },
+                    fontFamily: {
+                        "display": ["Plus Jakarta Sans"]
+                    },
+                    borderRadius: {"DEFAULT": "0.5rem", "lg": "1rem", "xl": "1.5rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .glow-border {
+            position: relative;
+        }
+        .glow-border::after {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            background: linear-gradient(45deg, transparent, rgba(15, 15, 189, 0.3), transparent);
+            border-radius: inherit;
+            z-index: -1;
+            pointer-events: none;
+        }
+        .text-glow {
+            text-shadow: 0 0 15px rgba(15, 15, 189, 0.4);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen">
+<div class="relative flex min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Header -->
+<header class="sticky top-0 z-50 flex items-center bg-background-dark/80 backdrop-blur-lg p-4 justify-between border-b border-white/5">
+<div class="flex size-10 shrink-0 items-center justify-center rounded-full bg-white/5 hover:bg-white/10 transition-colors cursor-pointer">
+<span class="material-symbols-outlined text-slate-100">arrow_back</span>
+</div>
+<h2 class="text-slate-100 text-lg font-bold leading-tight tracking-[-0.015em] flex-1 text-center">Customize Your Story</h2>
+<div class="flex w-10 items-center justify-end">
+<button class="flex size-10 items-center justify-center rounded-full bg-primary/20 text-primary border border-primary/30 shadow-[0_0_15px_rgba(15,15,189,0.3)]">
+<span class="material-symbols-outlined text-[20px]">magic_button</span>
+</button>
+</div>
+</header>
+<main class="flex-1 pb-32">
+<!-- Hero Section -->
+<div class="p-4 @container">
+<div class="relative group aspect-[16/10] overflow-hidden rounded-xl border border-white/10 shadow-2xl">
+<div class="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105" data-alt="Cinematic fantasy castle in clouds with ethereal lighting" style='background-image: linear-gradient(to top, rgba(16, 16, 34, 0.9) 0%, rgba(16, 16, 34, 0.2) 50%, transparent 100%), url("https://lh3.googleusercontent.com/aida-public/AB6AXuBaJl37srv7Jg36dJRctwwsmhaDW7ab7mj1knHodKFOt90fYeycS3iV3JXcgZ_J4uxN27-a0U8psv0TgWeqfGWfDRyg3fJhE4ml0pP-t7bojbImt0kuPDYrE4jnVbxxDCXqzWbzKzZnHQqv8LuMuEHxJqcgEHy5d7pxA4oRqjWqrDNJ1_FRgaczo6b4OVa6c-YkVvXfsXupRrMo5AFwSDEs2tf28r1GuxC2IQVttwPdo7QOYPyPB5I0QIDZtF_quRlYhkJR2PQij90");'>
+</div>
+<div class="absolute bottom-0 left-0 p-6 w-full">
+<div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/30 border border-primary/40 backdrop-blur-md mb-3">
+<span class="material-symbols-outlined text-[14px] text-blue-300">auto_awesome</span>
+<span class="text-[10px] font-bold uppercase tracking-widest text-blue-100">AI Personalized</span>
+</div>
+<h1 class="text-slate-100 text-3xl font-extrabold leading-tight tracking-tight text-glow">The Enchanted Kingdom</h1>
+<p class="text-slate-300/80 text-sm mt-2 max-w-md line-clamp-2 italic font-light">"A journey where your choices weave the fabric of reality itself..."</p>
+</div>
+</div>
+</div>
+<!-- Personalized Magic Section -->
+<section class="px-4 py-6">
+<div class="flex items-center gap-2 mb-2">
+<span class="material-symbols-outlined text-primary">flare</span>
+<h3 class="text-slate-100 text-xl font-bold">Personalized Magic</h3>
+</div>
+<p class="text-slate-400 text-sm font-normal leading-relaxed mb-8">Choose the perfect voice and sensory elements to guide your journey.</p>
+<!-- Narrator Selection -->
+<div class="space-y-4">
+<div class="flex items-center justify-between px-1">
+<span class="text-slate-100 font-semibold tracking-wide">Select Narrator</span>
+<span class="text-primary text-xs font-bold uppercase tracking-tighter">4 Voices Available</span>
+</div>
+<div class="grid grid-cols-1 gap-4">
+<!-- Narrator Option 1 -->
+<div class="glass-card glow-border p-4 rounded-xl flex items-center gap-4 border-primary/20 shadow-[0_0_20px_rgba(15,15,189,0.05)]">
+<div class="relative size-14 rounded-full overflow-hidden border-2 border-primary">
+<img class="size-full object-cover" data-alt="Portrait of a mature man with a kind face" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBPp_BHAKNTZAWBh2jbwuByzgSsTcECgbjrnaGEMRwVhjoLQQ-OyMIxxnk8o5LI7plUDXCGB8Q7v8jFQFzeUE7Ff76uwb1_vLllZodDGeZedgl3Tn-_FS8eHdIcOPhm0GLTcX6QrJXkhRkg0CYyYhar_3b5Y8EUXuE5Gzz2z9j2zwxB7Qw0uZaLES4UycTWmpFUR-ilvRvVyK0QXVhtjHpdVrZPzufpHNR1R17wY9Ll-KXlL_aCP37q-vS5OzASByrRXm1uVidSKcE"/>
+<div class="absolute bottom-0 right-0 size-4 bg-primary border-2 border-background-dark rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-[8px] text-white">check</span>
+</div>
+</div>
+<div class="flex-1">
+<h4 class="text-slate-100 font-bold">Alistair Thorne</h4>
+<p class="text-slate-400 text-xs">Deep, wise, and authoritative</p>
+</div>
+<div class="size-10 flex items-center justify-center rounded-full bg-primary text-white">
+<span class="material-symbols-outlined">play_arrow</span>
+</div>
+</div>
+<!-- Narrator Option 2 -->
+<div class="glass-card p-4 rounded-xl flex items-center gap-4 hover:bg-white/5 transition-all cursor-pointer">
+<div class="relative size-14 rounded-full overflow-hidden border-2 border-white/10 opacity-70">
+<img class="size-full object-cover" data-alt="Portrait of a young woman with a melodic presence" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAJdL4xIdlzvfxaoeKQew_jT0CTdq6tLXFM-W9SxlSKgS5dIoo4tkYYH9fbYj8LvvydAwkDB8rMnlgybAI-kM319tnmJKG78Xc3Bzz_Kg7m59V9tQU8w3zPRWxoMrXpTaOCvRNK2xQWPBG5hIX2WiSqGUtRmMK31WAeFVAvUnuBIEVsvaF_o3fxQ61sgozYRA_9zSdW-NJ8gSzbHscpjZln0GGF8T55tltGAFTpPAfXF4VfVV1kJ6R_ujsuz5zDhp5HZkGOAawYFs"/>
+</div>
+<div class="flex-1">
+<h4 class="text-slate-300 font-bold">Elara Vance</h4>
+<p class="text-slate-500 text-xs">Soft, melodic, and mysterious</p>
+</div>
+<div class="size-10 flex items-center justify-center rounded-full bg-white/5 text-slate-400">
+<span class="material-symbols-outlined">play_arrow</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Element Customization -->
+<div class="mt-10 space-y-6">
+<div class="flex items-center justify-between px-1">
+<span class="text-slate-100 font-semibold tracking-wide">Atmosphere Elements</span>
+</div>
+<div class="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
+<div class="glass-card flex flex-col items-center justify-center min-w-[100px] h-28 rounded-xl border-primary/10 gap-2">
+<div class="size-10 rounded-full bg-primary/20 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">rainy</span>
+</div>
+<span class="text-xs font-medium text-slate-300">Rainfall</span>
+</div>
+<div class="glass-card flex flex-col items-center justify-center min-w-[100px] h-28 rounded-xl border-primary/10 gap-2">
+<div class="size-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">air</span>
+</div>
+<span class="text-xs font-medium text-slate-400">Winds</span>
+</div>
+<div class="glass-card flex flex-col items-center justify-center min-w-[100px] h-28 rounded-xl border-primary/10 gap-2">
+<div class="size-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">fireplace</span>
+</div>
+<span class="text-xs font-medium text-slate-400">Crackling</span>
+</div>
+<div class="glass-card flex flex-col items-center justify-center min-w-[100px] h-28 rounded-xl border-primary/10 gap-2">
+<div class="size-10 rounded-full bg-white/5 flex items-center justify-center text-slate-400">
+<span class="material-symbols-outlined">forest</span>
+</div>
+<span class="text-xs font-medium text-slate-400">Wildlife</span>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Navigation & Action -->
+<div class="fixed bottom-0 left-0 right-0 z-50">
+<!-- CTA Button -->
+<div class="px-4 pb-6">
+<button class="w-full h-16 bg-primary hover:bg-primary/90 rounded-xl flex items-center justify-center gap-3 text-white font-bold text-lg shadow-[0_8px_30px_rgb(15,15,189,0.4)] border-t border-white/20 transition-transform active:scale-[0.98]">
+<span class="material-symbols-outlined">auto_fix_high</span>
+                    Begin Journey
+                </button>
+</div>
+<!-- Bottom Nav Bar -->
+<nav class="flex gap-2 border-t border-white/5 bg-background-dark/95 backdrop-blur-xl px-4 pb-6 pt-3">
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">auto_stories</span>
+<p class="text-[10px] font-bold uppercase tracking-widest">Library</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">explore</span>
+<p class="text-[10px] font-bold uppercase tracking-widest">Explore</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-primary" href="#">
+<div class="size-8 rounded-full bg-primary/20 flex items-center justify-center mb-1">
+<span class="material-symbols-outlined fill-1">star</span>
+</div>
+<p class="text-[10px] font-bold uppercase tracking-widest">Magic</p>
+</a>
+<a class="flex flex-1 flex-col items-center justify-center gap-1 text-slate-500 hover:text-primary transition-colors" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+<p class="text-[10px] font-bold uppercase tracking-widest">Profile</p>
+</a>
+</nav>
+</div>
+</div>
+</body></html>

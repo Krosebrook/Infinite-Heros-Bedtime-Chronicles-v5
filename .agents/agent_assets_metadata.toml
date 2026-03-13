@@ -6,3 +6,9 @@ id = "eEllkrsXjsu5YrzlmwG1u"
 uri = "file://.local/audit-report.md"
 type = "text"
 title = "Full Project Audit Report"
+
+[[outputs]]
+id = "I-e8G42s_Ic46wvTlwvou"
+uri = "file://docs/DEAD-CODE-TRIAGE.md"
+type = "text"
+title = "Dead Code Triage Report"

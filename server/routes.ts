@@ -4,6 +4,7 @@ import { generateSpeech, VOICE_MAP, MODE_DEFAULT_VOICES, getVoicesForMode, type 
 import { getMusicFilePath, getMusicFileName } from "./suno";
 import { createVideoJob, getVideoJob, getVideoFilePath, isVideoAvailable } from "./video";
 import { getAIRouter, getProviderStatuses, logProviderStatus } from "./ai";
+import { registerAudioRoutes } from "./replit_integrations/audio";
 import crypto from "node:crypto";
 import fs from "node:fs";
 import path from "node:path";
@@ -756,6 +757,12 @@ Style: ${sceneStyle}. Wide landscape composition, magical atmosphere, child-safe
       res.status(500).json({ error: "Failed to generate preview" });
     }
   });
+
+  // Register voice chat & conversation routes (replit_integrations)
+  if (process.env.AI_INTEGRATIONS_OPENAI_API_KEY && process.env.DATABASE_URL) {
+    registerAudioRoutes(app);
+    console.log("[Routes] Voice chat & conversation routes registered");
+  }
 
   const httpServer = createServer(app);
   return httpServer;

@@ -43,16 +43,9 @@ No restore needed. This is scaffold code from the initial project template. It i
 **Type:** Orphaned export / duplicate implementation  
 **What it does:** A full 103-line `HeroCard` component — a pressable hero selection card with gradient background, power badge, and haptic feedback — accepting a `Hero` object and `onPress` handler. It is a complete, working component.  
 **Current replacement:** `app/(tabs)/create.tsx:467` — heroes are rendered inline with `HEROES.map()` using bespoke JSX directly within the screen. The inline version has its own styling and selection state logic.  
-**Current replacement working?** YES — the inline version in create.tsx is active and functional.  
-**Recommendation:** NEEDS_DECISION  
-
-**Tradeoff:**  
-- **HeroCard.tsx** is a clean, reusable component following good separation-of-concerns principles. It accepts a `Hero` prop and an `onPress`, making it testable in isolation.  
-- **Inline in create.tsx** is tightly coupled to the screen's state (heroIndex, selection animation) and has been customized for the carousel/swiper interaction pattern used in the create flow.  
-- Restoring HeroCard would require refactoring create.tsx's hero rendering, which is a non-trivial change that could regress the carousel UX.  
-- `quick-create.tsx` (onboarding) also renders hero cards inline and might benefit from the component if restored.  
-
-**Decision needed:** Should `HeroCard.tsx` become the canonical hero card component used everywhere, or should it be deleted as replaced by the inline version?
+**Current replacement working?** YES — the inline version in create.tsx is active and functional.
+**Recommendation:** KEEP_CURRENT
+**Decision:** KEEP_CURRENT (2026-03-13) — The inline version in create.tsx is tightly integrated with the carousel/swiper UX. HeroCard.tsx is retained for potential reuse if a hero card component is needed elsewhere (e.g., quick-create, profile screens). No risk keeping it dormant.
 
 ---
 
@@ -78,15 +71,15 @@ This component is not broken — it was never connected. It is a useful utility 
 - `batch/` — Rate-limiting and batch processing utilities (no routes, just helpers).  
 
 **Current replacement:** `server/routes.ts` implements its own image generation via the multi-provider `AI Router` (Gemini → OpenAI fallback). Chat and audio have no equivalent in the current app. The main AI router (`server/ai/`) handles all text/image generation.  
-**Current replacement working?** YES for image generation. Chat and audio have NO current equivalent.  
-**Recommendation:** NEEDS_DECISION  
+**Current replacement working?** YES for image generation. Chat and audio have NO current equivalent.
+**Recommendation:** WIRED_UP
 
 **Tradeoff:**  
 - `chat/` and `audio/` represent substantial features (voice-interactive chat with memory) that do not exist anywhere in the current app. If a "chat with your hero" or "voice narration input" feature is planned, this code is ready to be wired up.  
 - `image/` overlaps with the existing AI router's image generation. The replit_integrations version uses Gemini only; the AI router version has multi-provider fallback. The AI router version is superior.  
 - `batch/` utilities are generic rate-limit helpers that could be useful but are currently redundant with the inline rate-limiting in routes.ts.  
 
-**Decision needed:** Should `chat/` and `audio/` be registered in server/index.ts as additional routes (adding the chat-with-hero feature), or should this entire directory be removed as unfinished work?
+**Decision:** WIRED_UP (2026-03-13) — Audio routes (which include conversation management) are now registered in `server/routes.ts` via `registerAudioRoutes()`. They are gated behind `AI_INTEGRATIONS_OPENAI_API_KEY` and `DATABASE_URL` environment variables. The image module was NOT registered because the existing AI router has superior multi-provider fallback. The batch utilities remain available as imports for future use.
 
 ---
 
@@ -134,16 +127,9 @@ This component is not broken — it was never connected. It is a useful utility 
 - Covers: audio volume, speed, voice, auto-play, story length, age range, auto-images, extend mode, auto-next, text size, library sort, favorites filter  
 - UI: A standalone screen accessible from `index.tsx` via a gear icon
 
-**Current replacement working?** Both are active and working independently. They do NOT sync. A user changing "auto-play" in System A's modal and "auto-play" in System B's screen are writing to different storage keys.  
-**Recommendation:** NEEDS_DECISION  
-
-**Tradeoff:**  
-- System B is more comprehensive and uses proper React Context (provider pattern). System A is a standalone modal with local state.  
-- System A covers some settings System B does not (language, parental controls toggle).  
-- The duplicate auto-play setting is the most dangerous: two places claim to control the same behavior but write to different keys.  
-- The clean solution is to migrate System A's unique settings (language, parental controls display toggle) into System B's `AppSettings` type and remove System A's preference storage. The `SettingsModal` component UI can remain as a modal shell that reads/writes from `SettingsContext` instead.
-
-**Decision needed:** Should System A's `getPreferences/savePreferences` be migrated to use `SettingsContext`, or should both systems continue to coexist?
+**Current replacement working?** Both were active and working independently. They did NOT sync.
+**Recommendation:** MERGED
+**Decision:** MERGED (2026-03-13) — SettingsModal.tsx now reads/writes via `useSettings()` from `SettingsContext` instead of its own `getPreferences`/`savePreferences`. System A's unique fields (`sleepTheme`, `isMuted`, `reducedMotion`, `fontSize`) were added to `AppSettings` in `SettingsContext.tsx`. A one-time migration in the SettingsProvider reads the old `@infinity_heroes_preferences` AsyncStorage key and merges values into the unified settings store. Both UIs now share a single source of truth.
 
 ---
 
@@ -152,14 +138,14 @@ This component is not broken — it was never connected. It is a useful utility 
 | # | File / Location | Type | Recommendation | Risk if Restored/Changed |
 |---|-----------------|------|----------------|--------------------------|
 | 1 | `server/storage.ts:1-38` | Orphaned export | KEEP_CURRENT | None — never imported |
-| 2 | `components/HeroCard.tsx:1-103` | Orphaned export / duplicate impl | NEEDS_DECISION | Medium — restoring requires create.tsx refactor |
+| 2 | `components/HeroCard.tsx:1-103` | Orphaned export / duplicate impl | KEEP_CURRENT | None — retained for potential reuse |
 | 3 | `components/KeyboardAwareScrollViewCompat.tsx:1-30` | Orphaned export | KEEP_CURRENT | None — never imported |
-| 4 | `server/replit_integrations/` (all) | Orphaned module set | NEEDS_DECISION | Low to register chat/audio; Medium to remove |
+| 4 | `server/replit_integrations/` (all) | ✅ WIRED_UP | Audio/chat routes registered in routes.ts |
 | 5a | `lib/storage.ts:47` `getReadStories` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
 | 5b | `lib/storage.ts:56` `markStoryRead` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
 | 5c | `lib/storage.ts:101` `saveStoryScene` | Orphaned export | ✅ RESTORED | Scene images now persist through story cache |
 | 5d | `lib/storage.ts:114` `updateFeedback` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
-| 6 | `components/SettingsModal.tsx` vs `lib/SettingsContext.tsx` | Duplicate settings system | NEEDS_DECISION | High — merging requires careful state migration |
+| 6 | `components/SettingsModal.tsx` vs `lib/SettingsContext.tsx` | ✅ MERGED | Settings unified under SettingsContext |
 
 ---
 
@@ -175,9 +161,9 @@ Scene image persistence was the only clear regression in the codebase. All other
 
 ---
 
-## Open Decisions
+## Resolved Decisions (2026-03-13)
 
-Three items still require a user decision before any action:
-1. **#2 HeroCard.tsx** — delete as dead code, or restore as canonical component?
-2. **#4 server/replit_integrations/** — wire up chat/audio routes, or remove?
-3. **#6 Dual settings systems** — migrate SettingsModal to use SettingsContext, or keep both?
+All three open decisions have been resolved:
+1. **#2 HeroCard.tsx** — KEEP_CURRENT. Retained for potential reuse; no regression risk.
+2. **#4 server/replit_integrations/** — WIRED_UP. Audio/chat routes registered in `server/routes.ts`, gated behind env vars.
+3. **#6 Dual settings systems** — MERGED. `SettingsModal.tsx` now uses `useSettings()` from `SettingsContext`. Legacy preferences migrated on first load.

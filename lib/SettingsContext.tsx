@@ -2,13 +2,15 @@ import React, { createContext, useContext, useReducer, useEffect, ReactNode } fr
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 const SETTINGS_KEY = "@infinity_heroes_app_settings";
+const LEGACY_PREFERENCES_KEY = "@infinity_heroes_preferences";
+const MIGRATION_DONE_KEY = "@infinity_heroes_settings_migrated";
 
 export interface AppSettings {
   audioVolume: number;
   audioSpeed: number;
   narratorVoice: string;
   autoPlay: boolean;
-  storyLength: "short" | "medium" | "long";
+  storyLength: "short" | "medium-short" | "medium" | "long" | "epic";
   ageRange: "2-4" | "4-6" | "6-8" | "8-10";
   defaultTheme: string;
   autoGenerateImages: boolean;
@@ -18,6 +20,10 @@ export interface AppSettings {
   librarySortOrder: "recent" | "alphabetical" | "theme";
   showFavoritesOnly: boolean;
   autoSave: boolean;
+  sleepTheme: string;
+  isMuted: boolean;
+  reducedMotion: boolean;
+  fontSize: "normal" | "large";
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -35,6 +41,10 @@ export const DEFAULT_SETTINGS: AppSettings = {
   librarySortOrder: "recent",
   showFavoritesOnly: false,
   autoSave: true,
+  sleepTheme: "Cloud Kingdom",
+  isMuted: false,
+  reducedMotion: false,
+  fontSize: "normal",
 };
 
 type SettingsAction =
@@ -74,17 +84,36 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
   const [isLoaded, setIsLoaded] = React.useState(false);
 
   useEffect(() => {
-    AsyncStorage.getItem(SETTINGS_KEY)
-      .then((data) => {
+    (async () => {
+      try {
+        let merged: Partial<AppSettings> = {};
+
+        const data = await AsyncStorage.getItem(SETTINGS_KEY);
         if (data) {
-          try {
-            const parsed = JSON.parse(data) as Partial<AppSettings>;
-            dispatch({ type: "LOAD", payload: { ...DEFAULT_SETTINGS, ...parsed } });
-          } catch {}
+          try { merged = JSON.parse(data); } catch {}
         }
-      })
-      .catch(() => {})
-      .finally(() => setIsLoaded(true));
+
+        const migrated = await AsyncStorage.getItem(MIGRATION_DONE_KEY);
+        if (!migrated) {
+          const legacyData = await AsyncStorage.getItem(LEGACY_PREFERENCES_KEY);
+          if (legacyData) {
+            try {
+              const legacy = JSON.parse(legacyData);
+              if (legacy.sleepTheme && !merged.sleepTheme) merged.sleepTheme = legacy.sleepTheme;
+              if (legacy.isMuted !== undefined && merged.isMuted === undefined) merged.isMuted = legacy.isMuted;
+              if (legacy.reducedMotion !== undefined && merged.reducedMotion === undefined) merged.reducedMotion = legacy.reducedMotion;
+              if (legacy.fontSize && !merged.fontSize) merged.fontSize = legacy.fontSize;
+              if (legacy.narratorVoice && !merged.narratorVoice) merged.narratorVoice = legacy.narratorVoice;
+              if (legacy.storyLength && !merged.storyLength) merged.storyLength = legacy.storyLength;
+            } catch {}
+          }
+          await AsyncStorage.setItem(MIGRATION_DONE_KEY, "1");
+        }
+
+        dispatch({ type: "LOAD", payload: { ...DEFAULT_SETTINGS, ...merged } });
+      } catch {}
+      setIsLoaded(true);
+    })();
   }, []);
 
   useEffect(() => {

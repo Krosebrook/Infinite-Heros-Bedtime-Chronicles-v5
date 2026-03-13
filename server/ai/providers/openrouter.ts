@@ -10,7 +10,7 @@ function getClient(): OpenAI | null {
 
 const PROVIDER_MODELS: Record<string, { model: string; providerName: ProviderName; displayName: string }> = {
   "xai": {
-    model: "x-ai/grok-3-mini-beta",
+    model: "x-ai/grok-3-mini",
     providerName: "xai",
     displayName: "xAI Grok",
   },

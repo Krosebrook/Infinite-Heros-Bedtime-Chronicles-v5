@@ -22,7 +22,7 @@ export const anthropicProvider: AIProvider = {
     if (!client) throw new Error("Anthropic not configured");
 
     const message = await client.messages.create({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: req.maxTokens ?? 8192,
       system: req.systemPrompt,
       messages: [{ role: "user", content: req.userPrompt }],
@@ -34,7 +34,7 @@ export const anthropicProvider: AIProvider = {
     return {
       text,
       provider: "anthropic",
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       usage: {
         inputTokens: message.usage?.input_tokens,
         outputTokens: message.usage?.output_tokens,
@@ -47,7 +47,7 @@ export const anthropicProvider: AIProvider = {
     if (!client) throw new Error("Anthropic not configured");
 
     const stream = client.messages.stream({
-      model: "claude-sonnet-4-20250514",
+      model: "claude-sonnet-4-6",
       max_tokens: req.maxTokens ?? 8192,
       system: req.systemPrompt,
       messages: [{ role: "user", content: req.userPrompt }],

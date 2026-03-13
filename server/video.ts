@@ -83,7 +83,7 @@ export async function createVideoJob(
 
   try {
     const video = await client.videos.create({
-      model: "sora-2-2025-12-08",
+      model: "sora-2",
       prompt,
       size: "1280x720",
       seconds: 4,

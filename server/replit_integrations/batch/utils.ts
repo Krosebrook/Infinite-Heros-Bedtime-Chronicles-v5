@@ -17,7 +17,7 @@ import pRetry from "p-retry";
  *   async (artwork) => {
  *     // Your custom LLM logic here
  *     const response = await openai.chat.completions.create({
- *       model: "gpt-5.1",
+ *       model: "gpt-4o",
  *       messages: [{ role: "user", content: `Categorize: ${artwork.name}` }],
  *       response_format: { type: "json_object" },
  *     });
@@ -69,7 +69,7 @@ export function isRateLimitError(error: unknown): boolean {
  *   csvRows,
  *   async (row) => {
  *     const response = await openai.chat.completions.create({
- *       model: "gpt-5.1", // the newest OpenAI model
+ *       model: "gpt-4o", // the newest OpenAI model
  *       messages: [{ role: "user", content: `Categorize artwork: ${row.name}` }],
  *       response_format: { type: "json_object" },
  *     });

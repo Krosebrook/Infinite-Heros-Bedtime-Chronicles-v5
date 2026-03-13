@@ -1,0 +1,169 @@
+# Feature Discovery Prompt
+**Purpose:** Run this prompt after any agent coding session to generate a current-state feature inventory.  
+**Output:** A `FEATURE-DISCOVERY.md` file documenting every feature's state (Active, Dormant, Partial, Conflicted).  
+**When to run:** After any agent session that adds, modifies, or refactors features. Also run periodically (weekly or before sprint planning) to catch drift.
+
+---
+
+## The Prompt
+
+Copy everything below the line into a new conversation with full codebase context (e.g., Claude Code, Cursor, or paste the repo).
+
+---
+
+```
+You are a codebase auditor performing a Feature Discovery Audit. Your job is to produce a comprehensive, accurate inventory of every feature in this codebase — not just what's "dead," but what's ACTIVE, DORMANT, PARTIAL, or CONFLICTED.
+
+## Definitions
+
+- **ACTIVE**: Code exists, is imported/called, renders in UI or responds to API calls, and works end-to-end.
+- **DORMANT**: Code exists and appears functional, but nothing imports/calls it. It was never wired to the UI or API surface. It is reachable code that is simply unreachable.
+- **PARTIAL**: Code exists and is partially wired — some pieces work, some are disconnected. Example: a function that saves data exists and is called, but the UI that displays that data was removed.
+- **CONFLICTED**: Two or more implementations exist for the same logical feature. They may write to different storage keys, use different state management, or present different UIs for the same setting.
+
+## Audit Process
+
+### Phase 1: Export Scan
+1. Find every exported function, component, class, constant, type, and route in the codebase.
+2. For each export, trace whether it is imported by any other file.
+3. Exports with zero external imports are DORMANT candidates.
+
+### Phase 2: Route Scan
+1. Find every API route defined in the backend (Express routes, API handlers, etc.).
+2. For each route, trace whether any frontend code calls it.
+3. Routes with zero frontend callers are DORMANT candidates.
+
+### Phase 3: Storage Scan
+1. Find every unique storage key (AsyncStorage, localStorage, database tables, etc.).
+2. For each key, find all reads and writes.
+3. Keys written but never read (or read but never written) are PARTIAL candidates.
+4. Keys where two different systems read/write the same logical data are CONFLICTED candidates.
+
+### Phase 4: Component Scan
+1. Find every React component file.
+2. For each component, trace whether it appears in any render tree (imported + used in JSX).
+3. Components that exist as files but never appear in JSX are DORMANT candidates.
+
+### Phase 5: Duplicate Detection
+1. Find functions/components that do substantially the same thing (e.g., two settings modals, two hero card renderers, two image generation routes).
+2. If both are active, they are CONFLICTED.
+3. If one is active and one is orphaned, the orphaned one is DORMANT.
+
+### Phase 6: Regression Detection
+1. For every DORMANT function, check: does the active codebase have a gap where this function SHOULD be called?
+2. Example: a `saveToDisk()` function exists but the code that generates the data never calls it — that's a REGRESSION, not just dormant code.
+3. Flag regressions explicitly — they are the highest-priority findings.
+
+## Output Format
+
+Produce a markdown file (`FEATURE-DISCOVERY.md`) with the following structure:
+
+```markdown
+# Feature Discovery Report
+**Project:** [name]
+**Generated:** [date]
+**Branch:** [branch + commit hash]
+
+## Feature Inventory
+
+### [Feature Category Name]
+
+| Feature | State | Location | Notes |
+|---------|-------|----------|-------|
+| [name] | ✅/💤/⚠️/🔴 | [file:line or directory] | [one-line explanation] |
+
+**Dormant detail — [feature name]:**
+[2-4 sentences: what it does, why it's dormant, what would be needed to wire it up, estimated effort]
+
+### [Next Category...]
+
+## Summary by State
+
+### ✅ Active: [count]
+[One paragraph summary of what works]
+
+### 💤 Dormant: [count]
+| Feature | Effort to Wire | Value |
+|---------|---------------|-------|
+| [name] | [Small/Medium/Large] | [Low/Medium/High + why] |
+
+### ⚠️ Partial: [count]
+[List with explanation of what's missing]
+
+### 🔴 Conflicted: [count]
+[List with explanation of the conflict and the user-facing bug risk]
+
+## Regressions Found
+[List any DORMANT items that represent a regression — working code that SHOULD be called but isn't]
+
+## Decisions Pending
+| # | Item | Options |
+|---|------|---------|
+| [n] | [feature] | [Option A / Option B / Option C] |
+```
+
+## Rules
+
+1. **Be exhaustive.** Scan every file. Don't stop at "the main features work."
+2. **Trace imports, not assumptions.** A function is DORMANT only if you can confirm zero import paths reach it.
+3. **Check both directions.** Backend routes need frontend callers. Frontend functions need backend endpoints.
+4. **Storage keys are contracts.** Two systems writing different keys for the same logical setting is a bug.
+5. **Don't recommend actions.** Your job is to REPORT state. Recommendations happen in a separate step.
+6. **Include effort estimates.** For every DORMANT feature, estimate: Small (< 1 hour), Medium (1-4 hours), Large (4+ hours) to wire up.
+7. **Flag regressions loudly.** If a function exists that would fix a gap in the active code, that's a regression — it goes in a dedicated section.
+8. **Group by user-facing feature category**, not by file location.
+9. **Include the previous FEATURE-DISCOVERY.md** (if it exists in `/docs/`) as a baseline. Note what changed since the last audit. Add a "Changes Since Last Audit" section at the top if a previous version exists.
+```
+
+---
+
+## Companion: Dead Code Triage Prompt
+
+If you also want a focused dead-code-only audit (the report that preceded this discovery), use this prompt:
+
+```
+You are a codebase auditor performing a Dead Code Triage. Find every piece of code that is never reached at runtime.
+
+## Scan for:
+1. **Orphaned exports** — functions, components, classes exported but never imported elsewhere.
+2. **Duplicate implementations** — two files/functions doing the same thing where one is used and the other isn't.
+3. **Architectural drift** — two parallel systems (e.g., dual settings stores) that should be one.
+4. **Renamed/suffixed files** — .old, .bak, .backup, .deprecated, .orig files.
+5. **Commented-out code blocks** — large blocks (5+ lines) of commented code.
+6. **Always-false branches** — `if (false)`, `if (0)`, feature flags that are permanently off.
+
+## For each candidate, produce:
+- **Type**: Which category above
+- **What it does**: 2-3 sentences explaining the code's purpose
+- **Current replacement**: What (if anything) replaced it in the active codebase
+- **Current replacement working?**: YES / NO / PARTIALLY / N/A
+- **Recommendation**: One of:
+  - `RESTORE` — this is a regression; working code should be reconnected
+  - `NEEDS_DECISION` — multiple valid paths; present tradeoffs
+  - `KEEP_CURRENT` — harmless, represents planned/future feature
+  - `DELETE` — genuinely dead, no future value
+
+## Output as a markdown triage report with a summary table at the end.
+```
+
+---
+
+## Workflow: When to Use Which Prompt
+
+| Scenario | Use |
+|----------|-----|
+| After an agent coding session | Feature Discovery (full inventory) |
+| Before sprint planning | Feature Discovery (find what's built but unwired) |
+| After a major refactor | Dead Code Triage (find what got orphaned) |
+| Periodic hygiene (monthly) | Both — triage first, then discovery |
+| Before deleting files | Dead Code Triage (confirm nothing is a regression) |
+
+---
+
+## Tips for Best Results
+
+1. **Run in a context with full codebase access.** The prompt needs to trace imports across the entire repo.
+2. **Include the previous FEATURE-DISCOVERY.md** so the auditor can diff against last known state.
+3. **Run Dead Code Triage first** if you suspect agent-introduced drift — it's faster and catches the regressions. Then run Feature Discovery for the full picture.
+4. **Store outputs in `/docs/`** — version-control them so you can diff over time.
+5. **Don't skip the storage scan.** Dual-key conflicts (like the auto-play bug) only surface when you audit storage keys, not just imports.

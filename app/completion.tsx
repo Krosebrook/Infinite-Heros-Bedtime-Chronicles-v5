@@ -30,7 +30,7 @@ import Colors from "@/constants/colors";
 import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 import { StoryFull, EarnedBadge } from "@/constants/types";
-import { saveStory, saveStoryWithProfile, updateStreak, checkAndAwardBadges } from "@/lib/storage";
+import { saveStory, saveStoryWithProfile, saveStoryScene, updateStreak, checkAndAwardBadges } from "@/lib/storage";
 import { useProfile } from "@/lib/ProfileContext";
 
 const MODE_THEMES = {
@@ -133,11 +133,12 @@ function PulsingBadge({ emoji, color }: { emoji: string; color: string }) {
 }
 
 export default function CompletionScreen() {
-  const { heroId, mode, storyJson, isFirstStory } = useLocalSearchParams<{
+  const { heroId, mode, storyJson, isFirstStory, scenesJson } = useLocalSearchParams<{
     heroId: string;
     mode: string;
     storyJson: string;
     isFirstStory: string;
+    scenesJson: string;
   }>();
   const insets = useSafeAreaInsets();
   const topInset = Platform.OS === "web" ? 67 : insets.top;
@@ -166,9 +167,17 @@ export default function CompletionScreen() {
       if (!activeProfile || !hero) return;
       try {
         await updateStreak(activeProfile.id);
-        const storyId = `story_${Date.now()}`;
+        let storyId = `story_${Date.now()}`;
         if (storyData) {
-          await saveStoryWithProfile(storyData, hero.id, mode || "classic", activeProfile.id);
+          storyId = await saveStoryWithProfile(storyData, hero.id, mode || "classic", activeProfile.id);
+          if (scenesJson) {
+            try {
+              const scenes: Record<string, string> = JSON.parse(scenesJson);
+              for (const [key, imageDataUri] of Object.entries(scenes)) {
+                await saveStoryScene(storyId, Number(key), imageDataUri);
+              }
+            } catch {}
+          }
         }
         const earned = await checkAndAwardBadges(
           activeProfile.id,

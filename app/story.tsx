@@ -35,7 +35,7 @@ import { LoadingOrb } from "@/components/PulsingOrb";
 import { getApiUrl } from "@/lib/query-client";
 import { fetch } from "expo/fetch";
 import { StoryFull } from "@/constants/types";
-import { getParentControls } from "@/lib/storage";
+import { getParentControls, saveStoryScene } from "@/lib/storage";
 import { MS_PER_WORD, MIN_READING_TIME_MS, LOADING_MESSAGE_INTERVAL_MS, VIDEO_POLL_INTERVAL_MS } from "@/constants/timing";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
 
@@ -372,6 +372,7 @@ export default function StoryScreen() {
   const loadingMsgRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const soundRef = useRef<Audio.Sound | null>(null);
   const bgMusicRef = useRef<Audio.Sound | null>(null);
+  const sceneCacheRef = useRef<Record<number, string>>({});
 
   const MUSIC_VOLUME = storyMode === "sleep" ? 0.12 : 0.15;
 
@@ -516,7 +517,7 @@ export default function StoryScreen() {
     }
   }, [hero, duration, storyMode, madlibWords]);
 
-  const loadSceneImage = useCallback(async (partText: string) => {
+  const loadSceneImage = useCallback(async (partText: string, partIndex: number) => {
     if (!hero) return;
     setSceneLoading(true);
     setSceneImage(null);
@@ -536,6 +537,7 @@ export default function StoryScreen() {
       if (res.ok) {
         const data = await res.json();
         setSceneImage(data.image);
+        sceneCacheRef.current[partIndex] = data.image;
       } else {
         setSceneError(true);
       }
@@ -605,7 +607,7 @@ export default function StoryScreen() {
   useEffect(() => {
     if (storyState === "ready" && storyData && storyData.parts[currentPartIndex]) {
       const partText = storyData.parts[currentPartIndex].text;
-      loadSceneImage(partText);
+      loadSceneImage(partText, currentPartIndex);
       if (videoEnabled) {
         triggerVideoGeneration(partText);
       }
@@ -737,6 +739,7 @@ export default function StoryScreen() {
         heroId: hero.id,
         mode: storyMode,
         storyJson: JSON.stringify(storyData),
+        scenesJson: JSON.stringify(sceneCacheRef.current),
       },
     });
   };
@@ -890,7 +893,7 @@ export default function StoryScreen() {
                 <View style={styles.sceneHeroPlaceholder}>
                   <Ionicons name="image-outline" size={32} color="rgba(255,255,255,0.15)" />
                   <Pressable
-                    onPress={() => { if (currentPart) loadSceneImage(currentPart.text); }}
+                    onPress={() => { if (currentPart) loadSceneImage(currentPart.text, currentPartIndex); }}
                     style={[styles.sceneRetryBtn, { borderColor: `${theme.accent}40` }]}
                   >
                     <Ionicons name="refresh" size={14} color={theme.accent} />
@@ -900,7 +903,7 @@ export default function StoryScreen() {
               ) : (
                 <Pressable
                   style={styles.sceneHeroPlaceholder}
-                  onPress={() => { if (currentPart) loadSceneImage(currentPart.text); }}
+                  onPress={() => { if (currentPart) loadSceneImage(currentPart.text, currentPartIndex); }}
                 >
                   <Ionicons name="image-outline" size={28} color={`${theme.accent}30`} />
                   <Text style={[styles.sceneGenerateText, { color: `${theme.accent}70` }]}>

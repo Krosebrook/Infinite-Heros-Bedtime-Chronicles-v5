@@ -1,0 +1,730 @@
+# Replit Agent Task: Full Codebase & Documentation Audit
+
+## Objective
+
+Perform a comprehensive audit of this project. First, identify and triage dead code that was previously functional but got broken or bypassed by prior agent sessions — present a restoration plan and wait for approval before fixing. Then audit the full codebase, compare against existing documentation, identify drift, and generate senior-grade documentation that reflects the true current state. Do not guess. Read every file.
+
+## Phase 0 — Dead Code Restoration (RUN FIRST)
+
+**Context:** Previous agent sessions broke working functionality by rewriting or replacing code, then left the original working versions in the codebase as "dead code" — commented out, renamed with `.old`/`.bak`/`.backup` suffixes, moved to unused files, or bypassed by new imports. That "dead code" was functional. I want it back.
+
+### 0.1 Identify All Candidates
+
+Scan the entire codebase for code that was likely once active but got sidelined:
+
+- **Commented-out blocks** — Functions, components, routes, middleware, or logic blocks that are commented out but structurally complete. Look for `//`, `/* */`, `{/* */}`, `#`, `"""`, `<!-- -->` wrapping what looks like working code.
+- **Renamed/suffixed files** — Files ending in `.old`, `.bak`, `.backup`, `.orig`, `.deprecated`, `.unused`, `_old`, `_backup`, `_v1`, `_prev`, or similar.
+- **Duplicate implementations** — Two versions of the same function/component/route where one is imported and the other isn't. The unused one may be the original.
+- **Orphaned exports** — Functions/components/classes that are exported but never imported anywhere. These may have been the active version before a rewrite.
+- **Git history clues** — Run `git log --oneline -20` and `git diff HEAD~5 --stat` to identify recently changed files. These are the most likely regression sites.
+- **TODO/FIXME markers referencing old behavior** — Comments like `// TODO: restore old logic`, `// was working before`, `// reverted`, `// old version below`.
+- **Conditional dead branches** — `if (false)` blocks, feature flags set to permanently off, or environment checks that can never be true.
+
+### 0.2 Triage Each Candidate
+
+For EVERY dead code candidate found, produce a triage entry:
+
+```
+### [File Path]:[Line Range]
+
+**Type:** Commented-out block | Renamed file | Orphaned export | Duplicate implementation | Dead branch
+**What it does:** [1-2 sentence description of the dead code's functionality]
+**Current replacement:** [What code is currently doing this job instead, if any — file path + line]
+**Current replacement working?** YES | NO | PARTIALLY | UNTESTED
+**Recommendation:** RESTORE | KEEP_CURRENT | MERGE | NEEDS_DECISION
+
+**If RESTORE:** [Explain what to uncomment/rename/re-import and what to remove]
+**If MERGE:** [Explain what to take from each version]
+**If NEEDS_DECISION:** [Explain the tradeoff — present both versions with what each does differently]
+```
+
+### 0.3 Restoration Rules
+
+1. **Do NOT delete any dead code yet.** Triage everything first. Present the full report before making changes.
+2. **Do NOT assume the newer version is better.** The older "dead" version may have been working correctly before the agent rewrote it.
+3. **Test both versions** where possible — if there are tests, run them against both the current and dead versions to see which passes.
+4. **Check git blame** on the dead code vs the replacement — if the dead code is from an earlier human commit and the replacement is from a recent agent commit, bias toward restoring the dead code.
+5. **Preserve the replacement** as a comment or `.backup` file when restoring, so nothing is permanently lost.
+6. **After triage is complete**, present the full report and WAIT for my approval before making any restorations. Do not auto-restore.
+
+### 0.4 Output: DEAD-CODE-TRIAGE.md
+
+Generate `/docs/DEAD-CODE-TRIAGE.md` containing:
+- Total candidates found (count)
+- Breakdown by type (commented-out, renamed files, orphaned exports, etc.)
+- Each triage entry from 0.2 above
+- Summary table:
+
+```
+| # | File | Type | Recommendation | Risk if Restored |
+|---|------|------|----------------|-----------------|
+| 1 | src/auth/middleware.js:45-89 | Commented-out | RESTORE | Low — tests pass |
+| 2 | components/Dashboard.old.tsx | Renamed file | NEEDS_DECISION | Medium — UI changed |
+...
+```
+
+- At the bottom: "Awaiting approval to proceed with restorations."
+
+**STOP after Phase 0 and present DEAD-CODE-TRIAGE.md before continuing to Phase 1.** I will review and approve/modify the restoration plan. Then you execute the approved restorations. Then proceed to Phase 1.
+
+---
+
+## Phase 1 — Codebase Audit
+
+Scan the entire repository. For each of the following, document what actually exists (not what should exist):
+
+### 1.1 Project Structure
+- Map the full directory tree (exclude `node_modules`, `.git`, build artifacts)
+- Identify the framework, language, and runtime (versions from `package.json`, `requirements.txt`, `.python-version`, `replit.nix`, or equivalent)
+- List all entry points (server start, build commands, scripts)
+- Identify environment configuration files (`.env.example`, `.replit`, `replit.nix`, `vercel.json`, `wrangler.toml`, etc.)
+
+### 1.2 Architecture
+- Map all routes/endpoints (REST, GraphQL, WebSocket — whatever exists)
+- Identify the data layer (database, ORM, direct queries, migrations)
+- Map authentication and authorization flows (auth provider, session handling, middleware)
+- Document all external service integrations (APIs, SDKs, webhooks)
+- Identify background jobs, cron tasks, or queue workers if present
+- Map state management approach (client-side and server-side)
+
+### 1.3 Dependencies
+- List all production dependencies with versions
+- List all dev dependencies with versions
+- Flag any dependencies with known vulnerabilities (`npm audit` or equivalent)
+- Flag any outdated major versions (compare against latest stable)
+- Identify unused dependencies (imported but never referenced in code)
+
+### 1.4 Security Posture
+- Check for hardcoded secrets, API keys, tokens, or credentials in any file (including comments and dead code)
+- Verify environment variables are used for all sensitive values
+- Check for input validation on external boundaries (API routes, form handlers, URL params)
+- Check for SQL injection vectors (raw queries without parameterization)
+- Check for XSS vectors (unsanitized output rendering)
+- Check authentication middleware coverage (which routes are protected, which are open)
+- Check CORS configuration
+- Check rate limiting presence
+- Check security headers (HSTS, CSP, X-Frame-Options, X-Content-Type-Options)
+- If using Supabase: verify Row-Level Security (RLS) is enabled on all tables containing user data
+
+### 1.5 Testing
+- Identify test framework and configuration
+- Count total tests, passing, failing, skipped
+- Calculate approximate code coverage (or note if coverage tooling is missing)
+- Identify untested critical paths (auth, payments, data mutations)
+- Run the test suite and capture results
+
+### 1.6 Code Quality
+- Identify linting configuration (ESLint, Prettier, Ruff, etc.) — present or missing
+- Check TypeScript strict mode (if TypeScript project)
+- Flag any `any` types, `@ts-ignore`, or `eslint-disable` overrides
+- Identify dead code (exported but never imported, unreachable branches) — cross-reference with Phase 0 triage. Any dead code already addressed in Phase 0 restorations should be marked as resolved, not re-flagged.
+- Check error handling patterns (try/catch coverage, error boundaries, graceful degradation)
+- Check logging patterns (structured vs console.log, log levels)
+
+## Phase 2 — Documentation Audit
+
+Find and read ALL existing documentation in the repo:
+
+### 2.1 Inventory
+- `README.md` — exists? complete? accurate?
+- `CONTRIBUTING.md` — exists?
+- `CHANGELOG.md` — exists? up to date?
+- `API.md` or OpenAPI/Swagger spec — exists? matches actual endpoints?
+- `ARCHITECTURE.md` or architecture diagrams — exists?
+- `SECURITY.md` — exists?
+- `ROADMAP.md` — exists? reflects current priorities?
+- `RUNBOOK.md` or operational docs — exists?
+- `DATABASE.md` or schema docs — exists? matches actual schema?
+- `PRD.md` or product spec — exists? matches what's built?
+- `docs/adr/` — Architecture Decision Records directory — exists? how many?
+- Inline code comments — density and quality
+- JSDoc / docstrings — coverage
+- `.env.example` — exists? matches actual env vars used in code?
+- Any `/docs` directory or wiki content
+- Postman/Insomnia collections — exists?
+
+### 2.2 Drift Analysis
+For every piece of documentation found, compare it against the actual codebase:
+
+- **Endpoints documented but not implemented** — list them
+- **Endpoints implemented but not documented** — list them
+- **Environment variables documented but not used** — list them
+- **Environment variables used but not documented** — list them
+- **Dependencies documented but removed** — list them
+- **Dependencies added but not documented** — list them
+- **Features described in README that don't exist in code** — list them
+- **Features in code not mentioned anywhere in docs** — list them
+- **Stale instructions** (references to old commands, deprecated config, wrong file paths) — list them
+
+## Phase 3 — Generate Documentation
+
+Based on what you actually found (NOT what should exist in theory), generate the following documents. Every claim must be verifiable against the codebase. Zero placeholders. Zero aspirational content.
+
+### 3.1 README.md (Complete Rewrite)
+Structure:
+```
+# Project Name
+One-line description of what this actually does.
+
+## Tech Stack
+Exact frameworks, languages, versions — from package.json/lockfiles, not assumptions.
+
+## Prerequisites
+What must be installed to run this locally. Exact versions.
+
+## Setup
+Step-by-step from clone to running. Every command. Tested.
+
+## Environment Variables
+| Variable | Required | Description | Where to Get It |
+Every env var actually used in the code. No extras. No missing ones.
+
+## Available Scripts
+Every script in package.json (or equivalent) with description of what it does.
+
+## Project Structure
+Directory tree with 1-line descriptions of what each major folder/file does.
+
+## API Reference
+Every endpoint: method, path, auth required, request body, response shape.
+(If > 20 endpoints, create separate API.md and link to it.)
+
+## Architecture Overview
+How the pieces connect. Data flow. Auth flow. External integrations.
+Use text descriptions — do not generate image files.
+
+## Testing
+How to run tests. What's covered. Known gaps.
+
+## Deployment
+How this gets deployed. What environment. Any CI/CD configuration.
+
+## Known Issues
+Current bugs, tech debt, or limitations you found during audit.
+```
+
+### 3.2 .env.example
+Generate from actual environment variable usage in the codebase. Include:
+- Every `process.env.X` or equivalent reference found in code
+- Descriptive comments for each variable
+- Safe placeholder values (not real secrets)
+
+### 3.3 ARCHITECTURE.md
+- System diagram (described in text/markdown — component names, data flow directions, integration points)
+- Database schema summary (tables, key relationships, RLS status if Supabase)
+- Auth flow (step-by-step: login → token → session → refresh → logout)
+- External service map (which services, what data flows to/from each)
+- Error handling strategy (how errors propagate, where they're caught, how they're reported)
+- Deployment topology (where each piece runs, how they connect in production)
+- Infrastructure dependencies (DNS, CDN, cache, queues, object storage)
+
+### 3.4 API.md (Full API Reference)
+Generate from actual route handlers, controllers, and middleware — not from docs that may be stale.
+```
+# API Reference
+
+## Base URL
+[Actual base URL from config or deployment]
+
+## Authentication
+[How auth works — header format, token type, where to get tokens]
+
+## Rate Limiting
+[Current limits if configured, or "Not configured" if absent]
+
+## Endpoints
+
+### [GROUP NAME] (e.g., Auth, Users, Products)
+
+#### [METHOD] [PATH]
+**Description:** [What this endpoint does — read from handler logic, not comments]
+**Auth Required:** Yes / No
+**Permissions:** [Role/scope required, if any]
+**Rate Limited:** Yes / No
+
+**Request Headers:**
+| Header | Required | Description |
+[Only headers the code actually checks for]
+
+**URL Parameters:**
+| Param | Type | Required | Description |
+[From route params like :id]
+
+**Query Parameters:**
+| Param | Type | Required | Default | Description |
+[From req.query usage]
+
+**Request Body:**
+```json
+{
+  // Actual shape from validation schema or handler destructuring
+  // Include types and whether required
+}
+```
+
+**Response — Success (200/201):**
+```json
+{
+  // Actual shape from what the handler returns
+}
+```
+
+**Response — Error (4xx/5xx):**
+```json
+{
+  // Actual error shape from error handler
+}
+```
+
+**Example:**
+```bash
+curl -X [METHOD] [BASE_URL][PATH] \
+  -H "Authorization: Bearer <token>" \
+  -H "Content-Type: application/json" \
+  -d '{ ... }'
+```
+
+[Repeat for every endpoint]
+```
+
+If the project uses GraphQL instead of REST, document: schema types, queries, mutations, subscriptions, with input/output types and auth requirements for each.
+
+If an OpenAPI/Swagger spec file exists, validate it against actual routes and update it. If none exists, generate one as `docs/openapi.yaml`.
+
+### 3.5 docs/adr/ — Architecture Decision Records
+Create `docs/adr/` directory. Generate ADRs by reverse-engineering decisions visible in the codebase. For each significant architectural choice you can identify:
+
+```
+# ADR-[NNN]: [Decision Title]
+
+## Status
+Accepted | Superseded | Deprecated
+(Determine from whether the decision is still active in the code)
+
+## Date
+[Date from git blame of the relevant code, or "Unknown — reconstructed from audit"]
+
+## Context
+[What problem or requirement led to this decision — infer from the code structure, comments, commit messages, and surrounding patterns]
+
+## Decision
+[What was decided — describe the actual implementation pattern found in code]
+
+## Consequences
+### Positive
+[Benefits this decision provides — observable from how the system works]
+### Negative
+[Tradeoffs or limitations — observable from workarounds, TODOs, or complexity in the code]
+### Risks
+[What could go wrong with this approach]
+
+## Alternatives Considered
+[If comments, git history, or dead code suggest other approaches were tried, list them. Otherwise: "Not documented — reconstructed from audit"]
+
+## References
+[Files where this decision is implemented — exact paths]
+```
+
+**Generate ADRs for at minimum these categories (if applicable to this codebase):**
+1. Framework/runtime selection (why React, Next.js, Express, etc.)
+2. Database choice and access pattern (ORM vs raw queries, connection pooling)
+3. Authentication strategy (session vs JWT, provider choice, token storage)
+4. API design pattern (REST vs GraphQL, versioning, error format)
+5. State management approach (client-side: Redux, Zustand, Context, etc.)
+6. Deployment/hosting strategy (Vercel, Cloudflare, Replit, etc.)
+7. Testing strategy (framework choice, what's tested, what's not)
+8. Error handling pattern (centralized vs distributed, error boundaries)
+9. Styling approach (CSS modules, Tailwind, styled-components, etc.)
+10. Third-party integration patterns (how external services are abstracted)
+
+Only generate ADRs where there's evidence in the code. Do not fabricate decisions. If you can't determine the reasoning, say "Reasoning not documented — decision reconstructed from implementation."
+
+### 3.6 PRD.md — Product Requirements Document (Current State)
+This is NOT aspirational. This documents what the product currently does, for whom, and why — reverse-engineered from the actual codebase.
+
+```
+# Product Requirements Document — [Project Name]
+**Status:** Reconstructed from codebase audit ([date])
+**Confidence:** [High/Medium/Low — based on how much is inferable vs guesswork]
+
+## 1. Product Overview
+### What It Is
+[1-2 paragraphs describing what this application actually does based on its routes, data models, and UI]
+
+### What It Is Not
+[Common misconceptions based on README vs reality, or stale feature descriptions]
+
+## 2. Target Users
+[Infer from auth roles, permission systems, UI copy, onboarding flows, or data models]
+| User Type | Evidence in Code | Capabilities |
+[e.g., Admin — role check in middleware — can manage users, view analytics]
+
+## 3. Core Features (Implemented)
+For each feature actually built and functional:
+### Feature: [Name]
+**Status:** Working | Partially Working | Broken
+**Entry Point:** [Route or UI path]
+**Data Models:** [Which models it reads/writes]
+**External Dependencies:** [APIs, services required]
+**Auth Required:** Yes / No / Role-specific
+**Description:** [What it does — from the code, not from docs]
+**Known Issues:** [Any bugs or gaps found during audit]
+
+## 4. Features Described But Not Implemented
+[From README, comments, or docs that reference features with no corresponding code]
+
+## 5. Features Implemented But Not Described
+[Code that does something meaningful but isn't mentioned in any docs]
+
+## 6. Data Model Summary
+| Model | Purpose | Record Count | Key Relationships |
+[From the database/ORM layer]
+
+## 7. Integration Map
+| Service | Purpose | Data Direction | Auth Method |
+[Every external service the code communicates with]
+
+## 8. Non-Functional Requirements (Observed)
+| Requirement | Current State | Evidence |
+| Performance | [What's in place — caching, CDN, lazy loading, etc.] | [Files/config] |
+| Security | [Auth, validation, headers, RLS] | [Files/config] |
+| Observability | [Logging, monitoring, error tracking] | [Files/config] |
+| Scalability | [Connection pooling, rate limiting, horizontal scaling readiness] | [Files/config] |
+
+## 9. Technical Constraints
+[Limitations imposed by current architecture — database size limits, API rate limits, deployment platform restrictions, etc.]
+
+## 10. Open Questions
+[Things that can't be determined from the code alone — business logic ambiguities, missing context]
+```
+
+### 3.7 ROADMAP.md — Prioritized Based on Audit Findings
+Generate from audit findings using WSJF scoring. This is a technical roadmap, not a feature wishlist.
+
+```
+# Technical Roadmap
+**Generated from:** Codebase audit ([date])
+**Prioritization:** WSJF (Weighted Shortest Job First)
+**Scoring:** Business Value + Time Criticality + Risk Reduction / Job Size
+**Scale:** 1 (low) to 13 (high), Fibonacci
+
+## Scoring Table
+| # | Item | BV | TC | RR | Size | WSJF | Category |
+|---|------|----|----|----|----|------|----------|
+[Every item from the audit, scored and sorted by WSJF descending]
+
+## Tier 1 — Critical Path (Do Now)
+Items with highest WSJF scores. These are blocking quality, security, or functionality.
+
+### [Item Title]
+**WSJF Score:** [X]
+**Category:** Security | Bug Fix | Infrastructure | Tech Debt | Feature Gap
+**What:** [Specific thing to do]
+**Why:** [Impact if not done]
+**Where:** [File(s) + line(s) affected]
+**Effort Estimate:** [Hours/days — S/M/L/XL]
+**Dependencies:** [What must happen first, if anything]
+**Acceptance Criteria:**
+- [ ] [Specific, testable criterion]
+- [ ] [Specific, testable criterion]
+
+## Tier 2 — High Priority (This Sprint)
+[Same format]
+
+## Tier 3 — Medium Priority (This Quarter)
+[Same format]
+
+## Tier 4 — Backlog
+[Same format — brief, no full detail needed]
+
+## Not Recommended
+[Items from the audit that look like issues but aren't worth fixing — explain why]
+```
+
+### 3.8 CHANGELOG.md — Reconstructed from Git History
+```bash
+git log --oneline --no-merges --since="6 months ago" | head -100
+```
+
+Generate a CHANGELOG from actual git history, grouped by date or version tag:
+
+```
+# Changelog
+
+## [Unreleased]
+[Changes on current branch not yet tagged/deployed]
+
+## [YYYY-MM-DD] (or version tag if tags exist)
+### Added
+[New features/files from commits]
+### Changed
+[Modifications to existing functionality]
+### Fixed
+[Bug fixes]
+### Removed
+[Deleted features/files]
+### Security
+[Security-related changes]
+### Deprecated
+[Features marked for removal]
+
+[Repeat for each significant date/tag range going back 3-6 months]
+```
+
+If no git history exists (fresh repo or squashed history), state "Git history insufficient to reconstruct changelog" and document only the current state.
+
+### 3.9 CONTRIBUTING.md
+```
+# Contributing Guide
+
+## Development Setup
+[Exact steps from clone to running dev server — same as README setup but with dev-specific additions]
+
+## Project Structure
+[Directory map with purpose of each major folder — from Phase 1.1]
+
+## Code Standards
+### Linting
+[Exact lint config and commands — from Phase 1.6]
+### Type Checking
+[TypeScript config, strict mode status, known `any` usage]
+### Naming Conventions
+[Observed patterns: file naming, variable naming, component naming]
+
+## Git Workflow
+### Branch Strategy
+[Observed from git history: main, dev, feature branches, or just main]
+### Commit Messages
+[Observed convention, or recommended: conventional commits]
+### Pull Request Process
+[From any PR templates found, or recommended process]
+
+## Testing
+### Running Tests
+[Exact command from package.json scripts]
+### Writing Tests
+[Test file location convention, framework, patterns observed]
+### Coverage Requirements
+[Current coverage level, or "No coverage threshold configured"]
+
+## API Changes
+[How to add/modify endpoints — based on observed patterns in route files]
+
+## Database Changes
+[How migrations work — based on observed migration tooling, or "No migration tooling configured"]
+
+## Environment Variables
+[How to add new env vars — reference .env.example, Replit Secrets, etc.]
+
+## Deployment
+[How deployments happen — manual, CI/CD, auto-deploy on push]
+
+## Known Gotchas
+[Things that will bite a new contributor — from audit findings]
+```
+
+### 3.10 RUNBOOK.md — Operational Procedures
+```
+# Runbook — [Project Name]
+
+## Service Overview
+| Component | Location | Health Check | Restart Procedure |
+[Each deployable component]
+
+## Startup / Shutdown
+### Start
+[Exact commands to start the full system locally]
+### Stop
+[How to gracefully shut down]
+### Restart
+[Full restart procedure]
+
+## Health Checks
+[How to verify the system is running correctly — endpoints to hit, expected responses]
+
+## Common Failure Modes
+### [Failure Type — e.g., Database Connection Lost]
+**Symptoms:** [What you'd see]
+**Diagnosis:** [Commands to run, logs to check]
+**Resolution:** [Step-by-step fix]
+**Prevention:** [What to change to prevent recurrence]
+
+### [Failure Type — e.g., Auth Token Expired]
+[Same format]
+
+### [Failure Type — e.g., External API Down]
+[Same format]
+
+## Environment Variable Reference
+| Variable | Service | Impact if Missing | How to Rotate |
+[Every env var with operational context]
+
+## Database Operations
+### Backup
+[How to backup — commands or provider dashboard steps]
+### Restore
+[How to restore from backup]
+### Migrations
+[How to run migrations, how to rollback]
+
+## Monitoring & Alerting
+[What monitoring exists — PostHog, Sentry, log aggregation, uptime checks]
+[What's NOT monitored but should be — from audit findings]
+
+## Incident Response
+### Severity Levels
+| Level | Definition | Response Time | Example |
+| P1 | Service down, data loss risk | Immediate | Database unreachable |
+| P2 | Major feature broken | < 4 hours | Auth flow broken |
+| P3 | Minor feature broken | < 24 hours | UI glitch, non-critical endpoint slow |
+| P4 | Cosmetic / low impact | Next sprint | Typo, minor UI issue |
+
+### Escalation Path
+[Based on project context — who to contact, what channels]
+
+## Secrets Rotation
+[How to rotate each API key, token, or credential — step by step]
+```
+
+### 3.11 DATABASE.md — Full Schema Reference
+```
+# Database Schema Reference
+**Database:** [PostgreSQL / MySQL / SQLite / Supabase / etc.]
+**ORM:** [Prisma / Drizzle / Knex / raw queries / etc.]
+**Migration Tool:** [What's used, or "None"]
+**Last Migration:** [Date/name of most recent migration file]
+
+## Schema Overview
+[Total tables, total relationships, any multi-tenant/RLS context]
+
+## Tables
+
+### [table_name]
+**Purpose:** [What this table stores]
+**RLS Enabled:** Yes / No (Supabase only)
+**Row Estimate:** [Approximate count if determinable]
+
+| Column | Type | Nullable | Default | Constraints | Description |
+|--------|------|----------|---------|-------------|-------------|
+| id | uuid | NO | gen_random_uuid() | PK | Primary key |
+| user_id | uuid | NO | — | FK → users.id | Owning user |
+| ... | ... | ... | ... | ... | ... |
+
+**Indexes:**
+| Name | Columns | Type | Unique |
+[All indexes on this table]
+
+**Relationships:**
+- `user_id` → `users.id` (many-to-one)
+- Referenced by: `orders.product_id` (one-to-many)
+
+**RLS Policies (if Supabase):**
+| Policy | Action | Role | Using | With Check |
+[Each RLS policy on this table]
+
+**Triggers / Functions:**
+[Any database triggers or functions that affect this table]
+
+[Repeat for every table]
+
+## Views
+[Any database views — name, definition, purpose]
+
+## Functions / Stored Procedures
+[Any database functions — name, params, return type, purpose]
+
+## Migrations History
+| # | Name | Date | Description |
+[From migration files directory]
+
+## Entity Relationship Summary
+[Text description of key relationships — not a generated image]
+Example: "Users have many Orders. Orders have many OrderItems. OrderItems reference Products. Products belong to Categories."
+
+## Data Integrity Notes
+[Observed issues: missing foreign keys, orphaned records possible, missing cascades, etc.]
+```
+
+### 3.12 SECURITY.md (Expanded)
+- Current security posture (what's in place, file-by-file evidence)
+- Vulnerabilities found during audit (severity: Critical / High / Medium / Low, exact file + line)
+- OWASP Top 10 checklist mapped against this codebase:
+
+```
+## OWASP Top 10 Assessment
+| # | Category | Status | Evidence | Finding |
+|---|----------|--------|----------|---------|
+| A01 | Broken Access Control | ⚠️ Partial | middleware/auth.js | RLS on 4/7 tables |
+| A02 | Cryptographic Failures | ✅ Pass | — | Secrets in env vars |
+| A03 | Injection | ❌ Fail | db/queries.js:45 | Raw SQL without params |
+...
+```
+
+- Remediation recommendations (specific — file, line, exact code change)
+- Dependency vulnerability report (from `npm audit` / `pip audit` output)
+- Secrets audit (confirm no secrets in code, list all env vars that should exist)
+- Auth flow security review (token storage, expiry, refresh rotation, CSRF)
+
+### 3.13 AUDIT-REPORT.md (Final Summary)
+- Executive summary (3-5 sentences: overall health, biggest risks, immediate actions)
+- Summary of all findings from Phase 1 and Phase 2
+- Categorized by: Critical (fix now) / High (fix this sprint) / Medium (fix this quarter) / Low (backlog)
+- Each finding: what's wrong, where (file + line), why it matters, how to fix, effort estimate
+- Documentation drift table (what docs said vs what code does)
+- Phase 0 restoration log (what was triaged, approved, restored)
+- WSJF-scored roadmap reference (link to ROADMAP.md)
+- Metrics summary:
+
+```
+## Codebase Health Metrics
+| Metric | Value | Rating |
+|--------|-------|--------|
+| Test Coverage | X% | 🔴/🟡/🟢 |
+| Dependency Vulnerabilities | X critical, X high | 🔴/🟡/🟢 |
+| Type Safety (any/ignore count) | X | 🔴/🟡/🟢 |
+| Dead Code Blocks | X (Y restored in Phase 0) | 🔴/🟡/🟢 |
+| Undocumented Endpoints | X of Y total | 🔴/🟡/🟢 |
+| Security Headers | X of 4 present | 🔴/🟡/🟢 |
+| RLS Coverage | X of Y tables | 🔴/🟡/🟢 |
+| Env Var Hygiene | All in env / X hardcoded | 🔴/🟡/🟢 |
+```
+
+## Execution Rules
+
+1. **Phase 0 runs first and STOPS.** Present dead code triage. Wait for my approval. Execute approved restorations. Then proceed.
+2. **Read the codebase first.** Do not generate anything until you've scanned every file.
+3. **Do not rewrite existing code** (outside of Phase 0 approved restorations). Phases 1-3 are audit and documentation — observe and document, don't refactor.
+4. **Do not create files outside the `/docs` directory** (except README.md and .env.example in root).
+5. **Flag uncertainty.** If you can't determine something from the code alone, say "UNVERIFIED: [reason]" — do not guess.
+6. **Be specific.** Reference exact file paths, line numbers, function names. No vague "some files have issues."
+7. **Run the test suite** if one exists. Include actual output.
+8. **Run dependency audit** (`npm audit`, `pip audit`, or equivalent). Include actual output.
+9. **Compare against best practices** but prioritize documenting reality over prescribing ideals.
+10. **When restoring dead code in Phase 0**, always preserve the current replacement as a `.backup` comment or file — never permanently delete either version until I confirm.
+
+## Output Checklist
+
+When complete, confirm:
+- [ ] **Phase 0:** Dead code candidates identified and triaged
+- [ ] **Phase 0:** DEAD-CODE-TRIAGE.md generated and presented for approval
+- [ ] **Phase 0:** Approved restorations executed, replacements preserved as backups
+- [ ] Full directory tree mapped
+- [ ] All endpoints cataloged
+- [ ] All env vars cataloged (used vs documented)
+- [ ] Security scan completed with findings
+- [ ] Test suite executed with results
+- [ ] Dependency audit executed with results
+- [ ] Documentation drift analysis completed
+- [ ] README.md generated (reflects actual state, post-restoration)
+- [ ] .env.example generated (from actual usage)
+- [ ] ARCHITECTURE.md generated
+- [ ] API.md generated (or openapi.yaml)
+- [ ] docs/adr/ generated with numbered ADRs
+- [ ] PRD.md generated (current state, not aspirational)
+- [ ] ROADMAP.md generated (WSJF-scored from audit findings)
+- [ ] CHANGELOG.md generated (from git history)
+- [ ] CONTRIBUTING.md generated
+- [ ] RUNBOOK.md generated
+- [ ] DATABASE.md generated (full schema reference)
+- [ ] SECURITY.md generated (with OWASP mapping)
+- [ ] AUDIT-REPORT.md generated with prioritized findings + health metrics

@@ -107,9 +107,11 @@ This component is not broken — it was never connected. It is a useful utility 
 
 #### 5c. `lib/storage.ts:101` — `saveStoryScene(storyId, partIndex, imageDataUri)`
 **What it does:** Persists a generated story scene image (base64) into a cached story record, keyed by part index.  
-**Current replacement:** Scene images are generated on-demand in `story.tsx` via `/api/generate-scene` but never persisted back to the cached story. The cache is therefore scene-less on reload.  
-**Current replacement working?** PARTIALLY — images generate but do NOT persist. If this function were called, scene images would survive app reload.  
-**Recommendation:** RESTORE — This is a real regression. The function exists and works; it is just never called. `story.tsx` generates scenes but drops the result on the floor instead of persisting it. Calling `saveStoryScene()` after a scene is generated would restore persistence.
+**Status:** ✅ RESTORED (2026-03-13)  
+**How restored:**  
+- `app/story.tsx` — `loadSceneImage` now accepts a `partIndex` param and writes to `sceneCacheRef.current[partIndex]` on success. All three call sites updated.  
+- `app/story.tsx` — `handleComplete` now passes `scenesJson: JSON.stringify(sceneCacheRef.current)` to the `/completion` route params.  
+- `app/completion.tsx` — imports `saveStoryScene`, reads `scenesJson` param, and calls `saveStoryScene(storyId, partIndex, imageDataUri)` for each entry after `saveStoryWithProfile` returns the real story ID. The story ID bug (`storyId` generated before save, never matching the saved record) was also fixed — `storyId` is now the value returned by `saveStoryWithProfile`.
 
 #### 5d. `lib/storage.ts:114` — `updateFeedback(storyId, rating, text)`
 **What it does:** Attaches a `{ rating, text, timestamp }` feedback record to a saved story.  
@@ -155,30 +157,27 @@ This component is not broken — it was never connected. It is a useful utility 
 | 4 | `server/replit_integrations/` (all) | Orphaned module set | NEEDS_DECISION | Low to register chat/audio; Medium to remove |
 | 5a | `lib/storage.ts:47` `getReadStories` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
 | 5b | `lib/storage.ts:56` `markStoryRead` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
-| 5c | `lib/storage.ts:101` `saveStoryScene` | Orphaned export | **RESTORE** | Low — call after scene image generated in story.tsx |
+| 5c | `lib/storage.ts:101` `saveStoryScene` | Orphaned export | ✅ RESTORED | Scene images now persist through story cache |
 | 5d | `lib/storage.ts:114` `updateFeedback` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
 | 6 | `components/SettingsModal.tsx` vs `lib/SettingsContext.tsx` | Duplicate settings system | NEEDS_DECISION | High — merging requires careful state migration |
 
 ---
 
-## One Actionable Restoration
+## Completed Restorations
 
-Of the 9 candidates, **only candidate 5c (`saveStoryScene`) is a clear regression** where working code is being silently dropped on the floor. All others are either harmless scaffold or require a user decision before acting.
+### Candidate 5c — `saveStoryScene` ✅ Done (2026-03-13)
 
-**Candidate 5c restoration plan:**  
-In `app/story.tsx`, after a scene image is generated (the `fetchSceneImage` function succeeds and sets `sceneImages[partIndex]`), call:  
-```typescript
-import { saveStoryScene } from "@/lib/storage";
-// After: setSceneImages(prev => ({ ...prev, [partIndex]: imageDataUri }));
-saveStoryScene(currentStoryId, partIndex, imageDataUri).catch(() => {});
-```  
-This is a single-line addition with no user-facing impact — it silently persists generated images so they reload correctly.
+Scene image persistence was the only clear regression in the codebase. All other candidates are either harmless scaffold or require a user decision.
+
+**What was changed:**
+- `app/story.tsx`: `loadSceneImage(partText)` → `loadSceneImage(partText, partIndex)`. Added `sceneCacheRef` to accumulate scenes. Passes `scenesJson` to `/completion` params.  
+- `app/completion.tsx`: Reads `scenesJson` param, calls `saveStoryScene` for each entry after story save. Also fixed a pre-existing storyId mismatch bug (the ID generated before save was never the ID used in storage).
 
 ---
 
-## Awaiting approval to proceed with restorations.
+## Open Decisions
 
-Please review this report and indicate:
-1. For each **NEEDS_DECISION** item — which path to take
-2. Whether to apply the one **RESTORE** recommendation (5c — scene image persistence)
-3. Any items marked KEEP_CURRENT that you'd prefer to clean up/delete instead
+Three items still require a user decision before any action:
+1. **#2 HeroCard.tsx** — delete as dead code, or restore as canonical component?
+2. **#4 server/replit_integrations/** — wire up chat/audio routes, or remove?
+3. **#6 Dual settings systems** — migrate SettingsModal to use SettingsContext, or keep both?

@@ -27,7 +27,7 @@ export default function ProfileScreen() {
       <StarField />
       <View style={[styles.content, { paddingTop: topInset + 20 }]}>
         <View style={styles.avatarWrap}>
-          <Text style={styles.avatarEmoji}>{activeProfile?.avatar || "👤"}</Text>
+          <Text style={styles.avatarEmoji}>{activeProfile?.avatarEmoji || "👤"}</Text>
         </View>
         <Text style={styles.name}>{activeProfile?.name || "Little Star"}</Text>
         <Text style={styles.subtitle}>Story Explorer</Text>

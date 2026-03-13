@@ -167,7 +167,7 @@ export default function HomeScreen() {
                 onPress={() => router.push("/(tabs)/profile")}
               >
                 <Text style={styles.profileEmoji}>
-                  {activeProfile?.avatar || "👤"}
+                  {activeProfile?.avatarEmoji || "👤"}
                 </Text>
               </Pressable>
             </View>

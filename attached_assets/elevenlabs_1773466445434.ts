@@ -1,5 +1,10 @@
 import { ElevenLabsClient } from 'elevenlabs';
 
+/**
+ * PATCH: Added ELEVENLABS_API_KEY env var as Priority 1 fallback.
+ * Original code ONLY worked via Replit Connectors, which break during re-wires.
+ * Now checks: direct env var → Replit Connectors → error
+ */
 async function getCredentials(): Promise<string> {
   // Priority 1: Direct API key (most reliable, survives re-wires)
   if (process.env.ELEVENLABS_API_KEY) {

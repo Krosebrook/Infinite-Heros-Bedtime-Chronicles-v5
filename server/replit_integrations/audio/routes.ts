@@ -59,7 +59,7 @@ export function registerAudioRoutes(app: Express): void {
 
   // Send voice message and get streaming audio response
   // Auto-detects audio format and converts WebM/MP4/OGG to WAV
-  // Uses gpt-4o-mini-transcribe for STT, gpt-audio for voice response
+  // Uses gpt-4o-mini-transcribe for STT, gpt-4o-audio-preview for voice response
   app.post("/api/conversations/:id/messages", audioBodyParser, async (req: Request, res: Response) => {
     try {
       const conversationId = parseInt(req.params.id);
@@ -93,9 +93,9 @@ export function registerAudioRoutes(app: Express): void {
 
       res.write(`data: ${JSON.stringify({ type: "user_transcript", data: userTranscript })}\n\n`);
 
-      // 6. Stream audio response from gpt-audio
+      // 6. Stream audio response from gpt-4o-audio-preview
       const stream = await openai.chat.completions.create({
-        model: "gpt-audio",
+        model: "gpt-4o-audio-preview",
         modalities: ["text", "audio"],
         audio: { voice, format: "pcm16" },
         messages: chatHistory,

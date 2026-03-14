@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Modal,
-  ScrollView,
   TextInput,
   Switch,
   Platform,
@@ -18,6 +17,7 @@ import Animated, { FadeIn } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { ParentControls, DEFAULT_PARENT_CONTROLS, CONTENT_THEMES } from "@/constants/types";
 import { getParentControls, saveParentControls } from "@/lib/storage";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 interface Props {
   visible: boolean;
@@ -149,7 +149,7 @@ export function ParentControlsModal({ visible, onClose }: Props) {
             </Pressable>
           </Animated.View>
         ) : (
-          <ScrollView
+          <KeyboardAwareScrollViewCompat
             contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 40 }]}
             showsVerticalScrollIndicator={false}
           >
@@ -280,7 +280,7 @@ export function ParentControlsModal({ visible, onClose }: Props) {
                 <Text style={styles.addPinText}>Set a PIN</Text>
               </Pressable>
             )}
-          </ScrollView>
+          </KeyboardAwareScrollViewCompat>
         )}
       </View>
     </Modal>

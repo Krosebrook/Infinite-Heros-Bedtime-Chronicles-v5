@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
   View,
   Text,
@@ -12,10 +12,9 @@ import {
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
-import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
+import Animated, { FadeIn } from "react-native-reanimated";
 import Colors from "@/constants/colors";
-import { UserPreferences, DEFAULT_PREFERENCES } from "@/constants/types";
-import { getPreferences, savePreferences } from "@/lib/storage";
+import { useSettings, type AppSettings } from "@/lib/SettingsContext";
 
 type Tab = "general" | "voice" | "accessibility";
 
@@ -61,19 +60,11 @@ export function SettingsModal({ visible, onClose }: Props) {
   const bottomInset = Platform.OS === "web" ? 34 : insets.bottom;
 
   const [tab, setTab] = useState<Tab>("general");
-  const [prefs, setPrefs] = useState<UserPreferences>(DEFAULT_PREFERENCES);
+  const { settings, updateSetting } = useSettings();
 
-  useEffect(() => {
-    if (visible) {
-      getPreferences().then(setPrefs).catch((e) => console.error("Failed to load preferences:", e));
-    }
-  }, [visible]);
-
-  const updatePref = <K extends keyof UserPreferences>(key: K, value: UserPreferences[K]) => {
+  const updatePref = <K extends keyof AppSettings>(key: K, value: AppSettings[K]) => {
     Haptics.selectionAsync();
-    const updated = { ...prefs, [key]: value };
-    setPrefs(updated);
-    savePreferences(updated);
+    updateSetting(key, value);
   };
 
   return (
@@ -125,11 +116,11 @@ export function SettingsModal({ visible, onClose }: Props) {
               <Text style={styles.sectionTitle}>Default Story Length</Text>
               <View style={styles.optionGrid}>
                 {STORY_LENGTHS.map((sl) => {
-                  const isActive = prefs.storyLength === sl.id;
+                  const isActive = settings.storyLength === sl.id;
                   return (
                     <Pressable
                       key={sl.id}
-                      onPress={() => updatePref("storyLength", sl.id)}
+                      onPress={() => updatePref("storyLength", sl.id as AppSettings["storyLength"])}
                       style={[styles.optionCard, isActive && styles.optionCardActive]}
                     >
                       <Text style={[styles.optionLabel, isActive && styles.optionLabelActive]}>
@@ -144,7 +135,7 @@ export function SettingsModal({ visible, onClose }: Props) {
               <Text style={styles.sectionTitle}>Sleep Theme</Text>
               <View style={styles.optionGrid}>
                 {SLEEP_THEMES.map((st) => {
-                  const isActive = prefs.sleepTheme === st.id;
+                  const isActive = settings.sleepTheme === st.id;
                   return (
                     <Pressable
                       key={st.id}
@@ -166,7 +157,7 @@ export function SettingsModal({ visible, onClose }: Props) {
               <Text style={styles.sectionTitle}>Narrator Voice</Text>
               <View style={styles.voiceList}>
                 {VOICES.map((v) => {
-                  const isActive = prefs.narratorVoice === v.id;
+                  const isActive = settings.narratorVoice === v.id;
                   return (
                     <Pressable
                       key={v.id}
@@ -191,7 +182,7 @@ export function SettingsModal({ visible, onClose }: Props) {
                   <Text style={styles.toggleDesc}>Turn off narration and sounds</Text>
                 </View>
                 <Switch
-                  value={prefs.isMuted}
+                  value={settings.isMuted}
                   onValueChange={(val) => updatePref("isMuted", val)}
                   trackColor={{ false: "rgba(255,255,255,0.1)", true: Colors.accent }}
                   thumbColor="#FFF"
@@ -205,7 +196,7 @@ export function SettingsModal({ visible, onClose }: Props) {
               <Text style={styles.sectionTitle}>Text Size</Text>
               <View style={styles.optionGrid}>
                 {(["normal", "large"] as const).map((size) => {
-                  const isActive = prefs.fontSize === size;
+                  const isActive = settings.fontSize === size;
                   return (
                     <Pressable
                       key={size}
@@ -233,7 +224,7 @@ export function SettingsModal({ visible, onClose }: Props) {
                   <Text style={styles.toggleDesc}>Minimize animations and transitions</Text>
                 </View>
                 <Switch
-                  value={prefs.reducedMotion}
+                  value={settings.reducedMotion}
                   onValueChange={(val) => updatePref("reducedMotion", val)}
                   trackColor={{ false: "rgba(255,255,255,0.1)", true: Colors.accent }}
                   thumbColor="#FFF"

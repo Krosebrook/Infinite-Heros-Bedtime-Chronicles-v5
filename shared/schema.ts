@@ -16,3 +16,6 @@ export const insertUserSchema = createInsertSchema(users).pick({
 
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
+
+export { conversations, messages, insertConversationSchema, insertMessageSchema } from "./models/chat";
+export type { Conversation, InsertConversation, Message, InsertMessage } from "./models/chat";

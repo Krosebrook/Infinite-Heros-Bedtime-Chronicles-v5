@@ -6,9 +6,8 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  ScrollView,
-  KeyboardAvoidingView,
 } from "react-native";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -92,16 +91,11 @@ export default function MadLibsScreen() {
         </Pressable>
       </View>
 
-      <KeyboardAvoidingView
+      <KeyboardAwareScrollViewCompat
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        keyboardVerticalOffset={90}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 100 }]}
+        showsVerticalScrollIndicator={false}
       >
-        <ScrollView
-          contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 100 }]}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-        >
           <Animated.View entering={FadeIn.duration(600)} style={styles.headerArea}>
             <View style={styles.madlibBadge}>
               <Ionicons name="happy" size={20} color="#FF8A65" />
@@ -155,8 +149,7 @@ export default function MadLibsScreen() {
               (at least 3 required)
             </Text>
           </View>
-        </ScrollView>
-      </KeyboardAvoidingView>
+      </KeyboardAwareScrollViewCompat>
 
       <View style={[styles.bottomBar, { paddingBottom: bottomInset + 20 }]}>
         <Pressable

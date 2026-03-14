@@ -318,6 +318,24 @@ function ChoiceButton({
   );
 }
 
+const MODE_VOICES: Record<string, { id: string; label: string; accent: string }[]> = {
+  sleep: [
+    { id: "moonbeam", label: "Moonbeam", accent: "American" },
+    { id: "whisper", label: "Whisper", accent: "American" },
+    { id: "stardust", label: "Stardust", accent: "American" },
+  ],
+  classic: [
+    { id: "captain", label: "Captain", accent: "British" },
+    { id: "professor", label: "Professor", accent: "British" },
+    { id: "aurora", label: "Aurora", accent: "American" },
+  ],
+  madlibs: [
+    { id: "giggles", label: "Giggles", accent: "American" },
+    { id: "blaze", label: "Blaze", accent: "American" },
+    { id: "ziggy", label: "Ziggy", accent: "British" },
+  ],
+};
+
 export default function StoryScreen() {
   const { heroId, duration, voice, mode, madlibWords, soundscape, sleepTimer, speed: initialSpeed, replayJson, setting, tone, childName, sidekick, problem } =
     useLocalSearchParams<{
@@ -348,6 +366,9 @@ export default function StoryScreen() {
   const SPEED_ICONS: Record<string, "moon-outline" | "cloudy-night-outline" | "sunny-outline"> = { gentle: "moon-outline", medium: "cloudy-night-outline", normal: "sunny-outline" };
   const defaultSpeed = initialSpeed || (storyMode === "sleep" ? "gentle" : "medium");
 
+  const modeVoices = MODE_VOICES[storyMode] || MODE_VOICES.classic;
+  const defaultVoice = voice || modeVoices[0].id;
+
   const [storyData, setStoryData] = useState<StoryFull | null>(null);
   const [storyState, setStoryState] = useState<StoryState>("generating");
   const [currentPartIndex, setCurrentPartIndex] = useState(0);
@@ -356,6 +377,7 @@ export default function StoryScreen() {
   const [audioPosition, setAudioPosition] = useState(0);
   const [audioDuration, setAudioDuration] = useState(0);
   const [playbackSpeed, setPlaybackSpeed] = useState(defaultSpeed);
+  const [currentVoice, setCurrentVoice] = useState(defaultVoice);
   const [sceneImage, setSceneImage] = useState<string | null>(null);
   const [sceneLoading, setSceneLoading] = useState(false);
   const [sceneError, setSceneError] = useState(false);
@@ -366,6 +388,10 @@ export default function StoryScreen() {
   const [musicPlaying, setMusicPlaying] = useState(false);
   const [videoEnabled, setVideoEnabled] = useState(false);
   const [videoJobId, setVideoJobId] = useState<string | null>(null);
+  // Large-range modulo so the ?t= cache-buster varies across many consecutive plays.
+  // The actual track selection on the server is random; this value only busts HTTP cache.
+  const MUSIC_TRACK_INDEX_RANGE = 1000;
+  const musicTrackIndexRef = useRef(Math.floor(Math.random() * MUSIC_TRACK_INDEX_RANGE));
   const scrollRef = useRef<ScrollView>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const autoAdvanceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -392,7 +418,11 @@ export default function StoryScreen() {
     setMusicLoading(true);
     try {
       const baseUrl = getApiUrl();
-      const musicUrl = new URL(`/api/music/${storyMode}`, baseUrl).toString();
+      // Use a random track index so each story session can get a different track when
+      // multiple variants exist (e.g. classic.mp3, classic_2.mp3, …).
+      // The ?t= param also busts HTTP caches so the server may select a new random file.
+      const trackIndex = musicTrackIndexRef.current;
+      const musicUrl = new URL(`/api/music/${storyMode}?t=${trackIndex}`, baseUrl).toString();
 
       await Audio.setAudioModeAsync({
         playsInSilentModeIOS: true,
@@ -401,8 +431,31 @@ export default function StoryScreen() {
 
       const { sound } = await Audio.Sound.createAsync(
         { uri: musicUrl },
-        { shouldPlay: true, volume: MUSIC_VOLUME, isLooping: true }
+        { shouldPlay: true, volume: MUSIC_VOLUME, isLooping: false }
       );
+
+      sound.setOnPlaybackStatusUpdate(async (status) => {
+        if (status.isLoaded && status.didJustFinish) {
+          // Advance track index so the next load requests a different cache-busted URL,
+          // enabling variety when multiple track variants exist for this mode.
+          musicTrackIndexRef.current = (musicTrackIndexRef.current + 1) % MUSIC_TRACK_INDEX_RANGE;
+          try {
+            await sound.unloadAsync();
+          } catch {}
+          bgMusicRef.current = null;
+          setMusicPlaying(false);
+          // Brief pause before reloading to prevent rapid back-to-back network requests
+          // in case the track is very short or the server returns an error.
+          const MUSIC_RELOAD_DELAY_MS = 500;
+          setTimeout(() => {
+            setMusicPlaying((prev) => {
+              if (!prev) startBgMusic();
+              return prev;
+            });
+          }, MUSIC_RELOAD_DELAY_MS);
+        }
+      });
+
       bgMusicRef.current = sound;
       setMusicPlaying(true);
       setMusicLoading(false);
@@ -671,7 +724,7 @@ export default function StoryScreen() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           text: currentPart.text,
-          voice: voice || "moonbeam",
+          voice: currentVoice,
           mode: storyMode,
         }),
       });
@@ -717,7 +770,7 @@ export default function StoryScreen() {
       setAudioLoading(false);
       setIsSpeaking(false);
     }
-  }, [currentPart, isSpeaking, audioLoading, storyMode, voice, stopAudio, playbackSpeed]);
+  }, [currentPart, isSpeaking, audioLoading, storyMode, currentVoice, stopAudio, playbackSpeed]);
 
   const cycleSpeed = useCallback(async () => {
     const keys = ["gentle", "medium", "normal"];
@@ -731,6 +784,17 @@ export default function StoryScreen() {
       } catch {}
     }
   }, [playbackSpeed]);
+
+  const cycleVoice = useCallback(async () => {
+    const voices = modeVoices;
+    const idx = voices.findIndex((v) => v.id === currentVoice);
+    const next = voices[(idx + 1) % voices.length];
+    setCurrentVoice(next.id);
+    Haptics.selectionAsync();
+    if (isSpeaking || audioLoading) {
+      await stopAudio();
+    }
+  }, [currentVoice, modeVoices, isSpeaking, audioLoading, stopAudio]);
 
   const seekAudio = useCallback(async (fraction: number) => {
     if (!soundRef.current || audioDuration === 0) return;
@@ -1011,28 +1075,7 @@ export default function StoryScreen() {
               entering={FadeInUp.duration(400)}
               style={[styles.bottomControlBar, { paddingBottom: bottomInset + 12 }]}
             >
-              {isLastPart ? (
-                <Pressable
-                  onPress={handleStoryComplete}
-                  style={({ pressed }) => [
-                    styles.finishButton,
-                    { transform: [{ scale: pressed ? 0.95 : 1 }] },
-                  ]}
-                  testID="finish-story-button"
-                >
-                  <LinearGradient
-                    colors={[theme.accent, theme.choiceColors[0][1]]}
-                    style={styles.finishButtonGradient}
-                  >
-                    <Ionicons name="sparkles" size={20} color="#FFF" />
-                    <Text style={styles.finishButtonText}>
-                      {isSleep ? "Sweet Dreams" : storyMode === "madlibs" ? "That Was Hilarious!" : "Complete Story"}
-                    </Text>
-                  </LinearGradient>
-                </Pressable>
-              ) : (
-                <>
-                {isSpeaking && audioDuration > 0 && (
+              {isSpeaking && audioDuration > 0 && (
                 <View style={styles.seekBarWrap}>
                   <View style={styles.seekBarTrack}>
                     <View
@@ -1056,69 +1099,90 @@ export default function StoryScreen() {
                 </View>
               )}
               <View style={styles.controlBar}>
-                  <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.controlBarBtn} testID="speed-cycle-btn">
-                    <Text style={[styles.controlAaText, { color: theme.accent }]}>
-                      {SPEED_LABELS[playbackSpeed]}
-                    </Text>
-                  </Pressable>
+                <Pressable onPress={cycleSpeed} hitSlop={8} style={styles.controlBarBtn} testID="speed-cycle-btn">
+                  <Text style={[styles.controlAaText, { color: theme.accent }]}>
+                    {SPEED_LABELS[playbackSpeed]}
+                  </Text>
+                </Pressable>
 
-                  <Pressable onPress={() => Haptics.selectionAsync()} hitSlop={8} style={styles.controlBarBtn}>
-                    <Ionicons name="bookmark-outline" size={20} color="rgba(255,255,255,0.5)" />
-                  </Pressable>
+                <Pressable onPress={cycleVoice} hitSlop={8} style={styles.controlBarBtn} testID="voice-cycle-btn">
+                  <Ionicons name="mic-outline" size={16} color={theme.accent} />
+                  <Text style={[styles.controlVoiceText, { color: theme.accent }]}>
+                    {modeVoices.find((v) => v.id === currentVoice)?.accent === "British" ? "GB" : "US"}
+                  </Text>
+                </Pressable>
 
-                  <Pressable onPress={handlePrevPart} hitSlop={8} style={styles.controlBarBtn} disabled={currentPartIndex === 0}>
-                    <Ionicons name="play-back" size={20} color={currentPartIndex === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)"} />
-                  </Pressable>
+                <Pressable onPress={handlePrevPart} hitSlop={8} style={styles.controlBarBtn} disabled={currentPartIndex === 0}>
+                  <Ionicons name="play-back" size={20} color={currentPartIndex === 0 ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)"} />
+                </Pressable>
 
-                  <Pressable
-                    onPress={speakCurrentPart}
-                    hitSlop={8}
-                    style={[styles.controlPlayBtn, { backgroundColor: theme.accent }]}
-                    disabled={audioLoading}
-                  >
-                    {audioLoading ? (
-                      <ActivityIndicator size="small" color="#FFF" />
-                    ) : (
+                <Pressable
+                  onPress={speakCurrentPart}
+                  hitSlop={8}
+                  style={[styles.controlPlayBtn, { backgroundColor: theme.accent }]}
+                  disabled={audioLoading}
+                >
+                  {audioLoading ? (
+                    <ActivityIndicator size="small" color="#FFF" />
+                  ) : (
+                    <Ionicons
+                      name={isSpeaking ? "pause" : "play"}
+                      size={24}
+                      color="#FFF"
+                      style={!isSpeaking ? { marginLeft: 2 } : undefined}
+                    />
+                  )}
+                </Pressable>
+
+                <Pressable onPress={handleNextPart} hitSlop={8} style={styles.controlBarBtn} disabled={isLastPart}>
+                  <Ionicons name="play-forward" size={20} color={isLastPart ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.6)"} />
+                </Pressable>
+
+                <Pressable onPress={speakCurrentPart} hitSlop={8} style={styles.controlBarBtn}>
+                  <Ionicons name="headset-outline" size={20} color={isSpeaking ? theme.accent : "rgba(255,255,255,0.5)"} />
+                </Pressable>
+
+                <Pressable
+                  onPress={toggleBgMusic}
+                  hitSlop={8}
+                  style={styles.controlBarBtn}
+                  disabled={musicLoading}
+                >
+                  {musicLoading ? (
+                    <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
+                  ) : (
+                    <View style={styles.musicBtnWrap}>
                       <Ionicons
-                        name={isSpeaking ? "pause" : "play"}
-                        size={24}
-                        color="#FFF"
-                        style={!isSpeaking ? { marginLeft: 2 } : undefined}
+                        name={musicMuted ? "musical-note-outline" : "musical-notes"}
+                        size={20}
+                        color={musicMuted ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.6)"}
                       />
-                    )}
-                  </Pressable>
-
-                  <Pressable onPress={handleNextPart} hitSlop={8} style={styles.controlBarBtn}>
-                    <Ionicons name="play-forward" size={20} color="rgba(255,255,255,0.6)" />
-                  </Pressable>
-
-                  <Pressable onPress={speakCurrentPart} hitSlop={8} style={styles.controlBarBtn}>
-                    <Ionicons name="headset-outline" size={20} color={isSpeaking ? theme.accent : "rgba(255,255,255,0.5)"} />
-                  </Pressable>
-
-                  <Pressable
-                    onPress={toggleBgMusic}
-                    hitSlop={8}
-                    style={styles.controlBarBtn}
-                    disabled={musicLoading}
+                      {musicPlaying && !musicMuted && (
+                        <View style={styles.musicDot} />
+                      )}
+                    </View>
+                  )}
+                </Pressable>
+              </View>
+              {isLastPart && (
+                <Pressable
+                  onPress={handleStoryComplete}
+                  style={({ pressed }) => [
+                    styles.finishButton,
+                    { transform: [{ scale: pressed ? 0.95 : 1 }], marginTop: 8 },
+                  ]}
+                  testID="finish-story-button"
+                >
+                  <LinearGradient
+                    colors={[theme.accent, theme.choiceColors[0][1]]}
+                    style={styles.finishButtonGradient}
                   >
-                    {musicLoading ? (
-                      <ActivityIndicator size="small" color="rgba(255,255,255,0.5)" />
-                    ) : (
-                      <View style={styles.musicBtnWrap}>
-                        <Ionicons
-                          name={musicMuted ? "musical-note-outline" : "musical-notes"}
-                          size={20}
-                          color={musicMuted ? "rgba(255,255,255,0.4)" : "rgba(255,255,255,0.6)"}
-                        />
-                        {musicPlaying && !musicMuted && (
-                          <View style={styles.musicDot} />
-                        )}
-                      </View>
-                    )}
-                  </Pressable>
-                </View>
-                </>
+                    <Ionicons name="sparkles" size={20} color="#FFF" />
+                    <Text style={styles.finishButtonText}>
+                      {isSleep ? "Sweet Dreams" : storyMode === "madlibs" ? "That Was Hilarious!" : "Complete Story"}
+                    </Text>
+                  </LinearGradient>
+                </Pressable>
               )}
             </Animated.View>
           )}
@@ -1358,6 +1422,11 @@ const styles = StyleSheet.create({
   controlAaText: {
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 14,
+  },
+  controlVoiceText: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 10,
+    marginTop: 1,
   },
   controlPlayBtn: {
     width: 52,

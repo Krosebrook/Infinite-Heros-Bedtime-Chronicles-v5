@@ -1,7 +1,7 @@
 import type { Express } from "express";
 import { createServer, type Server } from "node:http";
 import { generateSpeech, VOICE_MAP, MODE_DEFAULT_VOICES, getVoicesForMode, type VoiceConfig } from "./elevenlabs";
-import { getMusicFilePath, getMusicFileName } from "./suno";
+import { getMusicFilePath, getMusicTrackCount } from "./suno";
 import { createVideoJob, getVideoJob, getVideoFilePath, isVideoAvailable } from "./video";
 import { getAIRouter, getProviderStatuses, logProviderStatus } from "./ai";
 import { registerAudioRoutes } from "./replit_integrations/audio";
@@ -572,9 +572,14 @@ Style: ${sceneStyle}. Wide landscape composition, magical atmosphere, child-safe
     if (!VALID_MODES.includes(mode)) {
       return res.status(400).json({ error: "Invalid mode" });
     }
-    const filePath = getMusicFilePath(mode);
+    // Parse optional track index from query param (for cycling through multiple tracks)
+    const trackParam = req.query.track;
+    const trackIndex = trackParam !== undefined ? parseInt(String(trackParam), 10) : undefined;
+    const resolvedTrackIndex = trackIndex !== undefined && !isNaN(trackIndex) ? trackIndex : undefined;
+    const filePath = getMusicFilePath(mode, resolvedTrackIndex);
+    // Use a short cache so different sessions can receive different random tracks
     res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Cache-Control", "public, max-age=86400");
+    res.setHeader("Cache-Control", "public, max-age=300");
     res.sendFile(filePath, (err) => {
       if (err) {
         console.error("Music file error:", err);
@@ -583,6 +588,14 @@ Style: ${sceneStyle}. Wide landscape composition, magical atmosphere, child-safe
         }
       }
     });
+  });
+
+  app.get("/api/music-info/:mode", (req, res) => {
+    const mode = sanitizeString(req.params.mode, 20);
+    if (!VALID_MODES.includes(mode)) {
+      return res.status(400).json({ error: "Invalid mode" });
+    }
+    res.json({ trackCount: getMusicTrackCount(mode) });
   });
 
   app.post("/api/suggest-settings", async (req, res) => {

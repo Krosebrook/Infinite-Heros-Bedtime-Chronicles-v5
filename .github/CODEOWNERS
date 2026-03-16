@@ -1,0 +1,38 @@
+# CODEOWNERS
+# Maps file patterns to responsible owners.
+# Format: <pattern> <owner> [additional owners...]
+# Docs: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default owner for everything not matched below
+# <!-- HUMAN INPUT REQUIRED: Replace @owner with the actual GitHub username(s) or team(s) -->
+* @Krosebrook
+
+# Documentation — all docs require documentation owner review
+*.md @Krosebrook
+docs/ @Krosebrook
+CONTRIBUTING.md @Krosebrook
+SECURITY.md @Krosebrook
+CONVENTIONS.md @Krosebrook
+
+# Security-sensitive files — require explicit maintainer review
+.env.example @Krosebrook
+server/index.ts @Krosebrook
+server/routes.ts @Krosebrook
+
+# Database schema — changes require coordinated migration review
+shared/ @Krosebrook
+shared/schema.ts @Krosebrook
+shared/models/ @Krosebrook
+
+# CI and workspace configuration
+.github/ @Krosebrook
+.replit @Krosebrook
+
+# Patches — touch only when upgrading the patched package
+patches/ @Krosebrook
+
+# AI routing — changes to the provider chain or prompts require review
+server/ai/ @Krosebrook
+
+# Replit integrations — upstream boilerplate; review before modifying
+server/replit_integrations/ @Krosebrook

@@ -1,11 +1,11 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-20 -->
 <!-- Update this file when significant architectural changes occur or new major work begins -->
 
 # MEMORY.md — Persistent AI Agent Context
 
 Read this file at session start to rapidly build project context. Keep it dense and factual.
 
-**Last Updated:** 2026-03-16
+**Last Updated:** 2026-03-20
 
 ---
 
@@ -15,11 +15,11 @@ Read this file at session start to rapidly build project context. Keep it dense 
 - **Type:** Children's bedtime story app (ages 3–9)
 - **Platform:** Expo SDK 54 (React Native) + Express.js v5 backend
 - **Language:** TypeScript (strict throughout)
-- **Status:** Active development; no formal release yet
+- **Status:** Active development; Android Play Store deployment in progress
 
 ---
 
-## Current State (as of 2026-03-16)
+## Current State (as of 2026-03-20)
 
 ### What Works
 - Story generation via multi-provider AI fallback chain (Gemini → OpenAI → Anthropic → OpenRouter)
@@ -37,6 +37,15 @@ Read this file at session start to rapidly build project context. Keep it dense 
 - Unified settings system (SettingsContext + SettingsModal both using single AsyncStorage key)
 - Security headers, CORS restrictions, rate limiting, input sanitization
 
+### Mobile Deployment (added 2026-03-20)
+- **eas.json** configured — 3 profiles: development (APK+DevClient), preview (APK), production (AAB)
+- **scripts/build-android.sh** — EAS build helper with all 4 operations (dev/preview/production/submit)
+- **docs/operations/PLAY_STORE_DEPLOYMENT.md** — full EAS runbook with store listing copy
+- **.gitignore** updated — google-services-key.json and *.keystore protected
+- Android package: `com.infinityheroes.bedtime` (set in app.json)
+- iOS bundle: `com.infinityheroes.bedtime` (set in app.json, no App Store path active)
+- **CI pipeline**: .github/workflows/ci.yml exists in source but Zapier connector cannot push to .github/ paths — needs manual commit (see README)
+
 ### In Progress / Partially Done
 - Voice chat mobile UI (backend is ready; Expo screen not built yet)
 - HeroCard component exists but not yet rendered in any screen
@@ -44,109 +53,85 @@ Read this file at session start to rapidly build project context. Keep it dense 
 - Story feedback/rating UI (storage function `updateFeedback` exists; no UI)
 
 ### Blocked / Not Started
+- EAS init (requires `eas login` + `eas init` run locally to add projectId to app.json)
+- EAS secrets (API keys must be set via `eas secret:create` before production builds work)
+- CI pipeline commit (Zapier blocks .github/ path — manual `git push` required for ci.yml)
 - Automated test suite (Jest/Vitest) — top roadmap priority
-- Expo SDK 55 upgrade (blocked by `patches/expo-asset+12.0.12.patch` removal decision)
-- Redis-backed persistent rate limiting (low priority; in-memory is sufficient)
-- Authentication layer (not planned unless cost abuse becomes an issue)
+- Expo SDK 55 upgrade (blocked on patch compatibility)
 
 ---
 
-## Architecture Summary
+## Repository Structure
 
 ```
-Expo App (React Native)
-  └── Expo Router v6 (file-based routing)
-  └── React Context (Settings, Profile state)
-  └── AsyncStorage (stories, profiles, badges, settings)
-  └── TanStack React Query (server state)
-        │  HTTP
-Express Server (port 5000)
-  └── Security middleware → Rate limiter → Routes
-  └── AI Router (server/ai/index.ts)
-        └── Gemini (primary) → OpenAI → Anthropic → OpenRouter
-  └── ElevenLabs TTS (server/elevenlabs.ts)
-  └── OpenAI Sora video generation (server/video.ts)
-  └── Voice chat (server/replit_integrations/audio + chat)
-        └── PostgreSQL (Drizzle ORM) — conversations + messages
+app/              Expo Router screens (file = route)
+app/(tabs)/       Tab screens: index, create, library, saved, profile
+components/       Reusable React Native components
+constants/        types.ts, heroes.ts, colors.ts, timing.ts
+lib/              Client utilities: storage.ts, ProfileContext, SettingsContext, query-client
+server/           Express backend
+server/ai/        Multi-provider AI router (router.ts, index.ts, providers/)
+server/ai/providers/  gemini.ts, openai.ts, anthropic.ts, openrouter.ts
+server/replit_integrations/audio/  Voice chat routes (wired, UI pending)
+shared/           Drizzle schema + Zod types (used by client AND server)
+scripts/          Build helpers: build-android.sh (new), build.js
+docs/             Architecture, API, security, roadmap, CHANGELOG
+docs/operations/  PLAY_STORE_DEPLOYMENT.md (new)
 ```
 
 ---
 
-## Key Decisions Made
+## Tech Stack
 
-### ADR-001: Expo + React Native
-Chosen for cross-platform mobile (iOS + Android + Web) from a single TypeScript codebase, with Replit dev environment support. File-based routing via Expo Router v6.
-
-### ADR-002: Multi-Provider AI Fallback Chain
-Single `server/ai/index.ts` router with priority chain. If Gemini fails → OpenAI → Anthropic → OpenRouter (xAI/Mistral/Cohere/Meta). No single provider dependency. All keys server-side.
-
-### ADR-003: ElevenLabs for TTS
-Best voice quality for children's content. 8 voices curated by story mode. `eleven_multilingual_v2` model. Cached to disk (TTS_CACHE_MAX_AGE_MS).
-
-### ADR-004: AsyncStorage as Client-Side Data Store
-No PII, no sensitive data — story text, audio refs, badges, settings. Acceptable for this use case. Avoids needing a user auth system.
-
-### ADR-005: Single SettingsContext
-Previously two parallel settings systems (SettingsModal with local state + direct AsyncStorage, and SettingsContext). Merged into SettingsContext. Legacy key auto-migrates on first load.
+| Layer | Technology | Version |
+|-------|-----------|---------|
+| Mobile framework | Expo + React Native | SDK 54 / RN 0.81.5 |
+| Router | Expo Router | v6 |
+| Backend | Express.js | v5 |
+| AI (primary) | Google Gemini | gemini-2.5-flash |
+| AI (fallbacks) | OpenAI, Anthropic, OpenRouter | gpt-4o-mini / claude-sonnet-4-6 |
+| TTS | ElevenLabs | eleven_multilingual_v2 |
+| Database | PostgreSQL + Drizzle ORM | drizzle-orm 0.39 |
+| Client storage | AsyncStorage | 2.2.0 |
+| Animation | react-native-reanimated | v4 |
+| Build (Android) | EAS Build | eas-cli latest |
 
 ---
 
-## Known Tech Debt
+## Android Package: com.infinityheroes.bedtime
 
-| Debt | Location | Severity | Linked Item |
-|------|---------|---------|-------------|
-| No test suite | Entire codebase | High | Roadmap #1 |
-| `patches/expo-asset+12.0.12.patch` | `patches/` | Medium | Roadmap #2 (Expo 55) |
-| `HeroCard.tsx` unused | `components/HeroCard.tsx` | Low | Roadmap #5 |
-| Read/unread UI missing | `lib/storage.ts` helpers orphaned | Low | Roadmap #7 |
-| Story feedback UI missing | `lib/storage.ts` `updateFeedback` orphaned | Low | Roadmap #8 |
-| Voice chat mobile UI missing | `server/replit_integrations/` ready | Medium | Roadmap #4 |
-| In-memory rate limiter resets on restart | `server/routes.ts` | Low | Roadmap #9 |
+Set in `app.json` → `expo.android.package`. This is the permanent Play Store identifier.
+Cannot be changed after first Play Store submission.
 
----
+## EAS Deployment Order
 
-## Patterns Tried and Rejected
-
-- **Dual settings system** — `SettingsModal` previously had its own `getPreferences`/`savePreferences` functions using a separate AsyncStorage key. Rejected: data divergence bugs. Replaced with single SettingsContext.
-- **Direct AI provider calls from routes** — Early pattern called OpenAI/Gemini SDKs directly from `server/routes.ts`. Rejected: no fallback, fragile. Replaced with `server/ai/index.ts` abstraction.
+1. `npm install -g eas-cli`
+2. `eas login`
+3. `eas init` (adds projectId to app.json — commit this)
+4. `eas credentials --platform android` (set up managed keystore)
+5. Set all API keys as EAS secrets: `eas secret:create --scope project --name KEY --value val`
+6. `bash scripts/build-android.sh preview` (test APK)
+7. `bash scripts/build-android.sh production` (Play Store AAB)
+8. Upload .aab to Play Console or `bash scripts/build-android.sh submit`
 
 ---
 
-## Recent Significant Changes
+## Environment Variables Required
 
-| Date | Change | Impact |
-|------|--------|--------|
-| 2026-03-16 | Added CONTRIBUTING.md, CLAUDE.md, GEMINI.md, AGENTS.md, MEMORY.md, TODO.md, CONVENTIONS.md, GLOSSARY.md, ADRs, CODEOWNERS, runbooks | Documentation complete |
-| 2026-03-13 | Merged dual settings systems into SettingsContext | Eliminated storage divergence bug |
-| 2026-03-13 | Added security headers (X-Content-Type-Options, X-Frame-Options, Referrer-Policy) | Security improvement |
-| 2026-03-13 | Wired up voice chat routes (replit_integrations/audio) | Backend voice chat functional |
-| 2026-03-13 | Created comprehensive documentation suite (initial) | README, ARCHITECTURE, API, SECURITY, CHANGELOG, ROADMAP |
-| 2026-03-13 | Fixed storyId mismatch in completion screen | Bug fix |
-| 2026-03-12 | Added onboarding flow (welcome → quick-create) | New feature |
-| 2026-03-12 | Added app settings screen + SettingsContext | New feature |
-| 2026-03-12 | Redesigned story reading experience | UX improvement |
-| 2026-03-11 | Added story library (saved stories + management) | New feature |
-| 2026-03-11 | Added tabbed navigation (5 tabs) | Architecture change |
+See `.env.example` for full list. For EAS builds, ALL vars must be set as EAS secrets.
+Key vars:
+- `AI_INTEGRATIONS_GEMINI_API_KEY` + `AI_INTEGRATIONS_GEMINI_BASE_URL` (required)
+- `ELEVENLABS_API_KEY` (required for narration)
+- `EXPO_PUBLIC_API_URL` (required — points to Express server)
+- `DATABASE_URL` (required for voice chat only)
+- OpenAI, Anthropic, OpenRouter keys (optional, for AI fallback chain)
 
 ---
 
-## Environment Snapshot
+## Key Conventions
 
-Required env vars for full functionality:
-- `AI_INTEGRATIONS_GEMINI_API_KEY` — primary AI (required for story gen)
-- `AI_INTEGRATIONS_OPENAI_API_KEY` — fallback AI + image gen
-- `AI_INTEGRATIONS_ANTHROPIC_API_KEY` — fallback AI
-- `AI_INTEGRATIONS_OPENROUTER_API_KEY` — final fallback AI
-- `ELEVENLABS_API_KEY` — TTS narration
-- `DATABASE_URL` — PostgreSQL (voice chat only)
-- `OPENAI_API_KEY` — direct key for Sora video (optional)
-
-Auto-injected by Replit (do not set manually): `REPLIT_DEV_DOMAIN`, `REPLIT_DOMAINS`, `REPL_IDENTITY`
-
----
-
-## Contributor Context
-
-This project was bootstrapped on Replit. The primary development environment is Replit. External contributors can develop locally using `npx expo start` (no Replit-specific env vars needed) but will need their own API keys.
-
-The `replit.md` file is a Replit workspace configuration (system context for the Replit agent) — it is not a user-facing document and should not be treated as canonical documentation.
+- All screens in `app/` use Expo Router file-based routing
+- Server data access goes through `server/storage.ts` IStorage interface
+- AI generation goes through `server/ai/router.ts` (not direct provider calls)
+- Client-side data via AsyncStorage (`lib/storage.ts`) — no auth, session-based
+- `EXPO_PUBLIC_*` vars are bundled into client APK — never put secrets there

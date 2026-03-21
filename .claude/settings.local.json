@@ -11,7 +11,8 @@
       "Bash(for f:*)",
       "Bash(do echo:*)",
       "Read(//tmp/claude-1000/-mnt-e-Infinite-Heros-Bedtime-Chronicles-v5/tasks/**)",
-      "Bash(npx expo:*)"
+      "Bash(npx expo:*)",
+      "Bash(git diff:*)"
     ]
   }
 }

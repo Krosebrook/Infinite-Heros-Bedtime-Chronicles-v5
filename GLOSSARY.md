@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-21 -->
 # GLOSSARY.md — Domain Vocabulary
 
 Alphabetical reference for all domain-specific terms, abbreviations, and internal jargon used in this codebase, commit messages, and documentation.

@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-21 -->
 # Contributing to Infinity Heroes: Bedtime Chronicles
 
 Thank you for your interest in contributing! This guide covers the development workflow, code standards, and process for submitting changes.

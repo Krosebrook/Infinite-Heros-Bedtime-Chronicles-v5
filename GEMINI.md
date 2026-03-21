@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-21 -->
 # GEMINI.md — Gemini CLI Agent Context
 
 Custom instructions for Gemini CLI and Gemini-based coding agents working on this repository.

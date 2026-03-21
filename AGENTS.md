@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-21 -->
 # AGENTS.md — AI Agent Coordination
 
 This is the single source of truth for how all AI coding agents interact with this repository.

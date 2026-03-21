@@ -1,11 +1,11 @@
-<!-- Last verified: 2026-03-20 -->
+<!-- Last verified: 2026-03-21 -->
 <!-- Update this file when significant architectural changes occur or new major work begins -->
 
 # MEMORY.md — Persistent AI Agent Context
 
 Read this file at session start to rapidly build project context. Keep it dense and factual.
 
-**Last Updated:** 2026-03-20
+**Last Updated:** 2026-03-21
 
 ---
 
@@ -44,6 +44,7 @@ Read this file at session start to rapidly build project context. Keep it dense 
 - **.gitignore** updated — google-services-key.json and *.keystore protected
 - Android package: `com.infinityheroes.bedtime` (set in app.json)
 - iOS bundle: `com.infinityheroes.bedtime` (set in app.json, no App Store path active)
+- **EAS init complete** — projectId `6aea7a34-65d8-4036-a1b8-9caed0b850fb` added to app.json, `appVersionSource` set to `"local"`
 - **CI pipeline**: .github/workflows/ci.yml exists in source but Zapier connector cannot push to .github/ paths — needs manual commit (see README)
 
 ### In Progress / Partially Done
@@ -53,7 +54,6 @@ Read this file at session start to rapidly build project context. Keep it dense 
 - Story feedback/rating UI (storage function `updateFeedback` exists; no UI)
 
 ### Blocked / Not Started
-- EAS init (requires `eas login` + `eas init` run locally to add projectId to app.json)
 - EAS secrets (API keys must be set via `eas secret:create` before production builds work)
 - CI pipeline commit (Zapier blocks .github/ path — manual `git push` required for ci.yml)
 - Automated test suite (Jest/Vitest) — top roadmap priority

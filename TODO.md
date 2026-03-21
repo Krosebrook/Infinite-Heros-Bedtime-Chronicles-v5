@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-21 -->
 <!-- Generated from codebase scan + docs/ROADMAP.md. Re-run scan to refresh TODO signals. -->
 
 # TODO.md — Prioritized Backlog

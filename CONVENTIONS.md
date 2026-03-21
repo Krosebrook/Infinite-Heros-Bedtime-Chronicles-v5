@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-21 -->
 # CONVENTIONS.md — Code Standards and Patterns
 
 This document is the canonical reference for all code conventions in this repository. AI agents and human contributors must follow these rules. When a linter or type checker enforces a rule, that tooling takes precedence over this document.

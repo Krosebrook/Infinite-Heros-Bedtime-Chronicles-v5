@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-16 -->
+<!-- Last verified: 2026-03-21 -->
 # CLAUDE.md — Agent Context for Claude Code
 
 This file provides Claude with the project context needed to work effectively on this repository.

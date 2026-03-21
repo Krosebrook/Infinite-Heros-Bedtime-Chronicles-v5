@@ -19,6 +19,8 @@
     },
     "android": {
       "package": "com.infinityheroes.bedtime",
+      "versionCode": 1,
+      "permissions": [],
       "adaptiveIcon": {
         "backgroundColor": "#0B1026",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

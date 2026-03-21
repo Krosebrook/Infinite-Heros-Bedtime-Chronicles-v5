@@ -104,6 +104,23 @@ Critical variables for production:
 
 ---
 
+## Firebase Setup (for Auth)
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Enable Anonymous Authentication in Firebase Console → Authentication → Sign-in method
+3. Add an Android app with package name `com.infinityheroes.bedtime`
+4. Download `google-services.json` (for client) — not needed for anonymous auth with Expo
+5. Create a service account key:
+   - Firebase Console → Project Settings → Service accounts → Generate new private key
+   - Save as JSON, set as `FIREBASE_SERVICE_ACCOUNT_KEY` environment variable on the server
+6. Set client-side Firebase config as EAS secrets:
+   - `EXPO_PUBLIC_FIREBASE_API_KEY`
+   - `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`
+   - `EXPO_PUBLIC_FIREBASE_PROJECT_ID`
+   - `EXPO_PUBLIC_FIREBASE_APP_ID`
+
+---
+
 ## Rollback
 
 If the deployment is broken, see [rollback.md](./rollback.md).

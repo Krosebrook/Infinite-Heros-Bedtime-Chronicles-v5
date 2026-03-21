@@ -19,7 +19,7 @@ Read this file at session start to rapidly build project context. Keep it dense 
 
 ---
 
-## Current State (as of 2026-03-20)
+## Current State (as of 2026-03-21)
 
 ### What Works
 - Story generation via multi-provider AI fallback chain (Gemini → OpenAI → Anthropic → OpenRouter)
@@ -35,7 +35,10 @@ Read this file at session start to rapidly build project context. Keep it dense 
 - Voice chat backend (PostgreSQL + Express routes wired up)
 - Onboarding flow (welcome → quick-create → home)
 - Unified settings system (SettingsContext + SettingsModal both using single AsyncStorage key)
-- Security headers, CORS restrictions, rate limiting, input sanitization
+- Security headers (CSP, HSTS), CORS restrictions, rate limiting, input sanitization
+- Firebase anonymous authentication (client + server)
+- Vitest test suite (22 tests, router + query-client coverage)
+- `sanitizeErrorMessage()` utility for safe error responses
 
 ### Mobile Deployment (added 2026-03-20)
 - **eas.json** configured — 3 profiles: development (APK+DevClient), preview (APK), production (AAB)
@@ -56,7 +59,6 @@ Read this file at session start to rapidly build project context. Keep it dense 
 ### Blocked / Not Started
 - EAS secrets (API keys must be set via `eas secret:create` before production builds work)
 - CI pipeline commit (Zapier blocks .github/ path — manual `git push` required for ci.yml)
-- Automated test suite (Jest/Vitest) — top roadmap priority
 - Expo SDK 55 upgrade (blocked on patch compatibility)
 
 ---
@@ -124,6 +126,8 @@ Key vars:
 - `ELEVENLABS_API_KEY` (required for narration)
 - `EXPO_PUBLIC_API_URL` (required — points to Express server)
 - `DATABASE_URL` (required for voice chat only)
+- `FIREBASE_SERVICE_ACCOUNT_KEY` (required for production auth; omit for dev mode bypass)
+- `EXPO_PUBLIC_FIREBASE_API_KEY`, `EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN`, `EXPO_PUBLIC_FIREBASE_PROJECT_ID`, `EXPO_PUBLIC_FIREBASE_APP_ID` (required for client Firebase Auth)
 - OpenAI, Anthropic, OpenRouter keys (optional, for AI fallback chain)
 
 ---
@@ -135,3 +139,4 @@ Key vars:
 - AI generation goes through `server/ai/router.ts` (not direct provider calls)
 - Client-side data via AsyncStorage (`lib/storage.ts`) — no auth, session-based
 - `EXPO_PUBLIC_*` vars are bundled into client APK — never put secrets there
+- All POST API endpoints require Firebase Auth token (dev mode bypasses auth)

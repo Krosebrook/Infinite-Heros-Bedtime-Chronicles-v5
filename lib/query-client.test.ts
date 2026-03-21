@@ -1,20 +1,27 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 
-// We need to mock expo/fetch before importing the module
+// Mock expo/fetch before importing the module
 vi.mock('expo/fetch', () => ({
   fetch: vi.fn(),
 }));
 
-vi.mock('@tanstack/react-query', () => ({
-  QueryClient: vi.fn().mockImplementation(() => ({})),
-}));
+vi.mock('@tanstack/react-query', () => {
+  class MockQueryClient {
+    defaultOptions: unknown;
+    constructor(opts?: unknown) {
+      this.defaultOptions = opts;
+    }
+  }
+  return {
+    QueryClient: MockQueryClient,
+  };
+});
 
 describe('getApiUrl', () => {
   const originalEnv = process.env;
 
   beforeEach(() => {
     process.env = { ...originalEnv };
-    // Clear module cache so env changes take effect
     vi.resetModules();
   });
 

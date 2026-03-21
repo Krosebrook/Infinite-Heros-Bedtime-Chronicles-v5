@@ -4,6 +4,14 @@ import type { AIProvider, TextGenerationRequest, TextGenerationResponse } from '
 
 /**
  * Creates a mock AIProvider for testing.
+ * Note: Default chains are defined in router.ts — tests must use task types
+ * that include the registered provider names in their chain.
+ *
+ * Key chains:
+ *   story:      anthropic → gemini → openai → meta-llama → xai → mistral → cohere
+ *   suggestion: gemini → mistral → anthropic → meta-llama → xai → cohere
+ *   image:      gemini → openai
+ *   avatar:     gemini → openai
  */
 function createMockProvider(
   overrides: Partial<AIProvider> & { name: AIProvider['name'] }
@@ -60,18 +68,20 @@ describe('AIRouter', () => {
 
   describe('generateText', () => {
     it('returns response from the first available provider in the chain', async () => {
+      // suggestion chain: gemini → mistral → anthropic → ...
       const gemini = createMockProvider({ name: 'gemini' });
-      const openai = createMockProvider({ name: 'openai' });
+      const anthropic = createMockProvider({ name: 'anthropic' });
       router.registerProvider(gemini);
-      router.registerProvider(openai);
+      router.registerProvider(anthropic);
 
       const result = await router.generateText('suggestion', DEFAULT_REQUEST);
       expect(result.provider).toBe('gemini');
       expect(gemini.generateText).toHaveBeenCalledOnce();
-      expect(openai.generateText).not.toHaveBeenCalled();
+      expect(anthropic.generateText).not.toHaveBeenCalled();
     });
 
     it('falls back to the next provider when the first one fails', async () => {
+      // story chain: anthropic → gemini → openai → ...
       const anthropic = createMockProvider({
         name: 'anthropic',
         generateText: vi.fn().mockRejectedValue(new Error('API rate limited')),
@@ -93,42 +103,46 @@ describe('AIRouter', () => {
     });
 
     it('throws when all providers fail', async () => {
+      // suggestion chain: gemini → mistral → anthropic → ...
+      // Register gemini and anthropic; both fail. Last error should be from anthropic.
       const gemini = createMockProvider({
         name: 'gemini',
         generateText: vi.fn().mockRejectedValue(new Error('Gemini down')),
       });
-      const openai = createMockProvider({
-        name: 'openai',
-        generateText: vi.fn().mockRejectedValue(new Error('OpenAI down')),
+      const anthropic = createMockProvider({
+        name: 'anthropic',
+        generateText: vi.fn().mockRejectedValue(new Error('Anthropic down')),
       });
       router.registerProvider(gemini);
-      router.registerProvider(openai);
+      router.registerProvider(anthropic);
 
-      await expect(router.generateText('suggestion', DEFAULT_REQUEST)).rejects.toThrow('OpenAI down');
+      await expect(router.generateText('suggestion', DEFAULT_REQUEST)).rejects.toThrow('Anthropic down');
     });
 
     it('skips unavailable providers in the chain', async () => {
+      // suggestion chain: gemini → mistral → anthropic → ...
       const gemini = createMockProvider({ name: 'gemini', isAvailable: () => false });
-      const openai = createMockProvider({ name: 'openai' });
+      const anthropic = createMockProvider({ name: 'anthropic' });
       router.registerProvider(gemini);
-      router.registerProvider(openai);
+      router.registerProvider(anthropic);
 
       const result = await router.generateText('suggestion', DEFAULT_REQUEST);
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('anthropic');
       expect(gemini.generateText).not.toHaveBeenCalled();
     });
 
     it('skips providers without text capability', async () => {
+      // suggestion chain: gemini → mistral → anthropic → ...
       const gemini = createMockProvider({
         name: 'gemini',
         capabilities: { text: false, image: true, streaming: false },
       });
-      const openai = createMockProvider({ name: 'openai' });
+      const anthropic = createMockProvider({ name: 'anthropic' });
       router.registerProvider(gemini);
-      router.registerProvider(openai);
+      router.registerProvider(anthropic);
 
       const result = await router.generateText('suggestion', DEFAULT_REQUEST);
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('anthropic');
     });
   });
 
@@ -164,57 +178,59 @@ describe('AIRouter', () => {
     });
 
     it('falls back when provider returns non-JSON in jsonMode', async () => {
+      // story chain: anthropic → gemini → openai → ...
+      const anthropic = createMockProvider({
+        name: 'anthropic',
+        generateText: vi.fn().mockResolvedValue({
+          text: 'This is not JSON at all, just plain text without any braces.',
+          provider: 'anthropic',
+          model: 'claude-sonnet',
+        }),
+      });
       const gemini = createMockProvider({
         name: 'gemini',
         generateText: vi.fn().mockResolvedValue({
-          text: 'This is not JSON at all, just plain text.',
+          text: '{"title": "Fallback Story"}',
           provider: 'gemini',
           model: 'gemini-2.5-flash',
         }),
       });
-      const openai = createMockProvider({
-        name: 'openai',
-        generateText: vi.fn().mockResolvedValue({
-          text: '{"title": "Fallback Story"}',
-          provider: 'openai',
-          model: 'gpt-4o-mini',
-        }),
-      });
+      router.registerProvider(anthropic);
       router.registerProvider(gemini);
-      router.registerProvider(openai);
 
-      const result = await router.generateText('suggestion', {
+      const result = await router.generateText('story', {
         ...DEFAULT_REQUEST,
         jsonMode: true,
       });
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('gemini');
     });
 
     it('falls back when provider returns malformed JSON in jsonMode', async () => {
+      // story chain: anthropic → gemini → openai → ...
+      const anthropic = createMockProvider({
+        name: 'anthropic',
+        generateText: vi.fn().mockResolvedValue({
+          text: '{"title": "broken json',
+          provider: 'anthropic',
+          model: 'claude-sonnet',
+        }),
+      });
       const gemini = createMockProvider({
         name: 'gemini',
         generateText: vi.fn().mockResolvedValue({
-          text: '{"title": "broken json',
+          text: '{"title": "Valid"}',
           provider: 'gemini',
           model: 'gemini-2.5-flash',
         }),
       });
-      const openai = createMockProvider({
-        name: 'openai',
-        generateText: vi.fn().mockResolvedValue({
-          text: '{"title": "Valid"}',
-          provider: 'openai',
-          model: 'gpt-4o-mini',
-        }),
-      });
+      router.registerProvider(anthropic);
       router.registerProvider(gemini);
-      router.registerProvider(openai);
 
-      const result = await router.generateText('suggestion', {
+      const result = await router.generateText('story', {
         ...DEFAULT_REQUEST,
         jsonMode: true,
       });
-      expect(result.provider).toBe('openai');
+      expect(result.provider).toBe('gemini');
     });
   });
 

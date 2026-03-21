@@ -11,7 +11,7 @@ const pool = new pg.Pool({
     : undefined,
 });
 
-pool.on('error', (err) => {
+pool.on('error', (err: Error) => {
   console.error('[DB] Unexpected pool error:', err instanceof Error ? err.message : String(err));
 });
 

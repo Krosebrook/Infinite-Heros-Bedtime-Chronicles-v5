@@ -2,7 +2,12 @@
   "permissions": {
     "allow": [
       "Bash(echo $CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(sudo npm:*)",
+      "Bash(chmod -R u+w /mnt/e/Infinite-Heros-Bedtime-Chronicles-v5/node_modules 2>&1 && npm install --save-dev vitest @vitest/coverage-v8 msw@latest 2>&1 | tail -10)",
+      "Bash(chmod -R u+w node_modules 2>/dev/null; npm install --save-dev vitest @vitest/coverage-v8 msw@latest 2>&1 | tail -15)",
+      "Bash(npx vitest:*)",
+      "Bash(npx tsc:*)"
     ]
   }
 }

@@ -4,7 +4,6 @@ import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
 
-const app = express();
 const log = console.log;
 
 function validateEnvironment() {
@@ -73,6 +72,15 @@ function setupCors(app: express.Application) {
   app.use((req, res, next) => {
     const origins = new Set<string>();
 
+    // Custom domain
+    origins.add("https://bedtime-chronicles.com");
+    origins.add("https://www.bedtime-chronicles.com");
+
+    // Vercel preview deployments
+    if (process.env.VERCEL_URL) {
+      origins.add(`https://${process.env.VERCEL_URL}`);
+    }
+
     if (process.env.REPLIT_DEV_DOMAIN) {
       origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
     }
@@ -97,7 +105,10 @@ function setupCors(app: express.Application) {
       }
     })();
 
-    if (origin && (origins.has(origin) || isLocalhost)) {
+    // Allow Vercel preview URLs (*.vercel.app)
+    const isVercelPreview = origin ? /\.vercel\.app$/.test(new URL(origin).hostname) : false;
+
+    if (origin && (origins.has(origin) || isLocalhost || isVercelPreview)) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header(
         "Access-Control-Allow-Methods",
@@ -299,7 +310,9 @@ function setupErrorHandler(app: express.Application) {
   });
 }
 
-(async () => {
+export async function createApp(): Promise<express.Application> {
+  const app = express();
+
   validateEnvironment();
   setupSecurityHeaders(app);
   setupCors(app);
@@ -308,34 +321,45 @@ function setupErrorHandler(app: express.Application) {
 
   configureExpoAndLanding(app);
 
-  const server = await registerRoutes(app);
+  await registerRoutes(app);
 
   setupErrorHandler(app);
 
-  const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`express server serving on port ${port}`);
-    },
-  );
+  return app;
+}
 
-  function gracefulShutdown(signal: string) {
-    log(`[Shutdown] Received ${signal}, closing server...`);
-    server.close(() => {
-      log("[Shutdown] Server closed cleanly");
-      process.exit(0);
-    });
-    setTimeout(() => {
-      log("[Shutdown] Forcing exit after timeout");
-      process.exit(1);
-    }, 10_000);
-  }
+// Only start the server when running directly (not imported by Vercel)
+if (!process.env.VERCEL) {
+  (async () => {
+    const app = await createApp();
+    const { createServer } = await import("node:http");
+    const server = createServer(app);
 
-  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-})();
+    const port = parseInt(process.env.PORT || "5000", 10);
+    server.listen(
+      {
+        port,
+        host: "0.0.0.0",
+        reusePort: true,
+      },
+      () => {
+        log(`express server serving on port ${port}`);
+      },
+    );
+
+    function gracefulShutdown(signal: string) {
+      log(`[Shutdown] Received ${signal}, closing server...`);
+      server.close(() => {
+        log("[Shutdown] Server closed cleanly");
+        process.exit(0);
+      });
+      setTimeout(() => {
+        log("[Shutdown] Forcing exit after timeout");
+        process.exit(1);
+      }, 10_000);
+    }
+
+    process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+    process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+  })();
+}

@@ -10,30 +10,18 @@
       "android": {
         "buildType": "apk",
         "gradleCommand": ":app:assembleDebug"
-      },
-      "env": {
-        "EXPO_PUBLIC_ENV": "development",
-        "EXPO_PUBLIC_API_URL": ""
       }
     },
     "preview": {
       "distribution": "internal",
       "android": {
         "buildType": "apk"
-      },
-      "env": {
-        "EXPO_PUBLIC_ENV": "preview",
-        "EXPO_PUBLIC_API_URL": ""
       }
     },
     "production": {
       "autoIncrement": true,
       "android": {
         "buildType": "app-bundle"
-      },
-      "env": {
-        "EXPO_PUBLIC_ENV": "production",
-        "EXPO_PUBLIC_API_URL": ""
       }
     }
   },

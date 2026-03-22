@@ -13,9 +13,9 @@
       "Read(//tmp/claude-1000/-mnt-e-Infinite-Heros-Bedtime-Chronicles-v5/tasks/**)",
       "Bash(npx expo:*)",
       "Bash(git diff:*)",
-      "Bash(git add:*)",
-      "Bash(git rebase:*)",
-      "Bash(GIT_EDITOR=true git rebase --continue)"
+      "Bash(git reset:*)",
+      "Bash(git commit:*)",
+      "Bash(git add:*)"
     ]
   }
 }

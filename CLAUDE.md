@@ -144,7 +144,7 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 **Image Generation:**
 | Priority | Provider | Model |
 |----------|----------|-------|
-| 1 | Gemini | `gemini-2.5-flash` |
+| 1 | Gemini | `gemini-2.5-flash` (with optional thinking budget) |
 | 2 | OpenAI | `gpt-image-1` |
 
 ### Story Modes

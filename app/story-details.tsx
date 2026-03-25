@@ -5,7 +5,6 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  ScrollView,
   TextInput,
   Image,
   Dimensions,
@@ -19,6 +18,7 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { useProfile } from "@/lib/ProfileContext";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 type IoniconsName = ComponentProps<typeof Ionicons>["name"];
 
@@ -160,7 +160,7 @@ export default function StoryDetailsScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 + bottomInset }}
         bounces={false}
@@ -365,7 +365,7 @@ export default function StoryDetailsScreen() {
             </View>
           </Animated.View>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
 
       <View style={[styles.bottomCTA, { paddingBottom: bottomInset + 12 }]}>
         <LinearGradient

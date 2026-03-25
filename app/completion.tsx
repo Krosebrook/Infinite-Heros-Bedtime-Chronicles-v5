@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Platform,
   ScrollView,
+  TextInput,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
@@ -30,7 +31,7 @@ import Colors from "@/constants/colors";
 import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 import { StoryFull, EarnedBadge } from "@/constants/types";
-import { saveStory, saveStoryWithProfile, saveStoryScene, updateStreak, checkAndAwardBadges } from "@/lib/storage";
+import { saveStory, saveStoryWithProfile, saveStoryScene, updateStreak, checkAndAwardBadges, updateFeedback } from "@/lib/storage";
 import { useProfile } from "@/lib/ProfileContext";
 
 const MODE_THEMES = {
@@ -150,6 +151,10 @@ export default function CompletionScreen() {
   const [saved, setSaved] = useState(false);
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
   const [newBadges, setNewBadges] = useState<EarnedBadge[]>([]);
+  const [rating, setRating] = useState(0);
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackSubmitted, setFeedbackSubmitted] = useState(false);
+  const [storyId, setStoryId] = useState<string | null>(null);
   const { activeProfile } = useProfile();
 
   let storyData: StoryFull | null = null;
@@ -167,21 +172,22 @@ export default function CompletionScreen() {
       if (!activeProfile || !hero) return;
       try {
         await updateStreak(activeProfile.id);
-        let storyId = `story_${Date.now()}`;
+        let sid = `story_${Date.now()}`;
         if (storyData) {
-          storyId = await saveStoryWithProfile(storyData, hero.id, mode || "classic", activeProfile.id);
+          sid = await saveStoryWithProfile(storyData, hero.id, mode || "classic", activeProfile.id);
+          setStoryId(sid);
           if (scenesJson) {
             try {
               const scenes: Record<string, string> = JSON.parse(scenesJson);
               for (const [key, imageDataUri] of Object.entries(scenes)) {
-                await saveStoryScene(storyId, Number(key), imageDataUri);
+                await saveStoryScene(sid, Number(key), imageDataUri);
               }
             } catch {}
           }
         }
         const earned = await checkAndAwardBadges(
           activeProfile.id,
-          storyId,
+          sid,
           mode || "classic",
           hero.id,
         );
@@ -211,6 +217,13 @@ export default function CompletionScreen() {
   const toggleSection = (section: string) => {
     Haptics.selectionAsync();
     setExpandedSection(expandedSection === section ? null : section);
+  };
+
+  const handleSubmitFeedback = async () => {
+    if (rating === 0 || !storyId) return;
+    Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    await updateFeedback(storyId, rating, feedbackText.trim());
+    setFeedbackSubmitted(true);
   };
 
   if (!hero) {
@@ -358,6 +371,71 @@ export default function CompletionScreen() {
           )}
         </Animated.View>
 
+        {storyId && (
+          <Animated.View entering={FadeInDown.duration(600).delay(700)} style={styles.feedbackArea}>
+            <Text style={styles.feedbackTitle}>
+              {feedbackSubmitted ? "Thanks for your feedback!" : "How was this story?"}
+            </Text>
+            {!feedbackSubmitted ? (
+              <>
+                <View style={styles.starsRow}>
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Pressable
+                      key={star}
+                      onPress={() => {
+                        Haptics.selectionAsync();
+                        setRating(star);
+                      }}
+                      hitSlop={6}
+                    >
+                      <Ionicons
+                        name={star <= rating ? "star" : "star-outline"}
+                        size={32}
+                        color={star <= rating ? "#FFD54F" : "rgba(255,255,255,0.2)"}
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+                {rating > 0 && (
+                  <Animated.View entering={FadeIn.duration(300)}>
+                    <TextInput
+                      style={styles.feedbackInput}
+                      placeholder="Any thoughts? (optional)"
+                      placeholderTextColor="rgba(255,255,255,0.2)"
+                      value={feedbackText}
+                      onChangeText={setFeedbackText}
+                      multiline
+                      numberOfLines={2}
+                      textAlignVertical="top"
+                    />
+                    <Pressable
+                      onPress={handleSubmitFeedback}
+                      style={({ pressed }) => [
+                        styles.feedbackSubmitBtn,
+                        { backgroundColor: `${theme.accent}20`, borderColor: `${theme.accent}40` },
+                        { transform: [{ scale: pressed ? 0.96 : 1 }] },
+                      ]}
+                    >
+                      <Text style={[styles.feedbackSubmitText, { color: theme.accent }]}>Submit</Text>
+                    </Pressable>
+                  </Animated.View>
+                )}
+              </>
+            ) : (
+              <View style={styles.starsRow}>
+                {[1, 2, 3, 4, 5].map((star) => (
+                  <Ionicons
+                    key={star}
+                    name={star <= rating ? "star" : "star-outline"}
+                    size={32}
+                    color={star <= rating ? "#FFD54F" : "rgba(255,255,255,0.2)"}
+                  />
+                ))}
+              </View>
+            )}
+          </Animated.View>
+        )}
+
         <Animated.View entering={FadeInUp.duration(600).delay(800)} style={styles.actionsArea}>
           <Pressable
             onPress={handleSaveToJar}
@@ -470,6 +548,51 @@ const styles = StyleSheet.create({
   tomorrowText: {
     fontFamily: "PlusJakartaSans_500Medium", fontSize: 14,
     flex: 1, lineHeight: 22, fontStyle: "italic",
+  },
+  feedbackArea: {
+    alignItems: "center",
+    marginBottom: 28,
+    paddingVertical: 20,
+    paddingHorizontal: 20,
+    borderRadius: 20,
+    backgroundColor: "rgba(255,255,255,0.03)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.06)",
+  },
+  feedbackTitle: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 16,
+    color: Colors.textPrimary,
+    marginBottom: 14,
+  },
+  starsRow: {
+    flexDirection: "row",
+    gap: 8,
+    marginBottom: 4,
+  },
+  feedbackInput: {
+    width: "100%",
+    backgroundColor: "rgba(255,255,255,0.04)",
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.07)",
+    padding: 12,
+    fontFamily: "PlusJakartaSans_400Regular",
+    fontSize: 14,
+    color: "#FFFFFF",
+    minHeight: 56,
+    marginTop: 12,
+  },
+  feedbackSubmitBtn: {
+    alignItems: "center",
+    paddingVertical: 10,
+    borderRadius: 12,
+    borderWidth: 1,
+    marginTop: 10,
+  },
+  feedbackSubmitText: {
+    fontFamily: "PlusJakartaSans_700Bold",
+    fontSize: 14,
   },
   actionsArea: { gap: 12 },
   saveButton: {

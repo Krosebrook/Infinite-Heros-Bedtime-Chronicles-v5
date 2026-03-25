@@ -2,7 +2,18 @@
 
 All notable changes to Infinity Heroes: Bedtime Chronicles are documented here.
 
-## [Unreleased] — 2026-03-13
+## [Unreleased] — 2026-03-25
+
+### Added
+- **Story feedback/rating UI** — Star rating + optional text feedback on the completion screen, saved via `updateFeedback()` to story storage.
+- **Read/unread story indicators** — Library shows "NEW" badge on unread stories with highlighted border; stories marked as read on tap.
+- **HeroCard in quick-create** — Selected theme now shows a hero preview card using the `HeroCard` component.
+- **KeyboardAwareScrollView on forms** — `story-details.tsx` and `quick-create.tsx` now use `KeyboardAwareScrollViewCompat` so inputs scroll into view when the keyboard opens.
+- **npm audit scripts** — Added `npm run audit` and `npm run audit:fix` to package.json.
+
+---
+
+## 2026-03-13
 
 ### Fixed
 - **Dual settings system merged** — `SettingsModal.tsx` now uses `SettingsContext` instead of separate `getPreferences`/`savePreferences`. Both UIs share a single AsyncStorage key. Legacy preferences auto-migrate on first load.

@@ -138,13 +138,13 @@ This component is not broken — it was never connected. It is a useful utility 
 | # | File / Location | Type | Recommendation | Risk if Restored/Changed |
 |---|-----------------|------|----------------|--------------------------|
 | 1 | `server/storage.ts:1-38` | Orphaned export | KEEP_CURRENT | None — never imported |
-| 2 | `components/HeroCard.tsx:1-103` | Orphaned export / duplicate impl | KEEP_CURRENT | None — retained for potential reuse |
-| 3 | `components/KeyboardAwareScrollViewCompat.tsx:1-30` | Orphaned export | KEEP_CURRENT | None — never imported |
+| 2 | `components/HeroCard.tsx:1-103` | ✅ WIRED_UP | Used in quick-create hero preview (2026-03-25) |
+| 3 | `components/KeyboardAwareScrollViewCompat.tsx:1-30` | ✅ WIRED_UP | Used in story-details + quick-create (2026-03-25) |
 | 4 | `server/replit_integrations/` (all) | ✅ WIRED_UP | Audio/chat routes registered in routes.ts |
-| 5a | `lib/storage.ts:47` `getReadStories` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
-| 5b | `lib/storage.ts:56` `markStoryRead` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
-| 5c | `lib/storage.ts:101` `saveStoryScene` | Orphaned export | ✅ RESTORED | Scene images now persist through story cache |
-| 5d | `lib/storage.ts:114` `updateFeedback` | Orphaned export | KEEP_CURRENT | None — represents planned feature |
+| 5a | `lib/storage.ts:47` `getReadStories` | ✅ WIRED_UP | Used in library read/unread indicators (2026-03-25) |
+| 5b | `lib/storage.ts:56` `markStoryRead` | ✅ WIRED_UP | Used in library read/unread indicators (2026-03-25) |
+| 5c | `lib/storage.ts:101` `saveStoryScene` | ✅ RESTORED | Scene images now persist through story cache |
+| 5d | `lib/storage.ts:114` `updateFeedback` | ✅ WIRED_UP | Used in completion screen feedback UI (2026-03-25) |
 | 6 | `components/SettingsModal.tsx` vs `lib/SettingsContext.tsx` | ✅ MERGED | Settings unified under SettingsContext |
 
 ---

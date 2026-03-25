@@ -14,7 +14,9 @@
     "start": "npx expo start",
     "lint": "npx expo lint",
     "lint:fix": "npx expo lint --fix",
-    "typecheck": "npx tsc --noEmit"
+    "typecheck": "npx tsc --noEmit",
+    "audit": "npm audit --omit=dev",
+    "audit:fix": "npm audit fix --omit=dev"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",

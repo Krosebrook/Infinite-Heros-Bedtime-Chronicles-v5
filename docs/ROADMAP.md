@@ -1,6 +1,6 @@
 # Development Roadmap
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-25
 
 Items are scored using Weighted Shortest Job First (WSJF): `(Business Value + Time Criticality + Risk Reduction) / Job Size`
 
@@ -16,6 +16,11 @@ Items are scored using Weighted Shortest Job First (WSJF): `(Business Value + Ti
 | Fix storyId mismatch in completion | Bug Fix | 2026-03-13 |
 | Create comprehensive documentation | Docs | 2026-03-13 |
 | Update .env.example | Docs | 2026-03-13 |
+| Add `npm audit` script | Security | 2026-03-25 |
+| Add KeyboardAwareScrollView to forms | UX | 2026-03-25 |
+| Implement read/unread story indicators | Feature | 2026-03-25 |
+| Use HeroCard.tsx in quick-create | Feature | 2026-03-25 |
+| Build story feedback/rating UI | Feature | 2026-03-25 |
 
 ## Backlog (Prioritized)
 
@@ -25,17 +30,13 @@ Items are scored using Weighted Shortest Job First (WSJF): `(Business Value + Ti
 |---|------|-------|-------------|------|------|------|-------|
 | 1 | Add testing framework (Jest/Vitest) | 8 | 5 | 8 | 3 | 7.0 | No tests exist; prevents regressions |
 | 2 | Upgrade to Expo SDK 55 | 5 | 8 | 5 | 3 | 6.0 | Removes need for expo-asset patch (TODO in patches/) |
-| 3 | Add `npm audit` to CI | 3 | 5 | 8 | 2 | 8.0 | Zero effort, high security value |
+| 3 | Add `npm audit` to CI pipeline | 3 | 5 | 8 | 2 | 8.0 | Script added; needs CI integration |
 
 ### Medium Priority (WSJF 4-8)
 
 | # | Item | Value | Criticality | Risk | Size | WSJF | Notes |
 |---|------|-------|-------------|------|------|------|-------|
 | 4 | Build voice chat UI screen | 8 | 3 | 2 | 5 | 2.6 | Backend routes ready; needs Expo screen + audio recording |
-| 5 | Use HeroCard.tsx in quick-create | 3 | 2 | 1 | 2 | 3.0 | Reuse orphaned component |
-| 6 | Add KeyboardAwareScrollView to forms | 3 | 3 | 2 | 1 | 8.0 | Component exists, just needs wiring |
-| 7 | Implement read/unread story indicators | 3 | 2 | 1 | 2 | 3.0 | Storage functions exist (getReadStories/markStoryRead) |
-| 8 | Build story feedback/rating UI | 3 | 2 | 1 | 3 | 2.0 | Storage function exists (updateFeedback) |
 
 ### Low Priority (WSJF < 4)
 

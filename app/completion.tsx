@@ -178,8 +178,13 @@ export default function CompletionScreen() {
               }
             } catch {}
           }
+          // best-effort: never block badge awarding on a storage write failure
+          try {
+            await markStoryRead(storyId);
+          } catch (e) {
+            if (__DEV__) console.log("Error marking story as read:", e);
+          }
         }
-        await markStoryRead(storyId);
         const earned = await checkAndAwardBadges(
           activeProfile.id,
           storyId,

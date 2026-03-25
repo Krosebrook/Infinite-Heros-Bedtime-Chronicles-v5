@@ -115,6 +115,19 @@ Generates a hero portrait image.
 { "image": "data:image/png;base64,..." }
 ```
 
+### `POST /api/generate-image`
+Generates an image directly via Gemini (requires `AI_INTEGRATIONS_GEMINI_API_KEY`).
+
+**Request Body:**
+```json
+{ "prompt": "A whimsical castle floating in the clouds" }
+```
+
+**Response:**
+```json
+{ "b64_json": "<base64-image-data>", "mimeType": "image/png" }
+```
+
 ### `POST /api/generate-scene`
 Generates a story scene illustration.
 

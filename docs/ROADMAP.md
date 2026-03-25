@@ -1,6 +1,6 @@
 # Development Roadmap
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-25
 
 Items are scored using Weighted Shortest Job First (WSJF): `(Business Value + Time Criticality + Risk Reduction) / Job Size`
 
@@ -16,6 +16,9 @@ Items are scored using Weighted Shortest Job First (WSJF): `(Business Value + Ti
 | Fix storyId mismatch in completion | Bug Fix | 2026-03-13 |
 | Create comprehensive documentation | Docs | 2026-03-13 |
 | Update .env.example | Docs | 2026-03-13 |
+| Fix audio pipeline (model name + ffmpeg) | Bug Fix | 2026-03-25 |
+| Model audit (rolling aliases, dead refs) | Maintenance | 2026-03-25 |
+| Wire Gemini image integration route | Feature | 2026-03-25 |
 
 ## Backlog (Prioritized)
 

@@ -178,7 +178,7 @@ When using `--browser remote`, additional options are available:
 ```bash
 # Specify LLM model
 browser-use -b remote run "task" --llm gpt-4o
-browser-use -b remote run "task" --llm claude-sonnet-4-20250514
+browser-use -b remote run "task" --llm claude-sonnet-4-6
 
 # Proxy configuration (default: us)
 browser-use -b remote run "task" --proxy-country uk

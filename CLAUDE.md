@@ -41,7 +41,9 @@ app/                    # Expo Router screens (file-based routing)
   welcome.tsx           # Onboarding splash (fade animation)
 components/             # Reusable React Native components
   ErrorBoundary.tsx     # Error boundary wrapper
+  ErrorFallback.tsx     # Error fallback UI component
   HeroCard.tsx          # Hero template card (orphaned — kept for future reuse)
+  KeyboardAwareScrollViewCompat.tsx  # Cross-platform keyboard-aware scroll
   MemoryJar.tsx         # Story memory display
   ParentControlsModal.tsx  # Parent controls (PIN-protected)
   ProfileModal.tsx      # Child profile management
@@ -56,8 +58,11 @@ constants/              # Types, hero templates, colors, timing
 lib/                    # Client utilities
   SettingsContext.tsx    # Unified settings provider (React Context)
   ProfileContext.tsx     # Child profile context
+  AuthContext.tsx        # Authentication context
   storage.ts            # AsyncStorage helpers
+  storage.test.ts       # Storage unit tests
   query-client.ts       # TanStack React Query config (staleTime: Infinity, retry: false)
+  query-client.test.ts  # Query client unit tests
 server/                 # Express.js backend
   index.ts              # Server bootstrap, security middleware, CORS, graceful shutdown
   routes.ts             # All API endpoints (~33KB, 30+ endpoints)
@@ -107,6 +112,11 @@ npm run lint                # npx expo lint
 npm run lint:fix            # npx expo lint --fix
 npm run typecheck           # npx tsc --noEmit
 
+# Testing
+npm test                    # vitest run (single run)
+npm run test:watch          # vitest (watch mode)
+npm run test:coverage       # vitest run --coverage
+
 # Database
 npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 ```
@@ -137,7 +147,7 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 **Image Generation:**
 | Priority | Provider | Model |
 |----------|----------|-------|
-| 1 | Gemini | `gemini-2.5-flash` (with optional thinking budget) |
+| 1 | Gemini | `gemini-2.5-flash-image` (with optional thinking budget) |
 | 2 | OpenAI | `gpt-image-1` |
 
 ### Story Modes
@@ -306,6 +316,7 @@ npm run db:push   # Applies schema changes to DATABASE_URL target
 - `@infinity_heroes_favorites` — Favorite stories
 - `@infinity_heroes_onboarding_complete` — Onboarding flag
 - `@infinity_heroes_preferences` — Legacy key (auto-migrates to app_settings)
+- `@infinity_heroes_settings_migrated` — Migration flag for legacy → new settings
 
 ## App Settings (defaults)
 ```typescript
@@ -318,8 +329,11 @@ npm run db:push   # Applies schema changes to DATABASE_URL target
   ageRange: "4-6",           // 2-4 | 4-6 | 6-8 | 8-10
   defaultTheme: "fantasy",
   autoGenerateImages: false,
+  extendMode: false,
+  autoPlayNext: false,
   textSize: "medium",        // small | medium | large
   librarySortOrder: "recent", // recent | alphabetical | theme
+  showFavoritesOnly: false,
   autoSave: true,
   isMuted: false,
   reducedMotion: false,
@@ -357,15 +371,18 @@ Nova (Guardian of Light), Coral (Heart of the Ocean), Orion (Star of Friendship)
 | Story Legend | Complete 25 total stories |
 | Word Wizard | Learn 5 vocabulary words |
 
-## Testing Approach
+## Testing
 
-**No automated test suite exists yet.** This is the top item on the roadmap.
+**Framework:** Vitest v4 with @vitest/coverage-v8
 
-Until tests are added: verify happy path + error states manually before committing. Document manual test steps in the PR description.
+```bash
+npm test                # vitest run (single run)
+npm run test:watch      # vitest (watch mode)
+npm run test:coverage   # vitest run --coverage
+```
 
-When a test framework is added, target:
-- File naming: `<module>.test.ts` alongside the source file
-- Coverage: >=80% branch coverage for server utilities
+- File naming: `<module>.test.ts` alongside the source file (e.g., `lib/storage.test.ts`)
+- Target: >=80% branch coverage for server utilities
 - Mocks: mock all external API calls (Gemini, OpenAI, ElevenLabs)
 
 ## Environment Variables
@@ -399,7 +416,7 @@ Minimum required: `AI_INTEGRATIONS_GEMINI_API_KEY`. Optional for full features: 
 
 ## Development Notes
 
-- **No test framework configured** — MVP stage
+- **Testing:** Vitest v4 configured with coverage via @vitest/coverage-v8
 - **No CI/CD pipelines** — Deployment via Replit push-to-deploy (Google Cloud Run)
 - **React Compiler** enabled via app.json experiments
 - **New Architecture** (React Native) enabled

@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "Infinity Heroes",
-    "slug": "infinity-heroes",
+    "slug": "infinity-heroes-bedtime-chronicles",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
@@ -19,6 +19,8 @@
     },
     "android": {
       "package": "com.infinityheroes.bedtime",
+      "versionCode": 1,
+      "permissions": [],
       "adaptiveIcon": {
         "backgroundColor": "#0B1026",
         "foregroundImage": "./assets/images/android-icon-foreground.png",
@@ -33,7 +35,7 @@
       [
         "expo-router",
         {
-          "origin": "https://replit.com/"
+          "origin": "https://infinityheroes.app/"
         }
       ],
       "expo-font",
@@ -42,6 +44,11 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6aea7a34-65d8-4036-a1b8-9caed0b850fb"
+      }
     }
   }
 }

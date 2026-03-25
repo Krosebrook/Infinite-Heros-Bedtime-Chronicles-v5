@@ -6,7 +6,8 @@ import { GestureHandlerRootView } from "react-native-gesture-handler";
 import { KeyboardProvider } from "react-native-keyboard-controller";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { ErrorBoundary } from "@/components/ErrorBoundary";
-import { queryClient } from "@/lib/query-client";
+import { queryClient, setAuthTokenGetter } from "@/lib/query-client";
+import { AuthProvider, useAuth } from "@/lib/AuthContext";
 import { ProfileProvider } from "@/lib/ProfileContext";
 import { SettingsProvider } from "@/lib/SettingsContext";
 import { StatusBar } from "expo-status-bar";
@@ -120,18 +121,29 @@ export default function RootLayout() {
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <ProfileProvider>
-          <SettingsProvider>
-            <GestureHandlerRootView style={{ flex: 1 }}>
-              <KeyboardProvider>
-                <StatusBar style="light" />
-                <RootLayoutNav />
-              </KeyboardProvider>
-            </GestureHandlerRootView>
-          </SettingsProvider>
-        </ProfileProvider>
-      </QueryClientProvider>
+      <AuthProvider>
+        <AuthBridge />
+        <QueryClientProvider client={queryClient}>
+          <ProfileProvider>
+            <SettingsProvider>
+              <GestureHandlerRootView style={{ flex: 1 }}>
+                <KeyboardProvider>
+                  <StatusBar style="light" />
+                  <RootLayoutNav />
+                </KeyboardProvider>
+              </GestureHandlerRootView>
+            </SettingsProvider>
+          </ProfileProvider>
+        </QueryClientProvider>
+      </AuthProvider>
     </ErrorBoundary>
   );
+}
+
+function AuthBridge() {
+  const { getIdToken } = useAuth();
+  useEffect(() => {
+    setAuthTokenGetter(getIdToken);
+  }, [getIdToken]);
+  return null;
 }

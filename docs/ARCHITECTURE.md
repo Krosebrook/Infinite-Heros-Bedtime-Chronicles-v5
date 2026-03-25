@@ -102,15 +102,16 @@ SettingsContext (lib/SettingsContext.tsx)
 ## Server Architecture
 
 ### Middleware Stack (in order)
-1. **Security Headers** — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection
+1. **Security Headers** — CSP, HSTS, X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection
 2. **CORS** — Dynamic origin matching (Replit domains + localhost)
 3. **Body Parser** — JSON (100KB limit)
-4. **Request Logger** — API request timing and response logging
-5. **Route Handlers** — All /api/* endpoints
-6. **Error Handler** — Sanitized error responses
+4. **Auth Middleware** — Firebase JWT validation (skipped in dev mode)
+5. **Request Logger** — API request timing and response logging
+6. **Route Handlers** — All /api/* endpoints
+7. **Error Handler** — Sanitized error responses via `sanitizeErrorMessage()`
 
 ### Rate Limiting
-- In-memory per-IP rate limiter
+- In-memory rate limiter, keyed by authenticated user UID (falls back to IP)
 - Default: 10 requests per 60 seconds
 - Configurable via `RATE_LIMIT_WINDOW_MS` and `RATE_LIMIT_MAX`
 - Applied to all generation endpoints (story, avatar, scene, TTS, video, suggestions)
@@ -120,6 +121,15 @@ SettingsContext (lib/SettingsContext.tsx)
 - Cache key: MD5 of `voice:mode:text`
 - Auto-cleanup of expired files every hour
 - Configurable max age via `TTS_CACHE_MAX_AGE_MS` (default: 24h)
+
+## Authentication Flow
+
+1. App launches → `AuthProvider` in `app/_layout.tsx` initializes Firebase Auth
+2. If no existing user, `signInAnonymously()` creates an anonymous Firebase user
+3. `AuthBridge` component passes the token getter to `query-client.ts`
+4. All API requests include `Authorization: Bearer <token>` header
+5. Server middleware (`server/auth.ts`) validates the token via Firebase Admin SDK
+6. Rate limiting keys on `req.user.uid` instead of IP address
 
 ## Voice Chat Module
 

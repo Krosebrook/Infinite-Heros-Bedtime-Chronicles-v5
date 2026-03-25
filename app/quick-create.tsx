@@ -9,6 +9,7 @@ import {
   TextInput,
   Animated as RNAnimated,
 } from "react-native";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { router } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
 import { Ionicons } from "@expo/vector-icons";
@@ -139,10 +140,9 @@ export default function QuickCreateScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         showsVerticalScrollIndicator={false}
         contentContainerStyle={[styles.content, { paddingBottom: 120 + bottomInset }]}
-        keyboardShouldPersistTaps="handled"
       >
         <Animated.View entering={FadeInDown.duration(400).delay(100)}>
           <Text style={styles.sectionLabel}>Choose a Theme</Text>
@@ -281,7 +281,7 @@ export default function QuickCreateScreen() {
             </View>
           </RNAnimated.View>
         </Animated.View>
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
 
       <Animated.View
         entering={FadeInUp.duration(500).delay(300)}

@@ -4,7 +4,6 @@ import { registerRoutes } from "./routes";
 import * as fs from "fs";
 import * as path from "path";
 
-const app = express();
 const log = console.log;
 
 function validateEnvironment() {
@@ -63,6 +62,8 @@ function setupSecurityHeaders(app: express.Application) {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' https:;");
+    res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     next();
   });
 }
@@ -70,6 +71,15 @@ function setupSecurityHeaders(app: express.Application) {
 function setupCors(app: express.Application) {
   app.use((req, res, next) => {
     const origins = new Set<string>();
+
+    // Custom domain
+    origins.add("https://bedtime-chronicles.com");
+    origins.add("https://www.bedtime-chronicles.com");
+
+    // Vercel preview deployments
+    if (process.env.VERCEL_URL) {
+      origins.add(`https://${process.env.VERCEL_URL}`);
+    }
 
     if (process.env.REPLIT_DEV_DOMAIN) {
       origins.add(`https://${process.env.REPLIT_DEV_DOMAIN}`);
@@ -83,17 +93,28 @@ function setupCors(app: express.Application) {
 
     const origin = req.header("origin");
 
-    const isLocalhost =
-      origin?.startsWith("http://localhost:") ||
-      origin?.startsWith("http://127.0.0.1:");
+    const ALLOWED_LOCAL_PORTS = [5000, 8081, 19000, 19001, 19002, 19003, 19004, 19005, 19006];
+    const isLocalhost = (() => {
+      if (!origin) return false;
+      try {
+        const url = new URL(origin);
+        const isLocal = url.hostname === 'localhost' || url.hostname === '127.0.0.1';
+        return isLocal && ALLOWED_LOCAL_PORTS.includes(parseInt(url.port, 10));
+      } catch {
+        return false;
+      }
+    })();
 
-    if (origin && (origins.has(origin) || isLocalhost)) {
+    // Allow Vercel preview URLs (*.vercel.app)
+    const isVercelPreview = origin ? /\.vercel\.app$/.test(new URL(origin).hostname) : false;
+
+    if (origin && (origins.has(origin) || isLocalhost || isVercelPreview)) {
       res.header("Access-Control-Allow-Origin", origin);
       res.header(
         "Access-Control-Allow-Methods",
         "GET, POST, PUT, DELETE, OPTIONS",
       );
-      res.header("Access-Control-Allow-Headers", "Content-Type");
+      res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
       res.header("Access-Control-Allow-Credentials", "true");
     }
 
@@ -260,16 +281,24 @@ function configureExpoAndLanding(app: express.Application) {
   log("Expo routing: Checking expo-platform header on / and /manifest");
 }
 
+function sanitizeErrorMessage(err: unknown): string {
+  if (err instanceof Error) {
+    // Strip stack traces and internal details
+    return err.message.replace(/\n.*/gs, '').slice(0, 200);
+  }
+  return 'Internal Server Error';
+}
+
 function setupErrorHandler(app: express.Application) {
   app.use((err: unknown, _req: Request, res: Response, next: NextFunction) => {
-    const error = err as {
-      status?: number;
-      statusCode?: number;
-      message?: string;
-    };
+    const status =
+      err != null && typeof err === 'object' && 'status' in err
+        ? (err as { status: number }).status
+        : err != null && typeof err === 'object' && 'statusCode' in err
+          ? (err as { statusCode: number }).statusCode
+          : 500;
 
-    const status = error.status || error.statusCode || 500;
-    const message = error.message || "Internal Server Error";
+    const message = sanitizeErrorMessage(err);
 
     console.error("Internal Server Error:", err);
 
@@ -277,11 +306,13 @@ function setupErrorHandler(app: express.Application) {
       return next(err);
     }
 
-    return res.status(status).json({ message });
+    return res.status(status).json({ error: message });
   });
 }
 
-(async () => {
+export async function createApp(): Promise<express.Application> {
+  const app = express();
+
   validateEnvironment();
   setupSecurityHeaders(app);
   setupCors(app);
@@ -290,34 +321,45 @@ function setupErrorHandler(app: express.Application) {
 
   configureExpoAndLanding(app);
 
-  const server = await registerRoutes(app);
+  await registerRoutes(app);
 
   setupErrorHandler(app);
 
-  const port = parseInt(process.env.PORT || "5000", 10);
-  server.listen(
-    {
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    },
-    () => {
-      log(`express server serving on port ${port}`);
-    },
-  );
+  return app;
+}
 
-  function gracefulShutdown(signal: string) {
-    log(`[Shutdown] Received ${signal}, closing server...`);
-    server.close(() => {
-      log("[Shutdown] Server closed cleanly");
-      process.exit(0);
-    });
-    setTimeout(() => {
-      log("[Shutdown] Forcing exit after timeout");
-      process.exit(1);
-    }, 10_000);
-  }
+// Only start the server when running directly (not imported by Vercel)
+if (!process.env.VERCEL) {
+  (async () => {
+    const app = await createApp();
+    const { createServer } = await import("node:http");
+    const server = createServer(app);
 
-  process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-  process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-})();
+    const port = parseInt(process.env.PORT || "5000", 10);
+    server.listen(
+      {
+        port,
+        host: "0.0.0.0",
+        reusePort: true,
+      },
+      () => {
+        log(`express server serving on port ${port}`);
+      },
+    );
+
+    function gracefulShutdown(signal: string) {
+      log(`[Shutdown] Received ${signal}, closing server...`);
+      server.close(() => {
+        log("[Shutdown] Server closed cleanly");
+        process.exit(0);
+      });
+      setTimeout(() => {
+        log("[Shutdown] Forcing exit after timeout");
+        process.exit(1);
+      }, 10_000);
+    }
+
+    process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+    process.on("SIGINT", () => gracefulShutdown("SIGINT"));
+  })();
+}

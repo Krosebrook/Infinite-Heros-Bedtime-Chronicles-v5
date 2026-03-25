@@ -1,3 +1,4 @@
+<!-- Last verified: 2026-03-25 -->
 # CLAUDE.md - Infinity Heroes: Bedtime Chronicles v5
 
 ## Project Overview
@@ -21,7 +22,7 @@ AI-powered interactive bedtime story app for children ages 3-9. Kids create cust
 - **AI:** Multi-provider router with per-task fallback chains (e.g., `story`: Anthropic → Gemini → OpenAI → Meta-Llama → xAI → Mistral → Cohere; `suggestion`: Gemini-first chain — see `server/ai/router.ts`)
 - **TTS:** ElevenLabs API (eleven_multilingual_v2 model, MP3 44.1kHz/128kbps, 9 narrator voices)
 - **Video:** OpenAI Sora 2 (optional)
-- **Build:** esbuild (server), Metro (client), Babel with React Compiler
+- **Build:** Babel with React Compiler enabled
 
 ## Project Structure
 
@@ -388,6 +389,43 @@ npm run test:coverage   # vitest run --coverage
 - File naming: `<module>.test.ts` alongside the source file (e.g., `lib/storage.test.ts`)
 - Target: >=80% branch coverage for server utilities
 - Mocks: mock all external API calls (Gemini, OpenAI, ElevenLabs)
+
+## Testing Approach
+
+**No automated test suite exists yet.** This is the top item on the roadmap.
+
+Until tests are added: verify happy path + error states manually before committing. Document manual test steps in the PR description.
+
+When a test framework is added, target:
+- File naming: `<module>.test.ts` alongside the source file
+- Coverage: ≥80% branch coverage for server utilities
+- Mocks: mock all external API calls (Gemini, OpenAI, ElevenLabs)
+
+## Common Tasks
+
+### Add a new API endpoint
+1. Add the route handler in `server/routes.ts` (or a new file under `server/`)
+2. Follow the existing pattern: validate input with Zod, call logic, return JSON
+3. Apply rate limiting if the endpoint calls external APIs
+4. Document in `docs/API.md`
+5. Update `README.md` endpoint table if it's a primary endpoint
+
+### Add a new AI provider
+1. Create `server/ai/providers/<name>.ts` mirroring the existing provider pattern
+2. Add it to the fallback chain in `server/ai/index.ts`
+3. Add the API key env var to `.env.example`
+4. Update `docs/ARCHITECTURE.md` AI routing section
+
+### Add a new screen
+1. Create `app/<screen-name>.tsx` (Expo Router auto-registers it)
+2. For tab screens, place under `app/(tabs)/`
+3. Import styles from `constants/colors.ts`, wrap in `SafeAreaView`
+4. Update `README.md` project structure if it's a significant screen
+
+### Add a new AsyncStorage key
+1. Add the helper functions in `lib/storage.ts`
+2. Use the `@infinity_heroes_<descriptor>` key naming convention
+3. Document the key and data shape in `lib/storage.ts` with a JSDoc comment
 
 ## Environment Variables
 

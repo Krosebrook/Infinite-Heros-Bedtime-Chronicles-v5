@@ -14,7 +14,10 @@
     "start": "npx expo start",
     "lint": "npx expo lint",
     "lint:fix": "npx expo lint --fix",
-    "typecheck": "npx tsc --noEmit"
+    "typecheck": "npx tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.78.0",
@@ -80,10 +83,13 @@
     "@expo/ngrok": "^4.1.0",
     "@types/express": "^5.0.0",
     "@types/react": "~19.1.10",
+    "@types/supertest": "^7.2.0",
     "babel-plugin-react-compiler": "^19.0.0-beta-e993439-20250117",
     "drizzle-kit": "^0.18.1",
     "patch-package": "^8.0.0",
-    "typescript": "~5.9.2"
+    "supertest": "^7.2.2",
+    "typescript": "~5.9.2",
+    "vitest": "^4.1.1"
   },
   "private": true
 }

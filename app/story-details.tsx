@@ -5,11 +5,11 @@ import {
   Pressable,
   StyleSheet,
   Platform,
-  ScrollView,
   TextInput,
   Image,
   Dimensions,
 } from "react-native";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { Ionicons } from "@expo/vector-icons";
 import type { ComponentProps } from "react";
 import { router, useLocalSearchParams } from "expo-router";
@@ -160,7 +160,7 @@ export default function StoryDetailsScreen() {
         style={StyleSheet.absoluteFill}
       />
 
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: 100 + bottomInset }}
         bounces={false}
@@ -365,7 +365,7 @@ export default function StoryDetailsScreen() {
             </View>
           </Animated.View>
         </View>
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
 
       <View style={[styles.bottomCTA, { paddingBottom: bottomInset + 12 }]}>
         <LinearGradient

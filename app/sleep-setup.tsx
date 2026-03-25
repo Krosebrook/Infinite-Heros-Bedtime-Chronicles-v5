@@ -7,6 +7,7 @@ import {
   Platform,
   ScrollView,
 } from "react-native";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useLocalSearchParams } from "expo-router";
 import { LinearGradient } from "expo-linear-gradient";
@@ -95,7 +96,7 @@ export default function SleepSetupScreen() {
         <View style={{ width: 40 }} />
       </View>
 
-      <ScrollView
+      <KeyboardAwareScrollViewCompat
         contentContainerStyle={[styles.scrollContent, { paddingBottom: bottomInset + 120 }]}
         showsVerticalScrollIndicator={false}
       >
@@ -173,7 +174,7 @@ export default function SleepSetupScreen() {
             </View>
           </View>
         </Animated.View>
-      </ScrollView>
+      </KeyboardAwareScrollViewCompat>
 
       <Animated.View
         entering={FadeInDown.duration(500).delay(400)}

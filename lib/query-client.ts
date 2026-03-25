@@ -1,19 +1,30 @@
 import { fetch } from "expo/fetch";
 import { QueryClient, QueryFunction } from "@tanstack/react-query";
 
+let _getAuthToken: (() => Promise<string | null>) | null = null;
+
+export function setAuthTokenGetter(getter: () => Promise<string | null>) {
+  _getAuthToken = getter;
+}
+
 /**
  * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
-  let host = process.env.EXPO_PUBLIC_DOMAIN;
-
-  if (!host) {
-    throw new Error("EXPO_PUBLIC_DOMAIN is not set");
+  const apiUrl = process.env.EXPO_PUBLIC_API_URL;
+  if (apiUrl) {
+    return apiUrl.endsWith('/') ? apiUrl : `${apiUrl}/`;
   }
 
-  let url = new URL(`https://${host}`);
+  const host = process.env.EXPO_PUBLIC_DOMAIN;
+  if (!host) {
+    throw new Error("EXPO_PUBLIC_API_URL or EXPO_PUBLIC_DOMAIN must be set");
+  }
 
+  const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1');
+  const protocol = isLocal ? 'http' : 'https';
+  const url = new URL(`${protocol}://${host}`);
   return url.href;
 }
 
@@ -32,9 +43,21 @@ export async function apiRequest(
   const baseUrl = getApiUrl();
   const url = new URL(route, baseUrl);
 
+  const headers: Record<string, string> = {};
+  if (data) {
+    headers['Content-Type'] = 'application/json';
+  }
+
+  if (_getAuthToken) {
+    const token = await _getAuthToken();
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  }
+
   const res = await fetch(url.toString(), {
     method,
-    headers: data ? { "Content-Type": "application/json" } : {},
+    headers,
     body: data ? JSON.stringify(data) : undefined,
     credentials: "include",
   });
@@ -52,7 +75,16 @@ export const getQueryFn: <T>(options: {
     const baseUrl = getApiUrl();
     const url = new URL(queryKey.join("/") as string, baseUrl);
 
+    const fetchHeaders: Record<string, string> = {};
+    if (_getAuthToken) {
+      const token = await _getAuthToken();
+      if (token) {
+        fetchHeaders['Authorization'] = `Bearer ${token}`;
+      }
+    }
+
     const res = await fetch(url.toString(), {
+      headers: fetchHeaders,
       credentials: "include",
     });
 

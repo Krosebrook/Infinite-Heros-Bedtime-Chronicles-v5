@@ -8,6 +8,7 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Image,
 } from "react-native";
 import { Audio, AVPlaybackStatus } from "expo-av";
 import { Ionicons, MaterialCommunityIcons } from "@expo/vector-icons";
@@ -26,6 +27,8 @@ import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withSpring,
+  withRepeat,
+  withTiming,
 } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { HEROES, Hero } from "@/constants/heroes";
@@ -158,6 +161,48 @@ export default function CreateScreen() {
   const [suggestionLoading, setSuggestionLoading] = useState(false);
   const [suggestionDismissed, setSuggestionDismissed] = useState(false);
   const lastFetchedHeroRef = useRef<number>(-1);
+
+  const [heroAvatarUri, setHeroAvatarUri] = useState<Record<string, string>>({});
+  const [avatarLoading, setAvatarLoading] = useState<Record<string, boolean>>({});
+  const avatarShimmerOpacity = useSharedValue(0.3);
+
+  useEffect(() => {
+    avatarShimmerOpacity.value = withRepeat(
+      withTiming(1, { duration: 800 }),
+      -1,
+      true,
+    );
+  }, []);
+
+  const shimmerStyle = useAnimatedStyle(() => ({
+    opacity: avatarShimmerOpacity.value,
+  }));
+
+  useEffect(() => {
+    const h = HEROES[heroIndex];
+    if (heroAvatarUri[h.id] || avatarLoading[h.id]) return;
+
+    setAvatarLoading((prev) => ({ ...prev, [h.id]: true }));
+
+    apiRequest("POST", "/api/generate-avatar", {
+      heroName: h.name,
+      heroTitle: h.title,
+      heroPower: h.power,
+      heroDescription: h.description,
+    })
+      .then((res) => res.json())
+      .then((data: { image?: string }) => {
+        if (data.image) {
+          setHeroAvatarUri((prev) => ({ ...prev, [h.id]: data.image! }));
+        }
+      })
+      .catch((e) => {
+        if (__DEV__) console.log("Avatar fetch failed:", e);
+      })
+      .finally(() => {
+        setAvatarLoading((prev) => ({ ...prev, [h.id]: false }));
+      });
+  }, [heroIndex]);
 
   const hero = HEROES[heroIndex];
   const theme = MODE_THEMES[mode];
@@ -495,7 +540,18 @@ export default function CreateScreen() {
             <View style={s.glassCard}>
               <View style={s.heroDetailRow}>
                 <View style={[s.heroDetailIcon, { backgroundColor: `${hero.color}20` }]}>
-                  <Ionicons name={hero.iconName} size={28} color={hero.color} />
+                  {heroAvatarUri[hero.id] ? (
+                    <Image
+                      source={{ uri: heroAvatarUri[hero.id] }}
+                      style={s.heroAvatarImage}
+                    />
+                  ) : avatarLoading[hero.id] ? (
+                    <Animated.View style={[s.heroAvatarShimmer, { backgroundColor: `${hero.color}40` }, shimmerStyle]}>
+                      <Ionicons name={hero.iconName} size={28} color={hero.color} />
+                    </Animated.View>
+                  ) : (
+                    <Ionicons name={hero.iconName} size={28} color={hero.color} />
+                  )}
                 </View>
                 <View style={{ flex: 1 }}>
                   <Text style={s.heroDetailName}>{hero.name}</Text>
@@ -862,6 +918,19 @@ const s = StyleSheet.create({
     marginBottom: 10,
   },
   heroDetailIcon: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  heroAvatarImage: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+  },
+  heroAvatarShimmer: {
     width: 48,
     height: 48,
     borderRadius: 24,

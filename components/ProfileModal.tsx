@@ -9,6 +9,7 @@ import {
   TextInput,
   Platform,
 } from "react-native";
+import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 import { Ionicons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import * as Haptics from "expo-haptics";
@@ -107,10 +108,9 @@ export function ProfileModal({ visible, onClose }: Props) {
   };
 
   const renderForm = () => (
-    <ScrollView
+    <KeyboardAwareScrollViewCompat
       contentContainerStyle={[styles.formScroll, { paddingBottom: bottomInset + 40 }]}
       showsVerticalScrollIndicator={false}
-      keyboardShouldPersistTaps="handled"
     >
       <Text style={styles.sectionTitle}>NAME</Text>
       <TextInput
@@ -180,7 +180,7 @@ export function ProfileModal({ visible, onClose }: Props) {
           {screen === "edit" ? "Save Changes" : "Create Profile"}
         </Text>
       </Pressable>
-    </ScrollView>
+    </KeyboardAwareScrollViewCompat>
   );
 
   return (

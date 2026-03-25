@@ -11,22 +11,16 @@ AI-powered interactive bedtime story app for children ages 3-9. Kids create cust
 
 ## Tech Stack
 
-| Layer | Technology | Version |
-|-------|-----------|---------|
-| Mobile framework | Expo + React Native | SDK 54 / RN 0.81 |
-| Router | Expo Router (file-based) | v6 |
-| Backend | Express.js | v5 |
-| AI (primary) | Anthropic Claude | claude-sonnet-4-6 |
-| AI (fallbacks) | Gemini, OpenAI, OpenRouter | gemini-2.5-flash / gpt-4o-mini |
-| TTS | ElevenLabs | eleven_multilingual_v2 |
-| Database | PostgreSQL + Drizzle ORM | drizzle-orm 0.39 |
-| Client storage | AsyncStorage | 2.2.0 |
-| State management | React Context + TanStack React Query | v5 |
-| Animation | react-native-reanimated | v4 |
-| Build/bundle | esbuild (server), Metro (client) | — |
-
-Additional details:
+- **Frontend:** Expo SDK 54, React Native 0.81 (New Architecture), Expo Router v6 (file-based routing)
+- **State:** TanStack React Query v5 (server state) + React Context (app settings, profiles)
+- **Local Storage:** AsyncStorage for stories, profiles, badges, streaks, parent controls
+- **Styling:** React Native StyleSheet + react-native-reanimated v4 for animations
 - **Fonts:** Nunito (primary), Plus Jakarta Sans (UI), Bangers (display/titles)
+- **Validation:** Zod v3
+- **Backend:** Express.js v5, TypeScript, Node.js 18+
+- **Database:** PostgreSQL + Drizzle ORM (voice chat features only)
+- **AI:** Multi-provider router with per-task fallback chains (e.g., `story`: Anthropic → Gemini → OpenAI → Meta-Llama → xAI → Mistral → Cohere; `suggestion`: Gemini-first chain — see `server/ai/router.ts`)
+- **TTS:** ElevenLabs API (eleven_multilingual_v2 model, MP3 44.1kHz/128kbps, 9 narrator voices)
 - **Video:** OpenAI Sora 2 (optional)
 - **Build:** Babel with React Compiler enabled
 
@@ -48,7 +42,9 @@ app/                    # Expo Router screens (file-based routing)
   welcome.tsx           # Onboarding splash (fade animation)
 components/             # Reusable React Native components
   ErrorBoundary.tsx     # Error boundary wrapper
+  ErrorFallback.tsx     # Error fallback UI component
   HeroCard.tsx          # Hero template card (orphaned — kept for future reuse)
+  KeyboardAwareScrollViewCompat.tsx  # Cross-platform keyboard-aware scroll
   MemoryJar.tsx         # Story memory display
   ParentControlsModal.tsx  # Parent controls (PIN-protected)
   ProfileModal.tsx      # Child profile management
@@ -63,8 +59,11 @@ constants/              # Types, hero templates, colors, timing
 lib/                    # Client utilities
   SettingsContext.tsx    # Unified settings provider (React Context)
   ProfileContext.tsx     # Child profile context
+  AuthContext.tsx        # Authentication context
   storage.ts            # AsyncStorage helpers
+  storage.test.ts       # Storage unit tests
   query-client.ts       # TanStack React Query config (staleTime: Infinity, retry: false)
+  query-client.test.ts  # Query client unit tests
 server/                 # Express.js backend
   index.ts              # Server bootstrap, security middleware, CORS, graceful shutdown
   routes.ts             # All API endpoints (~33KB, 30+ endpoints)
@@ -76,12 +75,12 @@ server/                 # Express.js backend
   elevenlabs.ts         # TTS voice definitions & generation
   suno.ts               # Background music serving
   video.ts              # Sora video generation
-  storage.ts            # Server-side storage utilities
+  storage.ts            # Server-side in-memory story cache (NOT the same as lib/storage.ts)
   db.ts                 # Drizzle ORM client
   replit_integrations/  # Audio, chat, image, batch modules (conditionally registered)
   templates/            # HTML templates (landing page)
 shared/                 # Shared between client & server
-  schema.ts             # Drizzle ORM schema (users table)
+  schema.ts             # Drizzle ORM schema (users table, re-exports models/chat.ts)
   models/chat.ts        # Conversation & message tables
 docs/                   # Project documentation
   ARCHITECTURE.md       # System design & data flow
@@ -114,6 +113,11 @@ npm run lint                # npx expo lint
 npm run lint:fix            # npx expo lint --fix
 npm run typecheck           # npx tsc --noEmit
 
+# Testing
+npm test                    # vitest run (single run)
+npm run test:watch          # vitest (watch mode)
+npm run test:coverage       # vitest run --coverage
+
 # Database
 npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 ```
@@ -136,15 +140,15 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 | 1 | Anthropic | `claude-sonnet-4-6` |
 | 2 | Gemini | `gemini-2.5-flash` |
 | 3 | OpenAI | `gpt-4o-mini` |
-| 4 | OpenRouter/xAI | `x-ai/grok-3-mini` |
-| 5 | OpenRouter/Mistral | `mistralai/mistral-small-3.1-24b-instruct` |
-| 6 | OpenRouter/Cohere | `cohere/command-a-03-2025` |
-| 7 | OpenRouter/Meta | `meta-llama/llama-4-scout-17b-16e-instruct` |
+| 4 | OpenRouter/Meta | `meta-llama/llama-4-scout-17b-16e-instruct` |
+| 5 | OpenRouter/xAI | `x-ai/grok-3-mini` |
+| 6 | OpenRouter/Mistral | `mistralai/mistral-small-3.1-24b-instruct` |
+| 7 | OpenRouter/Cohere | `cohere/command-a-03-2025` |
 
 **Image Generation:**
 | Priority | Provider | Model |
 |----------|----------|-------|
-| 1 | Gemini | `gemini-2.5-flash` (with optional thinking budget) |
+| 1 | Gemini | `gemini-2.5-flash-image` (with optional thinking budget) |
 | 2 | OpenAI | `gpt-image-1` |
 
 ### Story Modes
@@ -186,24 +190,14 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 - `GET /api/video-status/:id` — Check video job status
 - `GET /api/video/:id` — Retrieve generated video
 
-**Voice Chat (requires DATABASE_URL + OPENAI_API_KEY):**
-- `POST /api/conversations/send` — Send voice message
+**Voice Chat (requires AI_INTEGRATIONS_OPENAI_API_KEY + AI_INTEGRATIONS_OPENAI_BASE_URL + DATABASE_URL):**
+- `GET /api/conversations` — List conversations
+- `POST /api/conversations` — Create new conversation
 - `GET /api/conversations/:id` — Get conversation history
+- `DELETE /api/conversations/:id` — Delete conversation
+- `POST /api/conversations/:id/messages` — Send voice message in a conversation
 
 ## Code Conventions
-
-### File Organization
-- `app/` — Expo Router screens only (file = route)
-- `app/(tabs)/` — Tab-navigated screens: `index`, `create`, `library`, `saved`, `profile`
-- `components/` — Reusable React Native components
-- `constants/` — Static data: `types.ts`, `heroes.ts`, `colors.ts`, `timing.ts`
-- `lib/` — Client-side utilities and contexts: `storage.ts`, `SettingsContext.tsx`, `ProfileContext.tsx`, `query-client.ts`
-- `server/` — Express backend: `index.ts` (bootstrap), `routes.ts` (route registration)
-- `server/ai/` — Multi-provider AI router with fallback chain
-- `server/ai/providers/` — One file per AI provider (gemini, openai, anthropic, openrouter)
-- `server/replit_integrations/` — Voice chat, audio, image, batch utilities
-- `shared/` — Code shared between client and server (Drizzle schema, Zod models)
-- `docs/` — All project documentation
 
 ### Naming
 - Files: `kebab-case.ts` for utilities, `PascalCase.tsx` for React components
@@ -214,25 +208,95 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 
 ### TypeScript
 - Strict mode enabled — never use `any` without a `// intentional: <reason>` comment
+- Path aliases: `@/*` (project root), `@shared/*` (shared folder)
 - All API request/response shapes defined in `shared/schema.ts` or inline Zod schemas
 - Component props typed inline as interfaces above the component
-- Path aliases: `@/*` (project root), `@shared/*` (shared folder)
+- Core interfaces in `constants/types.ts`: StoryPart, CachedStory, ChildProfile, EarnedBadge, ParentControls
 
 ### Styling
 - Use `StyleSheet.create()` — no inline style objects except for dynamic values
 - Color constants from `constants/colors.ts` — never hardcode color hex values
-- Theme: cosmic midnight/indigo/purple glassmorphism; accent `#6366f1`
+- Cosmic theme: primary `#05051e`, accent `#6366f1`, starlight `#E8E4F0`
 - Glassmorphism: `rgba(255,255,255,0.03)` bg + `rgba(255,255,255,0.1)` border
-- Portrait orientation only; dark UI by default (`userInterfaceStyle: "dark"`)
+- Dark UI by default (`userInterfaceStyle: "dark"` in app.json)
+- Portrait orientation only
 
 ### Error Handling
-- Server: catch errors, log with context, return `{ error: string }` with appropriate HTTP status. Never leak stack traces to clients.
+- Server (global handler): catch errors, sanitize via `sanitizeErrorMessage()` (strips newlines, truncates to 200 chars), return `{ error: string }` with appropriate HTTP status. Never leak stack traces.
+- Route-level validation errors (e.g. Zod schema failures): return `{ error: "Human-readable message" }` directly from handler.
 - Client: use React Error Boundaries for screen-level errors; show user-friendly message, not raw error
 - AI calls: the AI router handles provider fallback automatically; callers should still catch final failure
 
-## Key Patterns & Conventions
+## Architecture Constraints
 
-### Story Response Schema (AI must return)
+- **AI calls must go through `server/ai/index.ts`** — never call AI provider SDKs directly from routes
+- **No AI keys on the client** — all provider keys are server-side environment variables only
+- **Input sanitization is mandatory** — all user-provided string inputs must pass through `sanitizeString()` before inclusion in AI prompts; default limit is 500 chars (higher limits for specific fields, e.g. `sceneText` uses 2000 chars)
+- **Child safety system prompt** — the `CHILD_SAFETY_RULES` constant must be included in every story generation prompt. Never remove or bypass it
+- **Rate limiting** — per-IP sliding window rate limiter protects all POST endpoints. Do not add endpoints that bypass it
+- **AsyncStorage** is the canonical client-side storage. Use helpers in `lib/storage.ts` rather than calling AsyncStorage directly
+- **Settings** live exclusively in `SettingsContext` (`lib/SettingsContext.tsx`). Do not create parallel settings systems
+
+## Security Rules
+
+- Never commit secrets, API keys, or credentials. Use environment variables
+- All server responses must use `sanitizeErrorMessage()` — never return raw error objects
+- TTS filename serving: only files matching `/^[a-f0-9]+\.mp3$/` are served — do not relax this regex
+- Video ID validation: only IDs matching `/^[a-f0-9]+$/` are accepted
+- CORS is restricted to Replit domains + localhost — do not add wildcards
+- Input truncation via `sanitizeString()` is mandatory before any prompt inclusion
+
+### Child Safety Rules (enforced in AI prompts)
+- No violence, weapons, fighting, scary/horror elements
+- No real-world brands, celebrities, or copyrighted characters
+- No death, injury, illness, abandonment, or loss
+- No bullying, meanness, exclusion, or anxiety-inducing language
+- All choices lead to positive outcomes
+- Focus on: courage, kindness, friendship, wonder, imagination, comfort
+
+### Server Middleware Order
+1. Environment validation (warns on missing providers)
+2. Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
+3. CORS (Replit domains + localhost, methods: GET/POST/PUT/DELETE/OPTIONS)
+4. Body parsing (JSON + URL-encoded, 100KB limit)
+5. Request logging
+6. Expo manifest routing
+7. Static file serving
+8. Route registration
+9. Error handler (sanitizes messages)
+
+## Common Tasks
+
+### Add a new API endpoint
+1. Add the route handler in `server/routes.ts` (or a new file under `server/`)
+2. Follow the existing pattern: validate input with Zod, call logic, return JSON
+3. Apply rate limiting if the endpoint calls external APIs
+4. Document in `docs/API.md`
+5. Update `README.md` endpoint table if it's a primary endpoint
+
+### Add a new AI provider
+1. Create `server/ai/providers/<name>.ts` mirroring the existing provider pattern
+2. Add it to the fallback chain in `server/ai/index.ts`
+3. Add the API key env var to `.env.example`
+4. Update `docs/ARCHITECTURE.md` AI routing section
+
+### Add a new screen
+1. Create `app/<screen-name>.tsx` (Expo Router auto-registers it)
+2. For tab screens, place under `app/(tabs)/`
+3. Import styles from `constants/colors.ts`, wrap in `SafeAreaView`
+4. Update `README.md` project structure if it's a significant screen
+
+### Add a new AsyncStorage key
+1. Add the helper functions in `lib/storage.ts`
+2. Use the `@infinity_heroes_<descriptor>` key naming convention
+3. Document the key and data shape in `lib/storage.ts` with a JSDoc comment
+
+### Run a database migration
+```bash
+npm run db:push   # Applies schema changes to DATABASE_URL target
+```
+
+## Story Response Schema (AI must return)
 ```json
 {
   "title": "3-6 word title",
@@ -245,15 +309,7 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 }
 ```
 
-### Child Safety Rules (enforced in AI prompts)
-- No violence, weapons, fighting, scary/horror elements
-- No real-world brands, celebrities, or copyrighted characters
-- No death, injury, illness, abandonment, or loss
-- No bullying, meanness, exclusion, or anxiety-inducing language
-- All choices lead to positive outcomes
-- Focus on: courage, kindness, friendship, wonder, imagination, comfort
-
-### Client Storage Keys (AsyncStorage)
+## Client Storage Keys (AsyncStorage)
 - `@infinity_heroes_app_settings` — App settings JSON
 - `@infinity_heroes_profiles` — Child profiles
 - `@infinity_heroes_active_profile` — Currently selected profile
@@ -265,8 +321,9 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 - `@infinity_heroes_favorites` — Favorite stories
 - `@infinity_heroes_onboarding_complete` — Onboarding flag
 - `@infinity_heroes_preferences` — Legacy key (auto-migrates to app_settings)
+- `@infinity_heroes_settings_migrated` — Migration flag for legacy → new settings
 
-### App Settings (defaults)
+## App Settings (defaults)
 ```typescript
 {
   audioVolume: 80,           // 0-100
@@ -277,8 +334,11 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
   ageRange: "4-6",           // 2-4 | 4-6 | 6-8 | 8-10
   defaultTheme: "fantasy",
   autoGenerateImages: false,
+  extendMode: false,
+  autoPlayNext: false,
   textSize: "medium",        // small | medium | large
   librarySortOrder: "recent", // recent | alphabetical | theme
+  showFavoritesOnly: false,
   autoSave: true,
   isMuted: false,
   reducedMotion: false,
@@ -287,20 +347,20 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 }
 ```
 
-### Narrator Voices (ElevenLabs)
+## Narrator Voices (ElevenLabs)
 **Sleep mode:** moonbeam (Laura), whisper (Sarah), stardust (Gigi)
 **Classic mode:** captain (Charlotte), professor (Callum), aurora (Rachel)
 **Fun mode:** giggles (Freya), blaze (Dave), ziggy (Matilda)
 
 Sleep mode dynamically adjusts non-sleep voices: +stability, -style, no speaker boost.
 
-### Content Themes
+## Content Themes
 `courage` | `kindness` | `friendship` | `wonder` | `imagination` | `comfort`
 
-### Hero Templates (8 pre-defined)
+## Hero Templates (8 pre-defined)
 Nova (Guardian of Light), Coral (Heart of the Ocean), Orion (Star of Friendship), Luna (Dream Weaver), Nimbus (Brave Cloud), Bloom (Garden Keeper), Whistle (Night Train Conductor), Shade (Shadow Friend)
 
-### Badge System (12 achievements)
+## Badge System (12 achievements)
 | Badge | Condition |
 |-------|-----------|
 | First Adventure | Complete first story |
@@ -316,44 +376,19 @@ Nova (Guardian of Light), Coral (Heart of the Ocean), Orion (Star of Friendship)
 | Story Legend | Complete 25 total stories |
 | Word Wizard | Learn 5 vocabulary words |
 
-## Architecture Constraints
+## Testing
 
-- **AI calls must go through `server/ai/index.ts`** — never call AI provider SDKs directly from routes.
-- **No AI keys on the client** — all AI provider keys are server-side environment variables only.
-- **Input sanitization is mandatory** — all user-provided string inputs must pass through `sanitizeString()` before inclusion in AI prompts.
-- **Child safety system prompt** — the `CHILD_SAFETY_RULES` constant must be included in every story generation prompt. Never remove or bypass it.
-- **Rate limiting** — per-IP sliding window rate limiter protects all POST endpoints. Do not add endpoints that bypass it.
-- **AsyncStorage** is the canonical client-side storage mechanism. Use the helpers in `lib/storage.ts` rather than calling AsyncStorage directly.
-- **Settings** live exclusively in `SettingsContext` (`lib/SettingsContext.tsx`). Do not create parallel settings systems.
+**Framework:** Vitest v4 with @vitest/coverage-v8
 
-## Security
+```bash
+npm test                # vitest run (single run)
+npm run test:watch      # vitest (watch mode)
+npm run test:coverage   # vitest run --coverage
+```
 
-### Rules
-- Never commit secrets, API keys, or credentials. Use environment variables.
-- All server responses must use `sanitizeErrorMessage()` — never return raw error objects.
-- TTS filename serving: only files matching `/^[a-f0-9]+\.mp3$/` are served — do not relax this regex.
-- Video ID validation: only IDs matching `/^[a-f0-9]+$/` are accepted.
-- CORS is restricted to Replit domains + localhost — do not add wildcards.
-- Input truncation via `sanitizeString()` is mandatory before any prompt inclusion.
-
-### Implemented
-- Server-side API proxy (no API keys exposed to client)
-- Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
-- CORS restrictions (Replit domains + localhost)
-- Graceful shutdown (SIGTERM/SIGINT, 10s timeout)
-- Error sanitization (no internal errors leaked)
-- Rate limiting per IP (10 req/min, cleanup every 5 min)
-
-### Server Middleware Order
-1. Environment validation (warns on missing providers)
-2. Security headers
-3. CORS (Replit domains + localhost, methods: GET/POST/PUT/DELETE/OPTIONS)
-4. Body parsing (JSON + URL-encoded, 100KB limit)
-5. Request logging
-6. Expo manifest routing
-7. Static file serving
-8. Route registration
-9. Error handler (sanitizes messages)
+- File naming: `<module>.test.ts` alongside the source file (e.g., `lib/storage.test.ts`)
+- Target: >=80% branch coverage for server utilities
+- Mocks: mock all external API calls (Gemini, OpenAI, ElevenLabs)
 
 ## Testing Approach
 
@@ -398,12 +433,13 @@ When a test framework is added, target:
 # AI Providers (via Replit integrations)
 AI_INTEGRATIONS_GEMINI_API_KEY=
 AI_INTEGRATIONS_OPENAI_API_KEY=
+AI_INTEGRATIONS_OPENAI_BASE_URL=     # Required for voice chat (Replit OpenAI connector base URL)
 AI_INTEGRATIONS_ANTHROPIC_API_KEY=
 AI_INTEGRATIONS_OPENROUTER_API_KEY=
 OPENAI_API_KEY=              # Direct key for video generation
 
 # TTS & Database
-ELEVENLABS_API_KEY=
+ELEVENLABS_API_KEY=          # Optional: if set, used directly; otherwise falls back to Replit ElevenLabs connector
 DATABASE_URL=                # PostgreSQL (required for voice chat only)
 
 # Server Config (optional)
@@ -419,38 +455,42 @@ REPLIT_DOMAINS=              # Production domains (comma-separated)
 EXPO_PUBLIC_DOMAIN=          # Client API domain (set by dev script)
 ```
 
+Minimum required: `AI_INTEGRATIONS_GEMINI_API_KEY`. Optional for full features: OpenAI, Anthropic, ElevenLabs, DATABASE_URL.
+
 ## Development Notes
 
-- **No test framework configured** — MVP stage, no Jest/Vitest/Mocha
+- **Testing:** Vitest v4 configured with coverage via @vitest/coverage-v8
 - **No CI/CD pipelines** — Deployment via Replit push-to-deploy (Google Cloud Run)
 - **React Compiler** enabled via app.json experiments
 - **New Architecture** (React Native) enabled
 - **Typed Routes** enabled for Expo Router
 - **patch-package** used for dependency fixes (applied via postinstall)
-- Database (PostgreSQL) is only required for voice chat features; core story functionality uses AsyncStorage only
+- Database (PostgreSQL) only required for voice chat; core story functionality uses AsyncStorage only
 - Server uses esbuild for production bundling to `server_dist/`
-- Voice chat routes only registered when `AI_INTEGRATIONS_OPENAI_API_KEY` and `DATABASE_URL` are set
+- Voice chat routes only registered when `AI_INTEGRATIONS_OPENAI_API_KEY`, `AI_INTEGRATIONS_OPENAI_BASE_URL`, and `DATABASE_URL` are set
 - React Query configured with `staleTime: Infinity`, `retry: false`, `refetchOnWindowFocus: false`
 - TTS audio cached at `/tmp/tts-cache` with configurable max age
 - 12 randomized art styles for scene illustrations (watercolor, cel-shaded, paper cutout, gouache, crayon, digital, retro storybook, ink wash, pastel, pop art, chalk, flat design)
 
 ## Known Gotchas
 
-- **`npm run dev` does not exist** — use `npm run server:dev` (backend) and `npm run expo:dev` (frontend) separately
-- **`expo:dev` requires Replit env vars** — the `EXPO_PACKAGER_PROXY_URL` / `REPLIT_DEV_DOMAIN` are injected by the Replit shell; outside Replit, use `npx expo start` directly
-- **`server/routes.ts` is very large (~33KB)** — contains all API route handlers
-- **`app/story.tsx` is the most complex screen (~49KB)** — story playback with audio/image integration
-- **AI router automatically falls back** through providers if one fails — check `server/ai/router.ts`
-- **ElevenLabs voices are hardcoded** in `server/elevenlabs.ts` with specific voice IDs
-- **`patches/expo-asset+12.0.12.patch`** — a patch-package fix for Expo dev server HTTPS. Will be removed when Expo upgrades to SDK 55+
-- **`server/replit_integrations/`** — these modules are wired up but the voice chat UI screen doesn't exist yet; backend routes are functional
-- **`lib/storage.ts` vs `server/storage.ts`** — both files exist; `lib/storage.ts` is client-side AsyncStorage helpers; `server/storage.ts` is server-side in-memory story cache
-- **`shared/schema.ts` vs `shared/models/chat.ts`** — `schema.ts` re-exports from `models/chat.ts`; both included in `drizzle.config.ts`
-- **Legacy `@infinity_heroes_preferences` key** auto-migrates to `@infinity_heroes_app_settings`
-- **Server binds to `0.0.0.0`** with `reusePort: true`
-- **JSON body limit is 100KB** — large story payloads may need chunking
-- **`HeroCard.tsx`** — this component exists but is not yet used anywhere (orphaned); kept intentionally for future reuse
-- **`getReadStories` / `markStoryRead`** — these AsyncStorage helpers exist in `lib/storage.ts` but no UI reads/displays the unread state yet
+- `server/routes.ts` is very large (~33KB) — contains all API route handlers
+- `app/story.tsx` is the most complex screen (~49KB) — story playback with audio/image integration
+- **`npm run dev` does not exist** — use `npm run server:dev` + `npm run expo:dev` separately
+- **`expo:dev` requires Replit env vars** — outside Replit, use `npx expo start` directly
+- **`patches/expo-asset+12.0.12.patch`** — patch-package fix for Expo dev server HTTPS; removed when SDK 55+
+- AI router automatically falls back through providers if one fails — check `server/ai/router.ts`
+- ElevenLabs voices are hardcoded in `server/elevenlabs.ts` with specific voice IDs
+- Expo Router v6 file-based routing — screen paths map to file paths in `app/`
+- `postinstall` runs `patch-package` — don't skip it when installing dependencies
+- Metro blocklist includes `.local/state/workflow-logs/**`
+- Legacy `@infinity_heroes_preferences` key auto-migrates to `@infinity_heroes_app_settings`
+- Server binds to `0.0.0.0` with `reusePort: true`
+- JSON body limit is 100KB — large story payloads may need chunking
+- **`lib/storage.ts` vs `server/storage.ts`** — client-side AsyncStorage helpers vs server-side in-memory story cache
+- **`shared/schema.ts` vs `shared/models/chat.ts`** — schema.ts re-exports from models/chat.ts; both in drizzle.config.ts
+- **`getReadStories` / `markStoryRead`** — helpers exist in `lib/storage.ts` but no UI reads the unread state yet
+- **`server/replit_integrations/`** — wired up but voice chat UI screen doesn't exist yet; backend routes are functional
 
 ## Files/Directories — Do Not Modify Without Explicit Approval
 

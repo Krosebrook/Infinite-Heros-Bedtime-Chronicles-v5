@@ -1,10 +1,5 @@
 import OpenAI, { toFile } from "openai";
 import { Buffer } from "node:buffer";
-import { spawn } from "child_process";
-import { writeFile, unlink, readFile } from "fs/promises";
-import { randomUUID } from "crypto";
-import { tmpdir } from "os";
-import { join } from "path";
 
 export const openai = new OpenAI({
   apiKey: process.env.AI_INTEGRATIONS_OPENAI_API_KEY,
@@ -47,68 +42,25 @@ export function detectAudioFormat(buffer: Buffer): AudioFormat {
 }
 
 /**
- * Convert any audio/video format to WAV using ffmpeg.
- * Uses temp files instead of pipes because video containers (MP4/MOV)
- * require seeking to find the audio track.
- */
-export async function convertToWav(audioBuffer: Buffer): Promise<Buffer> {
-  const inputPath = join(tmpdir(), `input-${randomUUID()}`);
-  const outputPath = join(tmpdir(), `output-${randomUUID()}.wav`);
-
-  try {
-    // Write input to temp file (required for video containers that need seeking)
-    await writeFile(inputPath, audioBuffer);
-
-    // Run ffmpeg with file paths
-    await new Promise<void>((resolve, reject) => {
-      const ffmpeg = spawn("ffmpeg", [
-        "-i", inputPath,
-        "-vn",              // Extract audio only (ignore video track)
-        "-f", "wav",
-        "-ar", "16000",     // 16kHz sample rate (good for speech)
-        "-ac", "1",         // Mono
-        "-acodec", "pcm_s16le",
-        "-y",               // Overwrite output
-        outputPath,
-      ]);
-
-      ffmpeg.stderr.on("data", () => {}); // Suppress logs
-      ffmpeg.on("close", (code) => {
-        if (code === 0) resolve();
-        else reject(new Error(`ffmpeg exited with code ${code}`));
-      });
-      ffmpeg.on("error", reject);
-    });
-
-    // Read converted audio
-    return await readFile(outputPath);
-  } finally {
-    // Clean up temp files
-    await unlink(inputPath).catch(() => {});
-    await unlink(outputPath).catch(() => {});
-  }
-}
-
-/**
- * Auto-detect and convert audio to OpenAI-compatible format.
- * - WAV/MP3: Pass through (already compatible)
- * - WebM/MP4/OGG: Convert to WAV via ffmpeg
+ * Auto-detect audio format and return it for OpenAI API consumption.
+ * OpenAI's transcription API natively supports wav, mp3, webm, mp4, and ogg —
+ * no ffmpeg conversion needed.
  */
 export async function ensureCompatibleFormat(
   audioBuffer: Buffer
-): Promise<{ buffer: Buffer; format: "wav" | "mp3" }> {
+): Promise<{ buffer: Buffer; format: "wav" | "mp3" | "webm" | "mp4" | "ogg" }> {
   const detected = detectAudioFormat(audioBuffer);
-  if (detected === "wav") return { buffer: audioBuffer, format: "wav" };
-  if (detected === "mp3") return { buffer: audioBuffer, format: "mp3" };
-  // Convert WebM, MP4, OGG, or unknown to WAV
-  const wavBuffer = await convertToWav(audioBuffer);
-  return { buffer: wavBuffer, format: "wav" };
+  if (detected === "unknown") {
+    // Default to wav and let the API reject if truly unsupported
+    return { buffer: audioBuffer, format: "wav" };
+  }
+  return { buffer: audioBuffer, format: detected };
 }
 
 /**
  * Voice Chat: User speaks, LLM responds with audio (audio-in, audio-out).
- * Uses gpt-audio model via Replit AI Integrations.
- * Note: Browser records WebM/opus - convert to WAV using ffmpeg before calling this.
+ * Uses gpt-4o-audio-preview model via Replit AI Integrations.
+ * Note: Browser records WebM/opus - ensureCompatibleFormat() handles this automatically.
  */
 export async function voiceChat(
   audioBuffer: Buffer,
@@ -142,10 +94,8 @@ export async function voiceChat(
  * Note: Streaming only supports pcm16 output format.
  *
  * @example
- * // Converting browser WebM to WAV before calling:
- * const webmBuffer = Buffer.from(req.body.audio, "base64");
- * const wavBuffer = await convertWebmToWav(webmBuffer);
- * for await (const chunk of voiceChatStream(wavBuffer)) { ... }
+ * const audioBuffer = Buffer.from(req.body.audio, "base64");
+ * for await (const chunk of voiceChatStream(audioBuffer)) { ... }
  */
 export async function voiceChatStream(
   audioBuffer: Buffer,
@@ -182,7 +132,7 @@ export async function voiceChatStream(
 
 /**
  * Text-to-Speech: Converts text to speech verbatim.
- * Uses gpt-audio model via Replit AI Integrations.
+ * Uses gpt-4o-audio-preview model via Replit AI Integrations.
  */
 export async function textToSpeech(
   text: string,
@@ -204,7 +154,7 @@ export async function textToSpeech(
 
 /**
  * Streaming Text-to-Speech: Converts text to speech with real-time streaming.
- * Uses gpt-audio model via Replit AI Integrations.
+ * Uses gpt-4o-audio-preview model via Replit AI Integrations.
  * Note: Streaming only supports pcm16 output format.
  */
 export async function textToSpeechStream(
@@ -239,7 +189,7 @@ export async function textToSpeechStream(
  */
 export async function speechToText(
   audioBuffer: Buffer,
-  format: "wav" | "mp3" | "webm" = "wav"
+  format: "wav" | "mp3" | "webm" | "mp4" | "ogg" = "wav"
 ): Promise<string> {
   const file = await toFile(audioBuffer, `audio.${format}`);
   const response = await openai.audio.transcriptions.create({
@@ -255,7 +205,7 @@ export async function speechToText(
  */
 export async function speechToTextStream(
   audioBuffer: Buffer,
-  format: "wav" | "mp3" | "webm" = "wav"
+  format: "wav" | "mp3" | "webm" | "mp4" | "ogg" = "wav"
 ): Promise<AsyncIterable<string>> {
   const file = await toFile(audioBuffer, `audio.${format}`);
   const stream = await openai.audio.transcriptions.create({

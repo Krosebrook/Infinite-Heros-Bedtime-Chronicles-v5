@@ -43,3 +43,7 @@ static-build/
 server_dist/
 
 .env
+
+# Android EAS — NEVER commit signing keys or service account credentials
+google-services-key.json
+*.keystore

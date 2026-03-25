@@ -9,11 +9,12 @@ AI-powered interactive bedtime story app for children ages 3-9. Kids create cust
 - **Frontend:** Expo SDK 54, React Native 0.81 (New Architecture), Expo Router v6 (file-based routing)
 - **State:** TanStack React Query (server state) + React Context (app settings, profiles)
 - **Local Storage:** AsyncStorage for stories, profiles, badges, streaks, parent controls
-- **Styling:** React Native StyleSheet + react-native-reanimated for animations
+- **Styling:** React Native StyleSheet + react-native-reanimated v4 for animations
+- **Fonts:** Nunito (primary), Plus Jakarta Sans (UI), Bangers (display/titles)
 - **Backend:** Express.js v5, TypeScript, Node.js 18+
 - **Database:** PostgreSQL + Drizzle ORM (voice chat features only)
 - **AI:** Multi-provider router with fallback chain (Anthropic Claude > Gemini > OpenAI > OpenRouter)
-- **TTS:** ElevenLabs API (eleven_multilingual_v2, 8 narrator voices)
+- **TTS:** ElevenLabs API (eleven_multilingual_v2 model, MP3 44.1kHz/128kbps, 9 narrator voices)
 - **Video:** OpenAI Sora 2 (optional)
 - **Build:** esbuild (server), Metro (client), Babel with React Compiler
 
@@ -21,35 +22,52 @@ AI-powered interactive bedtime story app for children ages 3-9. Kids create cust
 
 ```
 app/                    # Expo Router screens (file-based routing)
+  _layout.tsx           # Root layout — providers: ErrorBoundary → QueryClient → Profile → Settings → Gesture → Keyboard
   (tabs)/               # Tab navigation (home, create, library, saved, profile)
-  story.tsx             # Story reading/playback (largest screen ~49KB)
-  story-details.tsx     # Story customization wizard
-  completion.tsx        # Post-story celebration + badge awarding
-  quick-create.tsx      # Fast onboarding hero creation
-  madlibs.tsx           # Mad Libs mode wizard
-  sleep-setup.tsx       # Sleep mode setup
-  settings.tsx          # App settings
+    _layout.tsx          # Tab bar layout (5 tabs, 60px height + bottom inset)
+  story.tsx             # Story reading/playback (largest screen ~49KB, fullScreen fade modal)
+  story-details.tsx     # Story customization wizard (slide from right)
+  completion.tsx        # Post-story celebration + badge awarding (fullScreen fade modal)
+  quick-create.tsx      # Fast onboarding hero creation (modal from bottom)
+  madlibs.tsx           # Mad Libs mode wizard (slide from right)
+  sleep-setup.tsx       # Sleep mode setup (slide from right)
+  settings.tsx          # App settings (slide from right)
+  trophies.tsx          # Badge collection view (slide from right)
+  welcome.tsx           # Onboarding splash (fade animation)
 components/             # Reusable React Native components
+  ErrorBoundary.tsx     # Error boundary wrapper
+  HeroCard.tsx          # Hero template card
+  MemoryJar.tsx         # Story memory display
+  ParentControlsModal.tsx  # Parent controls (PIN-protected)
+  ProfileModal.tsx      # Child profile management
+  SettingsModal.tsx     # Settings overlay
+  PulsingOrb.tsx        # Animated orb effect
+  StarField.tsx         # Background star animation
 constants/              # Types, hero templates, colors, timing
   types.ts              # Core TypeScript interfaces
-  heroes.ts             # Pre-defined hero templates
+  heroes.ts             # 8 pre-defined hero templates
   colors.ts             # Cosmic theme palette
+  timing.ts             # Animation timing constants
 lib/                    # Client utilities
   SettingsContext.tsx    # Unified settings provider (React Context)
   ProfileContext.tsx     # Child profile context
   storage.ts            # AsyncStorage helpers
-  query-client.ts       # TanStack React Query config
+  query-client.ts       # TanStack React Query config (staleTime: Infinity, retry: false)
 server/                 # Express.js backend
-  index.ts              # Server bootstrap, security middleware, CORS
-  routes.ts             # All API endpoints (~33KB, 20+ endpoints)
+  index.ts              # Server bootstrap, security middleware, CORS, graceful shutdown
+  routes.ts             # All API endpoints (~33KB, 30+ endpoints)
   ai/                   # Multi-provider AI router
+    index.ts            # Provider registration & status checking
     router.ts           # AIRouter class with fallback chain
+    types.ts            # AI provider interface definitions
     providers/          # Gemini, OpenAI, Anthropic, OpenRouter
   elevenlabs.ts         # TTS voice definitions & generation
   suno.ts               # Background music serving
   video.ts              # Sora video generation
+  storage.ts            # Server-side storage utilities
   db.ts                 # Drizzle ORM client
-  replit_integrations/  # Audio, chat, image, batch modules
+  replit_integrations/  # Audio, chat, image, batch modules (conditionally registered)
+  templates/            # HTML templates (landing page)
 shared/                 # Shared between client & server
   schema.ts             # Drizzle ORM schema (users table)
   models/chat.ts        # Conversation & message tables
@@ -59,6 +77,7 @@ docs/                   # Project documentation
   SECURITY.md           # OWASP assessment
   ROADMAP.md            # Development roadmap
   CHANGELOG.md          # Version history
+  DEAD-CODE-TRIAGE.md   # Code audit report
 patches/                # patch-package fixes for dependencies
 scripts/                # Build scripts (build.js)
 ```
@@ -71,7 +90,7 @@ npm run server:dev          # Backend on port 5000 (tsx server/index.ts)
 npm run expo:dev            # Frontend on port 8081
 
 # Build
-npm run server:build        # esbuild → server_dist/index.js
+npm run server:build        # esbuild → server_dist/index.js (ESM format)
 npm run expo:static:build   # Expo static build (node scripts/build.js)
 
 # Production
@@ -89,21 +108,74 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 ## Architecture
 
 ```
-[Expo Mobile App] → HTTP/JSON → [Express Server]
+[Expo Mobile App] → HTTP/JSON → [Express Server (port 5000, 0.0.0.0)]
                                    ├→ [AI Router] → Anthropic → Gemini → OpenAI → OpenRouter
-                                   ├→ [ElevenLabs TTS]
+                                   ├→ [ElevenLabs TTS] → /tmp/tts-cache (24h TTL)
                                    ├→ [PostgreSQL + Drizzle] (voice chat history)
                                    └→ [OpenAI Sora] (video generation)
 ```
 
 ### AI Provider Fallback Chain
-- **Text:** Anthropic Claude (claude-sonnet-4-6) → Gemini 2.5 Flash → OpenAI gpt-4o-mini → OpenRouter (xAI, Mistral, Cohere, Meta Llama)
-- **Image:** Gemini 2.5 Flash Image → OpenAI gpt-image-1
+
+**Text Generation:**
+| Priority | Provider | Model |
+|----------|----------|-------|
+| 1 | Anthropic | `claude-sonnet-4-6` |
+| 2 | Gemini | `gemini-2.5-flash` |
+| 3 | OpenAI | `gpt-4o-mini` |
+| 4 | OpenRouter/xAI | `x-ai/grok-3-mini` |
+| 5 | OpenRouter/Mistral | `mistralai/mistral-small-3.1-24b-instruct` |
+| 6 | OpenRouter/Cohere | `cohere/command-a-03-2025` |
+| 7 | OpenRouter/Meta | `meta-llama/llama-4-scout-17b-16e-instruct` |
+
+**Image Generation:**
+| Priority | Provider | Model |
+|----------|----------|-------|
+| 1 | Gemini | `gemini-2.5-flash` (with optional thinking budget) |
+| 2 | OpenAI | `gpt-image-1` |
 
 ### Story Modes
 - **Classic** — Adventure stories with choices
 - **Mad Libs** — Silly stories with user-provided words
 - **Sleep** — Calming, meditative stories for bedtime
+
+### Story Duration Configuration
+| Duration | Parts | Word Count |
+|----------|-------|------------|
+| short | 3 | 200-300 |
+| medium-short | 4 | 350-450 |
+| medium | 5 | 500-650 |
+| long | 6 | 750-950 |
+| epic | 7 | 1000-1300 |
+
+## Key API Endpoints
+
+**Story Generation:**
+- `POST /api/generate-story` — Synchronous story generation (JSON)
+- `POST /api/generate-story-stream` — Streaming story generation (SSE)
+- `POST /api/generate-avatar` — Hero portrait image
+- `POST /api/generate-scene` — Story scene illustration (random art style from 12 presets)
+- `POST /api/suggest-settings` — AI-powered story recommendations
+
+**Text-to-Speech:**
+- `POST /api/tts` — Generate narration (max 5000 chars)
+- `GET /api/tts-audio/:file` — Retrieve cached audio file
+- `POST /api/tts-preview` — Voice preview for selection
+
+**Configuration:**
+- `GET /api/voices` — Available narrator voices for current mode
+- `GET /api/music/:mode` — Background music track
+- `GET /api/health` — Server health check
+- `GET /api/ai-providers` — Provider availability status
+
+**Video (optional):**
+- `POST /api/generate-video` — Create video via Sora 2
+- `GET /api/video-status/:id` — Check video job status
+- `GET /api/video/:id` — Retrieve generated video
+
+**Voice Chat (requires DATABASE_URL + OPENAI_API_KEY):**
+- `POST /api/conversations/send` — Send voice message
+- `GET /api/conversations/:id` — Get conversation history
 
 ## Key Patterns & Conventions
 
@@ -115,25 +187,99 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 ### API Design
 - All endpoints under `/api/*` prefix
 - Response format: JSON or Server-Sent Events (SSE) for streaming
-- Rate limiting: 10 req/min per IP (configurable via env)
+- Rate limiting: 10 req/min per IP (in-memory, cleanup every 5 min)
 - Error responses: `{ "error": "Human-readable message" }`
-- Input sanitization: max 500 chars for string inputs
+- Input sanitization: max 500 chars for string inputs, 100KB body limit
 - No authentication (client-side profiles only)
+
+### Story Response Schema (AI must return)
+```json
+{
+  "title": "3-6 word title",
+  "parts": [{ "text": "2-4 paragraphs", "choices": ["A", "B", "C"], "partIndex": 0 }],
+  "vocabWord": { "word": "...", "definition": "child-friendly definition" },
+  "joke": "age-appropriate joke",
+  "lesson": "gentle life lesson (1-2 sentences)",
+  "tomorrowHook": "teaser for next adventure",
+  "rewardBadge": { "emoji": "...", "title": "2-3 words", "description": "..." }
+}
+```
+
+### Child Safety Rules (enforced in AI prompts)
+- No violence, weapons, fighting, scary/horror elements
+- No real-world brands, celebrities, or copyrighted characters
+- No death, injury, illness, abandonment, or loss
+- No bullying, meanness, exclusion, or anxiety-inducing language
+- All choices lead to positive outcomes
+- Focus on: courage, kindness, friendship, wonder, imagination, comfort
 
 ### Client Storage Keys (AsyncStorage)
 - `@infinity_heroes_app_settings` — App settings JSON
 - `@infinity_heroes_profiles` — Child profiles
+- `@infinity_heroes_active_profile` — Currently selected profile
 - `@infinity_heroes_stories` — Saved stories
+- `@infinity_heroes_read` — Read story tracking
 - `@infinity_heroes_badges` — Earned badges
 - `@infinity_heroes_streaks` — Reading streaks
 - `@infinity_heroes_parent_controls` — Parent controls
 - `@infinity_heroes_favorites` — Favorite stories
 - `@infinity_heroes_onboarding_complete` — Onboarding flag
+- `@infinity_heroes_preferences` — Legacy key (auto-migrates to app_settings)
+
+### App Settings (defaults)
+```typescript
+{
+  audioVolume: 80,           // 0-100
+  audioSpeed: 1.0,
+  narratorVoice: "moonbeam",
+  autoPlay: false,
+  storyLength: "medium",     // short | medium-short | medium | long | epic
+  ageRange: "4-6",           // 2-4 | 4-6 | 6-8 | 8-10
+  defaultTheme: "fantasy",
+  autoGenerateImages: false,
+  textSize: "medium",        // small | medium | large
+  librarySortOrder: "recent", // recent | alphabetical | theme
+  autoSave: true,
+  isMuted: false,
+  reducedMotion: false,
+  fontSize: "normal",        // normal | large
+  sleepTheme: "Cloud Kingdom"
+}
+```
+
+### Narrator Voices (ElevenLabs)
+**Sleep mode:** moonbeam (Laura), whisper (Sarah), stardust (Gigi)
+**Classic mode:** captain (Charlotte), professor (Callum), aurora (Rachel)
+**Fun mode:** giggles (Freya), blaze (Dave), ziggy (Matilda)
+
+Sleep mode dynamically adjusts non-sleep voices: +stability, -style, no speaker boost.
+
+### Content Themes
+`courage` | `kindness` | `friendship` | `wonder` | `imagination` | `comfort`
+
+### Hero Templates (8 pre-defined)
+Nova (Guardian of Light), Coral (Heart of the Ocean), Orion (Star of Friendship), Luna (Dream Weaver), Nimbus (Brave Cloud), Bloom (Garden Keeper), Whistle (Night Train Conductor), Shade (Shadow Friend)
+
+### Badge System (12 achievements)
+| Badge | Condition |
+|-------|-----------|
+| First Adventure | Complete first story |
+| Night Owl | Listen after 8 PM |
+| Early Bird | Listen 5-10 AM |
+| Hero Collector | Use every hero at least once |
+| Silly Storyteller | Complete 3 Mad Libs stories |
+| Dream Weaver | Complete 3 Sleep mode stories |
+| Classic Champion | Complete 5 Classic stories |
+| On Fire! | 3-day reading streak |
+| Diamond Reader | 7-day reading streak |
+| Bookworm | Complete 10 total stories |
+| Story Legend | Complete 25 total stories |
+| Word Wizard | Learn 5 vocabulary words |
 
 ### Styling
-- Cosmic theme with indigo/purple palette (see `constants/colors.ts`)
+- Cosmic theme: primary `#05051e`, accent `#6366f1`, starlight `#E8E4F0`
 - Dark UI by default (`userInterfaceStyle: "dark"` in app.json)
-- Glassmorphism effects throughout
+- Glassmorphism: `rgba(255,255,255,0.03)` bg + `rgba(255,255,255,0.1)` border
 - Portrait orientation only
 
 ### Security (Implemented)
@@ -141,8 +287,20 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 - Security headers (X-Content-Type-Options, X-Frame-Options, etc.)
 - CORS restrictions (Replit domains + localhost)
 - Child safety rules enforced in AI prompts
-- Graceful shutdown (SIGTERM/SIGINT handlers)
+- Graceful shutdown (SIGTERM/SIGINT, 10s timeout)
 - Error sanitization (no internal errors leaked)
+- Rate limiting per IP
+
+### Server Middleware Order
+1. Environment validation (warns on missing providers)
+2. Security headers
+3. CORS (Replit domains + localhost, methods: GET/POST/PUT/DELETE/OPTIONS)
+4. Body parsing (JSON + URL-encoded, 100KB limit)
+5. Request logging
+6. Expo manifest routing
+7. Static file serving
+8. Route registration
+9. Error handler (sanitizes messages)
 
 ## Environment Variables
 
@@ -156,13 +314,19 @@ OPENAI_API_KEY=              # Direct key for video generation
 
 # TTS & Database
 ELEVENLABS_API_KEY=
-DATABASE_URL=                # PostgreSQL (required for voice chat)
+DATABASE_URL=                # PostgreSQL (required for voice chat only)
 
 # Server Config (optional)
-PORT=5000
-RATE_LIMIT_WINDOW_MS=60000
-RATE_LIMIT_MAX=10
-TTS_CACHE_MAX_AGE_MS=86400000
+PORT=5000                    # Default 5000
+NODE_ENV=                    # development | production
+RATE_LIMIT_WINDOW_MS=60000   # Default 60000ms
+RATE_LIMIT_MAX=10            # Default 10 requests
+TTS_CACHE_MAX_AGE_MS=86400000  # Default 24 hours
+
+# Replit-specific (auto-set)
+REPLIT_DEV_DOMAIN=           # Dev server domain
+REPLIT_DOMAINS=              # Production domains (comma-separated)
+EXPO_PUBLIC_DOMAIN=          # Client API domain (set by dev script)
 ```
 
 ## Development Notes
@@ -175,6 +339,10 @@ TTS_CACHE_MAX_AGE_MS=86400000
 - **patch-package** used for dependency fixes (applied via postinstall)
 - Database (PostgreSQL) is only required for voice chat features; core story functionality uses AsyncStorage only
 - Server uses esbuild for production bundling to `server_dist/`
+- Voice chat routes only registered when `AI_INTEGRATIONS_OPENAI_API_KEY` and `DATABASE_URL` are set
+- React Query configured with `staleTime: Infinity`, `retry: false`, `refetchOnWindowFocus: false`
+- TTS audio cached at `/tmp/tts-cache` with configurable max age
+- 12 randomized art styles for scene illustrations (watercolor, cel-shaded, paper cutout, gouache, crayon, digital, retro storybook, ink wash, pastel, pop art, chalk, flat design)
 
 ## Important Gotchas
 
@@ -184,3 +352,7 @@ TTS_CACHE_MAX_AGE_MS=86400000
 - ElevenLabs voices are hardcoded in `server/elevenlabs.ts` with specific voice IDs
 - The app uses Expo Router v6 file-based routing — screen paths map to file paths in `app/`
 - `postinstall` runs `patch-package` — don't skip it when installing dependencies
+- Metro blocklist includes `.local/state/workflow-logs/**`
+- Legacy `@infinity_heroes_preferences` key auto-migrates to `@infinity_heroes_app_settings`
+- Server binds to `0.0.0.0` with `reusePort: true`
+- JSON body limit is 100KB — large story payloads may need chunking

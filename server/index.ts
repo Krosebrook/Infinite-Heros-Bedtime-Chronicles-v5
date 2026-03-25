@@ -63,6 +63,8 @@ function setupSecurityHeaders(app: express.Application) {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("X-XSS-Protection", "1; mode=block");
+    res.setHeader("Permissions-Policy", "camera=(), microphone=(self), geolocation=()");
+    res.setHeader("X-Permitted-Cross-Domain-Policies", "none");
     next();
   });
 }

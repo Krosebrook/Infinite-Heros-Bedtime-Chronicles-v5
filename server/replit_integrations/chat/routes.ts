@@ -7,12 +7,23 @@ const openai = new OpenAI({
   baseURL: process.env.AI_INTEGRATIONS_OPENAI_BASE_URL,
 });
 
+const MAX_TITLE_LENGTH = 200;
+const MAX_MESSAGE_LENGTH = 10000;
+
+function parseIdParam(raw: string): number | null {
+  const id = parseInt(raw, 10);
+  return Number.isFinite(id) && id > 0 ? id : null;
+}
+
 export function registerChatRoutes(app: Express): void {
-  // Get all conversations
+  // Get all conversations (with optional pagination)
   app.get("/api/conversations", async (req: Request, res: Response) => {
     try {
+      const limit = Math.min(Math.max(parseInt(String(req.query.limit), 10) || 50, 1), 200);
+      const offset = Math.max(parseInt(String(req.query.offset), 10) || 0, 0);
       const conversations = await chatStorage.getAllConversations();
-      res.json(conversations);
+      const paginated = conversations.slice(offset, offset + limit);
+      res.json({ data: paginated, total: conversations.length, limit, offset });
     } catch (error) {
       console.error("Error fetching conversations:", error);
       res.status(500).json({ error: "Failed to fetch conversations" });
@@ -22,7 +33,10 @@ export function registerChatRoutes(app: Express): void {
   // Get single conversation with messages
   app.get("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseIdParam(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
       const conversation = await chatStorage.getConversation(id);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
@@ -39,7 +53,10 @@ export function registerChatRoutes(app: Express): void {
   app.post("/api/conversations", async (req: Request, res: Response) => {
     try {
       const { title } = req.body;
-      const conversation = await chatStorage.createConversation(title || "New Chat");
+      const sanitizedTitle = typeof title === "string"
+        ? title.trim().slice(0, MAX_TITLE_LENGTH) || "New Chat"
+        : "New Chat";
+      const conversation = await chatStorage.createConversation(sanitizedTitle);
       res.status(201).json(conversation);
     } catch (error) {
       console.error("Error creating conversation:", error);
@@ -50,7 +67,10 @@ export function registerChatRoutes(app: Express): void {
   // Delete conversation
   app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
     try {
-      const id = parseInt(req.params.id);
+      const id = parseIdParam(req.params.id);
+      if (id === null) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
       await chatStorage.deleteConversation(id);
       res.status(204).send();
     } catch (error) {
@@ -62,11 +82,22 @@ export function registerChatRoutes(app: Express): void {
   // Send message and get AI response (streaming)
   app.post("/api/conversations/:id/messages", async (req: Request, res: Response) => {
     try {
-      const conversationId = parseInt(req.params.id);
+      const conversationId = parseIdParam(req.params.id);
+      if (conversationId === null) {
+        return res.status(400).json({ error: "Invalid conversation ID" });
+      }
       const { content } = req.body;
 
+      if (!content || typeof content !== "string" || content.trim().length === 0) {
+        return res.status(400).json({ error: "Message content is required" });
+      }
+
+      if (content.length > MAX_MESSAGE_LENGTH) {
+        return res.status(400).json({ error: `Message too long. Maximum ${MAX_MESSAGE_LENGTH} characters.` });
+      }
+
       // Save user message
-      await chatStorage.createMessage(conversationId, "user", content);
+      await chatStorage.createMessage(conversationId, "user", content.trim());
 
       // Get conversation history for context
       const messages = await chatStorage.getMessagesByConversation(conversationId);

@@ -18,7 +18,7 @@ AI-powered interactive bedtime story app for children ages 3-9. Kids create cust
 - **Validation:** Zod v3
 - **Backend:** Express.js v5, TypeScript, Node.js 18+
 - **Database:** PostgreSQL + Drizzle ORM (voice chat features only)
-- **AI:** Multi-provider router with fallback chain (Anthropic Claude > Gemini > OpenAI > OpenRouter)
+- **AI:** Multi-provider router with per-task fallback chains (e.g., `story`: Anthropic → Gemini → OpenAI → Meta-Llama → xAI → Mistral → Cohere; `suggestion`: Gemini-first chain — see `server/ai/router.ts`)
 - **TTS:** ElevenLabs API (eleven_multilingual_v2 model, MP3 44.1kHz/128kbps, 9 narrator voices)
 - **Video:** OpenAI Sora 2 (optional)
 - **Build:** esbuild (server), Metro (client), Babel with React Compiler
@@ -139,10 +139,10 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 | 1 | Anthropic | `claude-sonnet-4-6` |
 | 2 | Gemini | `gemini-2.5-flash` |
 | 3 | OpenAI | `gpt-4o-mini` |
-| 4 | OpenRouter/xAI | `x-ai/grok-3-mini` |
-| 5 | OpenRouter/Mistral | `mistralai/mistral-small-3.1-24b-instruct` |
-| 6 | OpenRouter/Cohere | `cohere/command-a-03-2025` |
-| 7 | OpenRouter/Meta | `meta-llama/llama-4-scout-17b-16e-instruct` |
+| 4 | OpenRouter/Meta | `meta-llama/llama-4-scout-17b-16e-instruct` |
+| 5 | OpenRouter/xAI | `x-ai/grok-3-mini` |
+| 6 | OpenRouter/Mistral | `mistralai/mistral-small-3.1-24b-instruct` |
+| 7 | OpenRouter/Cohere | `cohere/command-a-03-2025` |
 
 **Image Generation:**
 | Priority | Provider | Model |
@@ -189,9 +189,12 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 - `GET /api/video-status/:id` — Check video job status
 - `GET /api/video/:id` — Retrieve generated video
 
-**Voice Chat (requires DATABASE_URL + OPENAI_API_KEY):**
-- `POST /api/conversations/send` — Send voice message
+**Voice Chat (requires AI_INTEGRATIONS_OPENAI_API_KEY + AI_INTEGRATIONS_OPENAI_BASE_URL + DATABASE_URL):**
+- `GET /api/conversations` — List conversations
+- `POST /api/conversations` — Create new conversation
 - `GET /api/conversations/:id` — Get conversation history
+- `DELETE /api/conversations/:id` — Delete conversation
+- `POST /api/conversations/:id/messages` — Send voice message in a conversation
 
 ## Code Conventions
 
@@ -218,7 +221,8 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 - Portrait orientation only
 
 ### Error Handling
-- Server: catch errors, log with context, return `{ error: string }` with appropriate HTTP status. Never leak stack traces.
+- Server (global handler): catch errors, sanitize via `sanitizeErrorMessage()` (strips newlines, truncates to 200 chars), return `{ error: string }` with appropriate HTTP status. Never leak stack traces.
+- Route-level validation errors (e.g. Zod schema failures): return `{ error: "Human-readable message" }` directly from handler.
 - Client: use React Error Boundaries for screen-level errors; show user-friendly message, not raw error
 - AI calls: the AI router handles provider fallback automatically; callers should still catch final failure
 
@@ -226,7 +230,7 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 
 - **AI calls must go through `server/ai/index.ts`** — never call AI provider SDKs directly from routes
 - **No AI keys on the client** — all provider keys are server-side environment variables only
-- **Input sanitization is mandatory** — all user-provided string inputs must pass through `sanitizeString()` before inclusion in AI prompts
+- **Input sanitization is mandatory** — all user-provided string inputs must pass through `sanitizeString()` before inclusion in AI prompts; default limit is 500 chars (higher limits for specific fields, e.g. `sceneText` uses 2000 chars)
 - **Child safety system prompt** — the `CHILD_SAFETY_RULES` constant must be included in every story generation prompt. Never remove or bypass it
 - **Rate limiting** — per-IP sliding window rate limiter protects all POST endpoints. Do not add endpoints that bypass it
 - **AsyncStorage** is the canonical client-side storage. Use helpers in `lib/storage.ts` rather than calling AsyncStorage directly
@@ -391,12 +395,13 @@ npm run test:coverage   # vitest run --coverage
 # AI Providers (via Replit integrations)
 AI_INTEGRATIONS_GEMINI_API_KEY=
 AI_INTEGRATIONS_OPENAI_API_KEY=
+AI_INTEGRATIONS_OPENAI_BASE_URL=     # Required for voice chat (Replit OpenAI connector base URL)
 AI_INTEGRATIONS_ANTHROPIC_API_KEY=
 AI_INTEGRATIONS_OPENROUTER_API_KEY=
 OPENAI_API_KEY=              # Direct key for video generation
 
 # TTS & Database
-ELEVENLABS_API_KEY=
+ELEVENLABS_API_KEY=          # Optional: if set, used directly; otherwise falls back to Replit ElevenLabs connector
 DATABASE_URL=                # PostgreSQL (required for voice chat only)
 
 # Server Config (optional)
@@ -424,7 +429,7 @@ Minimum required: `AI_INTEGRATIONS_GEMINI_API_KEY`. Optional for full features: 
 - **patch-package** used for dependency fixes (applied via postinstall)
 - Database (PostgreSQL) only required for voice chat; core story functionality uses AsyncStorage only
 - Server uses esbuild for production bundling to `server_dist/`
-- Voice chat routes only registered when `AI_INTEGRATIONS_OPENAI_API_KEY` and `DATABASE_URL` are set
+- Voice chat routes only registered when `AI_INTEGRATIONS_OPENAI_API_KEY`, `AI_INTEGRATIONS_OPENAI_BASE_URL`, and `DATABASE_URL` are set
 - React Query configured with `staleTime: Infinity`, `retry: false`, `refetchOnWindowFocus: false`
 - TTS audio cached at `/tmp/tts-cache` with configurable max age
 - 12 randomized art styles for scene illustrations (watercolor, cel-shaded, paper cutout, gouache, crayon, digital, retro storybook, ink wash, pastel, pop art, chalk, flat design)

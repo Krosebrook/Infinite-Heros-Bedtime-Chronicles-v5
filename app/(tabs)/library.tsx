@@ -107,8 +107,16 @@ export default function LibraryScreen() {
           style={styles.storyCard}
           onPress={() => {
             if (isUnread) {
-              markStoryRead(item.id);
-              setReadStories((prev) => [...prev, item.id]);
+              void markStoryRead(item.id).catch((error) => {
+                // Non-fatal: log storage failure instead of causing an unhandled rejection
+                console.error("Failed to mark story as read:", error);
+              });
+              setReadStories((prev) => {
+                if (prev.includes(item.id)) {
+                  return prev;
+                }
+                return [...prev, item.id];
+              });
             }
             router.push({
               pathname: "/story",
@@ -318,12 +326,12 @@ const styles = StyleSheet.create({
     paddingHorizontal: 7,
     paddingVertical: 3,
     borderRadius: 6,
-    backgroundColor: "rgba(99,210,90,0.9)",
+    backgroundColor: Colors.success,
   },
   unreadBadgeText: {
     fontFamily: "PlusJakartaSans_700Bold",
     fontSize: 8,
-    color: "#FFFFFF",
+    color: Colors.textPrimary,
     letterSpacing: 1,
   },
 });

@@ -1,7 +1,5 @@
 {
   "version": 2,
-  "buildCommand": "npm run server:build",
-  "outputDirectory": ".",
   "functions": {
     "api/index.ts": {
       "maxDuration": 60

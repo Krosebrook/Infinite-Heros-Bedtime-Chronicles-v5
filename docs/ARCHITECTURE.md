@@ -102,7 +102,7 @@ SettingsContext (lib/SettingsContext.tsx)
 ## Server Architecture
 
 ### Middleware Stack (in order)
-1. **Security Headers** — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection
+1. **Security Headers** — X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection, Permissions-Policy, X-Permitted-Cross-Domain-Policies
 2. **CORS** — Dynamic origin matching (Replit domains + localhost)
 3. **Body Parser** — JSON (100KB limit)
 4. **Request Logger** — API request timing and response logging
@@ -129,3 +129,5 @@ When `AI_INTEGRATIONS_OPENAI_API_KEY` and `DATABASE_URL` are set:
 - Speech-to-text: OpenAI `gpt-4o-mini-transcribe`
 - Voice response: OpenAI `gpt-audio` model with streaming audio output
 - Response delivery: Server-Sent Events (SSE)
+- Input validation: route param IDs validated (positive integers), message length capped (10K chars), audio size capped (25MB), voice parameter allowlisted, conversation titles sanitized (200 chars)
+- Pagination: conversation list supports `limit`/`offset` query params (max 200 per page)

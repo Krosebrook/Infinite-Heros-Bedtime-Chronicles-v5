@@ -2,6 +2,25 @@
 
 All notable changes to Infinity Heroes: Bedtime Chronicles are documented here.
 
+## [Unreleased] — 2026-03-25
+
+### Fixed
+- **Input validation hardened** — All `parseInt` calls on route `:id` params now use `parseIdParam()` which rejects NaN, zero, negative, and non-integer values with 400 responses.
+- **Unsafe JSON parsing** — `JSON.parse` on AI-extracted JSON in `/api/generate-story` and `/api/suggest-settings` now wrapped in try-catch, returning clean 500 instead of crashing.
+- **Typed error handling** — All `catch (error: any)` replaced with `error instanceof Error` checks across `server/routes.ts`.
+
+### Added
+- **Conversation pagination** — `GET /api/conversations` now supports `limit` (1-200, default 50) and `offset` query params. Response shape changed to `{ data, total, limit, offset }`.
+- **Message content validation** — Chat messages validated for type, emptiness, and max length (10,000 chars).
+- **Audio payload validation** — Voice messages validated for type, base64 size estimation (max 25MB), and voice param allowlisted against `alloy|echo|fable|onyx|nova|shimmer`.
+- **Conversation title sanitization** — Titles trimmed and capped at 200 characters.
+- **Security headers** — Added `Permissions-Policy` (camera=(), microphone=(self), geolocation=()) and `X-Permitted-Cross-Domain-Policies: none`.
+
+### Changed
+- `GET /api/conversations` response format changed from array to `{ data: [], total, limit, offset }` for pagination support.
+
+---
+
 ## [Unreleased] — 2026-03-13
 
 ### Fixed

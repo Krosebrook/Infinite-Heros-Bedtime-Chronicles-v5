@@ -1,6 +1,6 @@
 # Development Roadmap
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-25
 
 Items are scored using Weighted Shortest Job First (WSJF): `(Business Value + Time Criticality + Risk Reduction) / Job Size`
 
@@ -16,6 +16,11 @@ Items are scored using Weighted Shortest Job First (WSJF): `(Business Value + Ti
 | Fix storyId mismatch in completion | Bug Fix | 2026-03-13 |
 | Create comprehensive documentation | Docs | 2026-03-13 |
 | Update .env.example | Docs | 2026-03-13 |
+| Harden input validation (parseInt, content, audio, voice) | Security | 2026-03-25 |
+| Add conversation pagination | Feature | 2026-03-25 |
+| Add Permissions-Policy & X-Permitted-Cross-Domain-Policies headers | Security | 2026-03-25 |
+| Safe JSON parsing for AI responses | Bug Fix | 2026-03-25 |
+| Replace unsafe `catch (error: any)` patterns | Code Quality | 2026-03-25 |
 
 ## Backlog (Prioritized)
 

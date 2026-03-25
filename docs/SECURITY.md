@@ -1,6 +1,6 @@
 # Security Posture
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-25
 
 ## Security Controls
 
@@ -9,11 +9,19 @@
 | Control | Status | Details |
 |---------|--------|---------|
 | Server-side API proxy | Active | All AI provider keys stay on the server; client never sees them |
-| Security headers | Active | X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection |
+| Security headers | Active | X-Content-Type-Options, X-Frame-Options, Referrer-Policy, X-XSS-Protection, Permissions-Policy, X-Permitted-Cross-Domain-Policies |
 | CORS restrictions | Active | Dynamic origin matching — only Replit domains + localhost allowed |
 | HTTP body size limits | Active | 100KB for general requests, 50MB for audio payloads |
 | Input sanitization | Active | All user inputs truncated to max length via `sanitizeString()` |
-| Input validation | Active | Whitelisted modes, durations, speeds; validated voice keys |
+| Input validation | Active | Whitelisted modes, durations, speeds; validated voice keys; parseInt guards on route params |
+| Conversation ID validation | Active | `parseIdParam()` rejects NaN, zero, negative, and non-integer IDs with 400 |
+| Message content validation | Active | Type check, empty check, max 10,000 character limit |
+| Audio payload validation | Active | Type check, base64 size estimation, max 25MB limit |
+| Voice parameter validation | Active | Allowlist: alloy, echo, fable, onyx, nova, shimmer |
+| Conversation title sanitization | Active | Trimmed and capped at 200 characters |
+| Conversation pagination | Active | `limit`/`offset` query params with bounds (max 200 per page) |
+| Safe JSON parsing | Active | AI response `JSON.parse` wrapped in try-catch to prevent crashes |
+| Typed error handling | Active | `catch (error: any)` replaced with `error instanceof Error` checks |
 | Rate limiting | Active | Per-IP, 10 req/min (configurable via env vars) |
 | Rate limit cleanup | Active | Expired entries pruned every 5 minutes |
 | TTS file validation | Active | Filename regex (`/^[a-f0-9]+\.mp3$/`) + path traversal prevention |
@@ -31,6 +39,8 @@
 | Client-side encryption | Low | Cached data is non-sensitive (story text, audio); no PII stored |
 | Explicit prompt injection defense | Low | AI safety filters + child-safety system prompt constrain output |
 | CSP headers | Medium | Not applicable — API-only server; no HTML served to browsers except landing page |
+| Authentication on chat routes | Low | Free children's app; conversations are ephemeral and non-sensitive |
+| Per-user rate limiting | Low | IP-based limiting is sufficient for single-instance deployment |
 
 ## OWASP Top 10 Assessment
 

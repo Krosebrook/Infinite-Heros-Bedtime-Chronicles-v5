@@ -451,7 +451,7 @@ Minimum required: `AI_INTEGRATIONS_GEMINI_API_KEY`. Optional for full features: 
 - JSON body limit is 100KB — large story payloads may need chunking
 - **`lib/storage.ts` vs `server/storage.ts`** — client-side AsyncStorage helpers vs server-side in-memory story cache
 - **`shared/schema.ts` vs `shared/models/chat.ts`** — schema.ts re-exports from models/chat.ts; both in drizzle.config.ts
-- **`getReadStories` / `markStoryRead`** — helpers exist in `lib/storage.ts` but no UI reads the unread state yet
+- **`getReadStories` / `markStoryRead`** — wired into library screen (unread dot indicator) and completion screen (marks story read on completion)
 - **`server/replit_integrations/`** — wired up but voice chat UI screen doesn't exist yet; backend routes are functional
 
 ## Files/Directories — Do Not Modify Without Explicit Approval

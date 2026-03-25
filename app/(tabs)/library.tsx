@@ -20,7 +20,7 @@ import { StarField } from "@/components/StarField";
 import { useProfile } from "@/lib/ProfileContext";
 import { HEROES } from "@/constants/heroes";
 import { CachedStory } from "@/constants/types";
-import { getStoriesForProfile, getAllStories, deleteStory, getFavorites, toggleFavorite } from "@/lib/storage";
+import { getStoriesForProfile, getAllStories, deleteStory, getFavorites, toggleFavorite, getReadStories } from "@/lib/storage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -48,6 +48,7 @@ export default function LibraryScreen() {
   const { activeProfile } = useProfile();
   const [stories, setStories] = useState<CachedStory[]>([]);
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [readStories, setReadStories] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
@@ -55,13 +56,15 @@ export default function LibraryScreen() {
       let cancelled = false;
       async function load() {
         setIsLoading(true);
-        const [s, f] = await Promise.all([
+        const [s, f, r] = await Promise.all([
           activeProfile ? getStoriesForProfile(activeProfile.id) : getAllStories(),
           getFavorites(),
+          getReadStories(),
         ]);
         if (!cancelled) {
           setStories(s);
           setFavorites(f);
+          setReadStories(r);
           setIsLoading(false);
         }
       }
@@ -94,6 +97,7 @@ export default function LibraryScreen() {
   const renderStory = ({ item, index }: { item: CachedStory; index: number }) => {
     const hero = getHero(item.heroId);
     const isFav = favorites.includes(item.id);
+    const isUnread = !readStories.includes(item.id);
     const modeColor = MODE_COLORS[item.mode] || Colors.accent;
     const sceneImage = item.scenes ? Object.values(item.scenes)[0] : null;
 
@@ -130,8 +134,11 @@ export default function LibraryScreen() {
               locations={[0, 0.35, 1]}
               style={styles.storyOverlay}
             />
-            <View style={[styles.modeBadge, { backgroundColor: `${modeColor}cc` }]}>
-              <Text style={styles.modeBadgeText}>{item.mode.toUpperCase()}</Text>
+            <View style={styles.topLeftBadges}>
+              <View style={[styles.modeBadge, { backgroundColor: `${modeColor}cc` }]}>
+                <Text style={styles.modeBadgeText}>{item.mode.toUpperCase()}</Text>
+              </View>
+              {isUnread && <View style={styles.unreadDot} />}
             </View>
             <Pressable
               style={styles.favBtn}
@@ -235,13 +242,24 @@ const styles = StyleSheet.create({
   storyOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  modeBadge: {
+  topLeftBadges: {
     position: "absolute",
     top: 10,
     left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  modeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.accent,
   },
   modeBadgeText: {
     fontFamily: "PlusJakartaSans_700Bold",

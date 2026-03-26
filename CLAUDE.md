@@ -290,9 +290,31 @@ npm run db:push             # Drizzle schema migration (needs DATABASE_URL)
 2. Use the `@infinity_heroes_<descriptor>` key naming convention
 3. Document the key and data shape in `lib/storage.ts` with a JSDoc comment
 
-### Run a database migration
-```bash
-npm run db:push   # Applies schema changes to DATABASE_URL target
+## Environment Variables
+
+```
+# AI Providers (via Replit integrations)
+AI_INTEGRATIONS_GEMINI_API_KEY=
+AI_INTEGRATIONS_OPENAI_API_KEY=
+AI_INTEGRATIONS_ANTHROPIC_API_KEY=
+AI_INTEGRATIONS_OPENROUTER_API_KEY=
+OPENAI_API_KEY=              # Direct key for video generation
+
+# TTS & Database
+ELEVENLABS_API_KEY=
+DATABASE_URL=                # PostgreSQL (required for voice chat only)
+
+# Server Config (optional)
+PORT=5000                    # Default 5000
+NODE_ENV=                    # development | production
+RATE_LIMIT_WINDOW_MS=60000   # Default 60000ms
+RATE_LIMIT_MAX=10            # Default 10 requests
+TTS_CACHE_MAX_AGE_MS=86400000  # Default 24 hours
+
+# Replit-specific (auto-set)
+REPLIT_DEV_DOMAIN=           # Dev server domain
+REPLIT_DOMAINS=              # Production domains (comma-separated)
+EXPO_PUBLIC_DOMAIN=          # Client API domain (set by dev script)
 ```
 
 ## Story Response Schema (AI must return)
@@ -460,3 +482,4 @@ Minimum required: `AI_INTEGRATIONS_GEMINI_API_KEY`. Optional for full features: 
 - `server/replit_integrations/` — Replit-provided integration boilerplate; upstream updates may overwrite changes
 - `shared/schema.ts` — database schema changes require coordinated migration; do not modify alone
 - `.replit` — Replit workspace config; changes affect the dev environment for all contributors
+___BEGIN___COMMAND_DONE_MARKER___0

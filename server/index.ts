@@ -62,7 +62,7 @@ function setupSecurityHeaders(app: express.Application) {
     res.setHeader("X-Frame-Options", "DENY");
     res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
     res.setHeader("X-XSS-Protection", "1; mode=block");
-    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' https:;");
+    res.setHeader("Content-Security-Policy", "default-src 'self'; script-src 'self' 'unsafe-inline' https://unpkg.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https:; media-src 'self' blob: https:; connect-src 'self' https:; font-src 'self' https://fonts.gstatic.com https:;");
     res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     next();
   });
@@ -237,6 +237,21 @@ function serveLandingPage({
   res.status(200).send(html);
 }
 
+/** Minimal fallback rendered when the full landing-page.html template is absent. */
+const FALLBACK_LANDING_HTML = [
+  '<!doctype html><html lang="en"><head>',
+  '<meta charset="utf-8">',
+  '<meta name="viewport" content="width=device-width,initial-scale=1">',
+  '<title>APP_NAME_PLACEHOLDER</title>',
+  '<style>body{margin:0;background:#020215;color:#f1f5f9;font-family:sans-serif;',
+  'display:flex;align-items:center;justify-content:center;min-height:100vh;',
+  'text-align:center;padding:24px}</style>',
+  '</head><body>',
+  '<h1>APP_NAME_PLACEHOLDER</h1>',
+  '<p>AI-powered bedtime stories for children.</p>',
+  '</body></html>',
+].join('');
+
 function configureExpoAndLanding(app: express.Application) {
   const templatePath = path.resolve(
     process.cwd(),
@@ -244,7 +259,15 @@ function configureExpoAndLanding(app: express.Application) {
     "templates",
     "landing-page.html",
   );
-  const landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
+
+  let landingPageTemplate: string;
+  try {
+    landingPageTemplate = fs.readFileSync(templatePath, "utf-8");
+  } catch {
+    // Fallback minimal landing page if the template file is not bundled
+    log("[Landing] Template file not found; using minimal fallback page");
+    landingPageTemplate = FALLBACK_LANDING_HTML;
+  }
   const appName = getAppName();
 
   log("Serving static Expo files with dynamic manifest routing");

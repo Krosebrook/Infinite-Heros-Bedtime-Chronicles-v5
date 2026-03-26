@@ -64,10 +64,12 @@ describe('getApiUrl', () => {
     expect(url).toMatch(/^http:\/\//);
   });
 
-  it('throws when neither env var is set', async () => {
+  it('falls back to relative root when neither env var is set', async () => {
     delete process.env.EXPO_PUBLIC_API_URL;
     delete process.env.EXPO_PUBLIC_DOMAIN;
     const { getApiUrl } = await import('./query-client');
-    expect(() => getApiUrl()).toThrow();
+    // Should not throw; returns "/" so API calls are relative (same-origin)
+    const url = getApiUrl();
+    expect(url).toBe('/');
   });
 });

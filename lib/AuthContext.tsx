@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initializeApp } from 'firebase/app';
-import { getAuth, signInAnonymously, onAuthStateChanged, type User } from 'firebase/auth';
+import { initializeApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, onAuthStateChanged, signInAnonymously, type Auth, type User } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: process.env.EXPO_PUBLIC_FIREBASE_API_KEY,
@@ -9,8 +9,23 @@ const firebaseConfig = {
   appId: process.env.EXPO_PUBLIC_FIREBASE_APP_ID,
 };
 
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
+// Only initialize Firebase when all required credentials are present
+const hasFirebaseConfig = !!(
+  firebaseConfig.apiKey &&
+  firebaseConfig.projectId &&
+  firebaseConfig.appId
+);
+
+let firebaseAuth: Auth | null = null;
+
+if (hasFirebaseConfig) {
+  try {
+    const firebaseApp: FirebaseApp = initializeApp(firebaseConfig);
+    firebaseAuth = getAuth(firebaseApp);
+  } catch (err) {
+    console.warn('[Auth] Firebase initialization failed:', err instanceof Error ? err.message : String(err));
+  }
+}
 
 interface AuthContextValue {
   user: User | null;
@@ -20,15 +35,22 @@ interface AuthContextValue {
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
-  loading: true,
+  loading: false,
   getIdToken: async () => null,
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(hasFirebaseConfig);
 
   useEffect(() => {
+    if (!firebaseAuth) {
+      // Firebase not configured — continue as unauthenticated
+      setLoading(false);
+      return;
+    }
+
+    const auth = firebaseAuth;
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
         setUser(firebaseUser);

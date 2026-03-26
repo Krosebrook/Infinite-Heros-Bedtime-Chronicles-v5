@@ -9,6 +9,8 @@ export function setAuthTokenGetter(getter: () => Promise<string | null>) {
 
 /**
  * Gets the base URL for the Express API server (e.g., "http://localhost:3000")
+ * Falls back to relative root "/" so the app works when deployed on the same
+ * origin as the API (e.g., Vercel deployment with the Express serverless function).
  * @returns {string} The API base URL
  */
 export function getApiUrl(): string {
@@ -19,7 +21,11 @@ export function getApiUrl(): string {
 
   const host = process.env.EXPO_PUBLIC_DOMAIN;
   if (!host) {
-    throw new Error("EXPO_PUBLIC_API_URL or EXPO_PUBLIC_DOMAIN must be set");
+    // Fall back to the current origin so API calls are relative (same-origin)
+    if (typeof window !== 'undefined') {
+      return window.location.origin + '/';
+    }
+    return '/';
   }
 
   const isLocal = host.startsWith('localhost') || host.startsWith('127.0.0.1');

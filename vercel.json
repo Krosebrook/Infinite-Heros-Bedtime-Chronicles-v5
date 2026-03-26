@@ -2,7 +2,8 @@
   "version": 2,
   "functions": {
     "api/index.ts": {
-      "maxDuration": 60
+      "maxDuration": 60,
+      "includeFiles": "server/templates/**,assets/**,app.json"
     }
   },
   "rewrites": [

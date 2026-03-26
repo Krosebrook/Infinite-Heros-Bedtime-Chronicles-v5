@@ -30,7 +30,7 @@ import Colors from "@/constants/colors";
 import { HEROES } from "@/constants/heroes";
 import { StarField } from "@/components/StarField";
 import { StoryFull, EarnedBadge } from "@/constants/types";
-import { saveStory, saveStoryWithProfile, saveStoryScene, updateStreak, checkAndAwardBadges } from "@/lib/storage";
+import { saveStory, saveStoryWithProfile, saveStoryScene, updateStreak, checkAndAwardBadges, markStoryRead } from "@/lib/storage";
 import { useProfile } from "@/lib/ProfileContext";
 
 const MODE_THEMES = {
@@ -177,6 +177,12 @@ export default function CompletionScreen() {
                 await saveStoryScene(storyId, Number(key), imageDataUri);
               }
             } catch {}
+          }
+          // best-effort: never block badge awarding on a storage write failure
+          try {
+            await markStoryRead(storyId);
+          } catch (e) {
+            if (__DEV__) console.log("Error marking story as read:", e);
           }
         }
         const earned = await checkAndAwardBadges(

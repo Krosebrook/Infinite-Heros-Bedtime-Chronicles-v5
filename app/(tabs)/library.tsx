@@ -20,7 +20,7 @@ import { StarField } from "@/components/StarField";
 import { useProfile } from "@/lib/ProfileContext";
 import { HEROES } from "@/constants/heroes";
 import { CachedStory } from "@/constants/types";
-import { getStoriesForProfile, getAllStories, deleteStory, getFavorites, toggleFavorite, getReadStories, markStoryRead } from "@/lib/storage";
+import { getStoriesForProfile, getAllStories, deleteStory, getFavorites, toggleFavorite, getReadStories } from "@/lib/storage";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 const CARD_WIDTH = (SCREEN_WIDTH - 48) / 2;
@@ -146,8 +146,11 @@ export default function LibraryScreen() {
               locations={[0, 0.35, 1]}
               style={styles.storyOverlay}
             />
-            <View style={[styles.modeBadge, { backgroundColor: `${modeColor}cc` }]}>
-              <Text style={styles.modeBadgeText}>{item.mode.toUpperCase()}</Text>
+            <View style={styles.topLeftBadges}>
+              <View style={[styles.modeBadge, { backgroundColor: `${modeColor}cc` }]}>
+                <Text style={styles.modeBadgeText}>{item.mode.toUpperCase()}</Text>
+              </View>
+              {isUnread && <View style={styles.unreadDot} />}
             </View>
             {isUnread && (
               <View style={styles.unreadBadge} testID={`unread-${item.id}`}>
@@ -256,13 +259,24 @@ const styles = StyleSheet.create({
   storyOverlay: {
     ...StyleSheet.absoluteFillObject,
   },
-  modeBadge: {
+  topLeftBadges: {
     position: "absolute",
     top: 10,
     left: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+  },
+  modeBadge: {
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 6,
+  },
+  unreadDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: Colors.accent,
   },
   modeBadgeText: {
     fontFamily: "PlusJakartaSans_700Bold",

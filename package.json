@@ -67,7 +67,7 @@
     "http-proxy-middleware": "^3.0.5",
     "openai": "^6.27.0",
     "p-limit": "^7.3.0",
-    "p-retry": "^7.1.1",
+    "p-retry": "5.1.2",
     "pg": "^8.16.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
@@ -102,6 +102,7 @@
   },
   "private": true,
   "overrides": {
-    "yaml": "^2.8.3"
+    "yaml": "^2.8.3",
+    "p-retry": "5.1.2"
   }
 }

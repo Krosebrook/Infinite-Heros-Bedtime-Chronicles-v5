@@ -12,7 +12,7 @@
     "server:dev": "NODE_ENV=development tsx server/index.ts",
     "expo:start:static:build": "npx expo start --no-dev --minify --localhost",
     "expo:static:build": "node scripts/build.js",
-    "server:build": "esbuild server/index.ts --platform=node --packages=external --bundle --format=esm --outdir=server_dist",
+    "server:build": "esbuild server/index.ts --platform=node --bundle --format=esm --outdir=server_dist",
     "server:prod": "NODE_ENV=production node server_dist/index.js",
     "db:push": "drizzle-kit push",
     "start": "npx expo start",
@@ -66,7 +66,7 @@
     "firebase-admin": "^13.7.0",
     "http-proxy-middleware": "^3.0.5",
     "openai": "^6.27.0",
-    "p-limit": "^7.3.0",
+    "p-limit": "4.0.0",
     "p-retry": "5.1.2",
     "pg": "^8.16.3",
     "react": "19.1.0",
@@ -103,6 +103,7 @@
   "private": true,
   "overrides": {
     "yaml": "^2.8.3",
-    "p-retry": "5.1.2"
+    "p-retry": "5.1.2",
+    "p-limit": "4.0.0"
   }
 }

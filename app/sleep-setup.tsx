@@ -166,7 +166,7 @@ export default function SleepSetupScreen() {
         <Animated.View entering={FadeInDown.duration(500).delay(300)}>
           <View style={styles.heroCard}>
             <View style={styles.heroCardContent}>
-              <Text style={styles.heroCardLabel}>TONIGHT'S HERO</Text>
+              <Text style={styles.heroCardLabel}>TONIGHT&apos;S HERO</Text>
               <Text style={styles.heroCardName}>{hero.name}</Text>
             </View>
             <View style={styles.heroCardIconWrap}>

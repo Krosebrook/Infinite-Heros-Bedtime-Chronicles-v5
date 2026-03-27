@@ -177,7 +177,7 @@ export function ParentControlsModal({ visible, onClose }: Props) {
             <View style={styles.toggleRow}>
               <View style={{ flex: 1 }}>
                 <Text style={styles.toggleLabel}>Enable Bedtime Reminder</Text>
-                <Text style={styles.toggleDesc}>Gently remind when it's time for bed</Text>
+                <Text style={styles.toggleDesc}>Gently remind when it&apos;s time for bed</Text>
               </View>
               <Switch
                 value={controls.bedtimeEnabled}

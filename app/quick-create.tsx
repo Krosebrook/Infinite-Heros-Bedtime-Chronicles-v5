@@ -185,7 +185,7 @@ export default function QuickCreateScreen() {
         </Animated.View>
 
         <Animated.View entering={FadeInDown.duration(400).delay(200)} style={styles.nameSection}>
-          <Text style={styles.sectionLabel}>Child's Name</Text>
+          <Text style={styles.sectionLabel}>Child&apos;s Name</Text>
           <View style={styles.inputWrap}>
             <Ionicons name="person-outline" size={18} color="rgba(255,255,255,0.3)" style={styles.inputIcon} />
             <TextInput

@@ -339,7 +339,7 @@ export default function CompletionScreen() {
                   <Ionicons name="heart-outline" size={18} color="#10B981" />
                 </View>
                 <View style={styles.extraCardHeaderText}>
-                  <Text style={styles.extraCardLabel}>Today's Lesson</Text>
+                  <Text style={styles.extraCardLabel}>Today&apos;s Lesson</Text>
                   <Text style={styles.extraCardTitle}>What we learned</Text>
                 </View>
                 <Ionicons

@@ -1,12 +1,14 @@
 {
   "version": 2,
+  "buildCommand": "npm run server:build",
+  "outputDirectory": ".",
   "functions": {
-    "api/index.ts": {
+    "api/server.mjs": {
       "maxDuration": 60,
-      "includeFiles": "server/templates/**,assets/**,app.json"
+      "includeFiles": "server_dist/**,assets/**,static-build/**,server/templates/**,app.json"
     }
   },
   "rewrites": [
-    { "source": "/(.*)", "destination": "/api" }
+    { "source": "/(.*)", "destination": "/api/server" }
   ]
 }

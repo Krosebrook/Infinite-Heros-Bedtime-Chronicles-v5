@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-21 -->
+<!-- Last verified: 2026-03-27 -->
 # Contributing to Infinity Heroes: Bedtime Chronicles
 
 Thank you for your interest in contributing! This guide covers the development workflow, code standards, and process for submitting changes.
@@ -104,14 +104,24 @@ Key rules:
 
 ## Testing Requirements
 
-> **Current state:** The project does not yet have an automated test suite. Adding one (Jest or Vitest) is the top item on the [roadmap](./docs/ROADMAP.md).
+The project uses **Vitest v4** with **585 passing tests** across 14 test files. See [docs/best-practices/TESTING.md](./docs/best-practices/TESTING.md) for the full testing guide.
 
-Until a test framework is in place:
-- Manually verify the happy path for any feature you add
-- Verify error states (missing API keys, network failure, invalid input)
-- For server-side changes, test with `curl` or Postman against `http://localhost:5000`
+```bash
+npm test                    # Run all tests (single run)
+npm run test:watch          # Watch mode
+npm run test:coverage       # With coverage report
+```
 
-When a test framework is added, PRs touching server logic or shared utilities must include unit tests with ≥80% branch coverage for changed files.
+**Requirements for PRs:**
+- All existing tests must pass (`npm test`)
+- PRs touching server logic or shared utilities must include unit tests
+- Target: ≥80% branch coverage for changed files
+- Zero lint errors (`npm run lint`)
+- Zero TypeScript errors (`npm run typecheck`)
+
+**Test file naming:** `<module>.test.ts` or `<module>.comprehensive.test.ts` alongside the source file.
+
+**Mocking:** Mock all external APIs (AI providers, ElevenLabs, AsyncStorage, Firebase). See existing test files for patterns.
 
 ---
 

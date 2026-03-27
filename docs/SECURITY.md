@@ -1,6 +1,6 @@
 # Security Posture
 
-**Last Updated:** 2026-03-13
+**Last Updated:** 2026-03-27
 
 ## Security Controls
 
@@ -27,24 +27,35 @@
 
 | Item | Risk Level | Rationale |
 |------|-----------|-----------|
-| Authentication | Low | Free children's app with no user accounts (client-side profiles only) |
 | Client-side encryption | Low | Cached data is non-sensitive (story text, audio); no PII stored |
-| Explicit prompt injection defense | Low | AI safety filters + child-safety system prompt constrain output |
-| CSP headers | Medium | Not applicable — API-only server; no HTML served to browsers except landing page |
+
+### Recently Implemented (2026-03-27)
+
+| Control | Status | Details |
+|---------|--------|---------|
+| Firebase Authentication | Active | Firebase Auth with Bearer tokens; anonymous sign-in for frictionless UX |
+| Production auth guard | Active | Blocks all requests in NODE_ENV=production without Firebase key |
+| Parent PIN hashing | Active | SHA-256 hash + random salt via expo-crypto; 5-attempt lockout |
+| Voice chat child safety | Active | VOICE_CHAT_SAFETY_PROMPT prepended to all AI conversations |
+| Voice chat auth | Active | requireAuth middleware on all /api/conversations/* endpoints |
+| Dual-layer rate limiting | Active | IP-based (10/min) + user-based (5/min via Firebase UID) |
+| Conversation ID validation | Active | parseInt with NaN/negative rejection |
+| Audio body limit reduction | Active | Reduced from 50MB to 10MB |
+| Chat history cap | Active | Max 20 messages sent to AI provider |
 
 ## OWASP Top 10 Assessment
 
 | # | Vulnerability | Status |
 |---|--------------|--------|
-| A01 | Broken Access Control | N/A — no authentication layer (by design) |
-| A02 | Cryptographic Failures | N/A — no secrets stored client-side; API keys server-only |
-| A03 | Injection | Mitigated — input sanitization, parameterized DB queries (Drizzle ORM) |
-| A04 | Insecure Design | Low risk — child safety rules in prompts; no sensitive operations |
-| A05 | Security Misconfiguration | Mitigated — security headers set; CORS restricted; body limits enforced |
+| A01 | Broken Access Control | Mitigated — Firebase Auth on all POST endpoints; conversation ID validation; production auth guard |
+| A02 | Cryptographic Failures | Mitigated — parent PIN hashed with SHA-256 + salt; API keys server-only |
+| A03 | Injection | Mitigated — input sanitization via sanitizeString(); parameterized DB queries (Drizzle ORM); prompt injection risk acknowledged |
+| A04 | Insecure Design | Mitigated — CHILD_SAFETY_RULES + VOICE_CHAT_SAFETY_PROMPT; dual-layer rate limiting |
+| A05 | Security Misconfiguration | Mitigated — security headers; CORS restricted; body limits enforced; production auth guard |
 | A06 | Vulnerable Components | Monitor — dependencies should be audited regularly via `npm audit` |
-| A07 | Auth Failures | N/A — no authentication |
+| A07 | Auth Failures | Mitigated — Firebase Auth with Bearer tokens; brute-force lockout on parent PIN |
 | A08 | Data Integrity Failures | Low risk — server validates AI responses before returning to client |
-| A09 | Logging Failures | Mitigated — request logging with timing; error logging without PII |
+| A09 | Logging Failures | Mitigated — request logging; rate limit violation logging; auth failure logging |
 | A10 | SSRF | Low risk — server only makes outbound calls to known AI provider URLs |
 
 ## Rate Limiting Details

@@ -1,4 +1,4 @@
-<!-- Last verified: 2026-03-21 -->
+<!-- Last verified: 2026-03-27 -->
 # CONVENTIONS.md — Code Standards and Patterns
 
 This document is the canonical reference for all code conventions in this repository. AI agents and human contributors must follow these rules. When a linter or type checker enforces a rule, that tooling takes precedence over this document.
@@ -243,10 +243,11 @@ Separate each group with a blank line.
 
 ## Testing
 
-> **No test suite exists yet.** These conventions apply when tests are added.
+**Framework:** Vitest v4 with @vitest/coverage-v8 — **585 tests, 14 files, all passing**
 
-- Framework: Jest with `@testing-library/react-native`, or Vitest for server utilities
-- File naming: `<module>.test.ts` (or `.test.tsx`) alongside the source file
+See [docs/best-practices/TESTING.md](./docs/best-practices/TESTING.md) for the full guide.
+
+- File naming: `<module>.test.ts` or `<module>.comprehensive.test.ts` alongside the source file
 - Test structure:
   ```ts
   describe('moduleName', () => {
@@ -255,9 +256,10 @@ Separate each group with a blank line.
     });
   });
   ```
-- Mocks: mock all external APIs (AI providers, ElevenLabs, AsyncStorage)
+- Mocks: mock all external APIs (AI providers, ElevenLabs, AsyncStorage, Firebase)
 - Coverage target: ≥80% branch coverage for server utilities
 - Do not test implementation details — test behavior and outputs
+- Run with: `npm test` (single run), `npm run test:watch` (watch mode), `npm run test:coverage` (with report)
 
 ---
 

@@ -2,11 +2,20 @@
   "version": 2,
   "functions": {
     "api/index.ts": {
-      "maxDuration": 60,
+      "maxDuration": 300,
       "includeFiles": "server/templates/**,assets/**,app.json"
     }
   },
   "rewrites": [
     { "source": "/(.*)", "destination": "/api" }
+  ],
+  "headers": [
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        { "key": "X-RateLimit-Limit", "value": "60" },
+        { "key": "Cache-Control", "value": "no-store" }
+      ]
+    }
   ]
 }

@@ -158,6 +158,8 @@ export default function HomeScreen() {
                 hitSlop={10}
                 style={styles.gearBtn}
                 testID="settings-btn"
+                accessibilityLabel="Open settings"
+                accessibilityRole="button"
               >
                 <Ionicons name="settings-outline" size={20} color="rgba(255,255,255,0.5)" />
               </Pressable>
@@ -165,6 +167,8 @@ export default function HomeScreen() {
                 style={styles.profileBtn}
                 testID="profile-btn"
                 onPress={() => router.push("/(tabs)/profile")}
+                accessibilityLabel="Open profile"
+                accessibilityRole="button"
               >
                 <Text style={styles.profileEmoji}>
                   {activeProfile?.avatarEmoji || "👤"}
@@ -185,6 +189,8 @@ export default function HomeScreen() {
                 value={searchText}
                 onChangeText={setSearchText}
                 testID="search-input"
+                accessibilityLabel="Search stories"
+                accessibilityRole="search"
               />
             </View>
           </View>
@@ -197,7 +203,7 @@ export default function HomeScreen() {
             contentContainerStyle={styles.categoriesScroll}
           >
             {CATEGORIES.map((cat) => (
-              <Pressable key={cat.id} style={styles.categoryChip} testID={`category-${cat.id}`}>
+              <Pressable key={cat.id} style={styles.categoryChip} testID={`category-${cat.id}`} accessibilityLabel={cat.label} accessibilityRole="button">
                 <View style={[styles.categoryIconWrap, { backgroundColor: cat.bg }]}>
                   <Ionicons name={cat.icon} size={18} color={cat.color} />
                 </View>
@@ -211,7 +217,7 @@ export default function HomeScreen() {
           <Animated.View entering={FadeInDown.duration(400).delay(250)}>
             <View style={styles.sectionHeader}>
               <Text style={styles.sectionTitle}>Continue Reading</Text>
-              <Pressable onPress={() => router.push("/(tabs)/library")}>
+              <Pressable onPress={() => router.push("/(tabs)/library")} accessibilityLabel="See all stories" accessibilityRole="button">
                 <Text style={styles.seeAll}>See All</Text>
               </Pressable>
             </View>
@@ -240,6 +246,8 @@ export default function HomeScreen() {
                         },
                       });
                     }}
+                    accessibilityLabel={`Open story: ${story.story.title}`}
+                    accessibilityRole="button"
                   >
                     {story.scenes?.[0] ? (
                       <Image
@@ -282,6 +290,8 @@ export default function HomeScreen() {
                 style={styles.storyCard}
                 onPress={() => handleStoryPress(story.id)}
                 testID={`story-card-${story.id}`}
+                accessibilityLabel={`Open story: ${story.title}`}
+                accessibilityRole="button"
               >
                 <View style={styles.storyImageWrap}>
                   <Image

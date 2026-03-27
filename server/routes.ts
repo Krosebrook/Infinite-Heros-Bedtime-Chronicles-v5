@@ -68,6 +68,36 @@ setInterval(() => {
   }
 }, 5 * 60 * 1000);
 
+// Serverless detection — warn that in-memory rate limiting has limited effectiveness
+const IS_SERVERLESS = !!(process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.FUNCTIONS_WORKER);
+if (IS_SERVERLESS) {
+  console.warn('[RateLimit] Running in serverless environment — in-memory rate limiter has limited effectiveness. Consider adding @upstash/ratelimit for distributed rate limiting.');
+}
+
+// Per-user rate limit — uses Firebase UID for stable identity across serverless instances
+const userRateLimitMap = new Map<string, { count: number; resetAt: number }>();
+const USER_RATE_LIMIT_WINDOW_MS = 60 * 1000;
+const USER_RATE_LIMIT_MAX = 5; // Stricter per-user limit for AI generation endpoints
+
+function checkUserRateLimit(userId: string): boolean {
+  const now = Date.now();
+  const entry = userRateLimitMap.get(userId);
+  if (!entry || now > entry.resetAt) {
+    userRateLimitMap.set(userId, { count: 1, resetAt: now + USER_RATE_LIMIT_WINDOW_MS });
+    return true;
+  }
+  entry.count++;
+  return entry.count <= USER_RATE_LIMIT_MAX;
+}
+
+// Cleanup user rate limit entries
+setInterval(() => {
+  const now = Date.now();
+  for (const [uid, entry] of userRateLimitMap) {
+    if (now > entry.resetAt) userRateLimitMap.delete(uid);
+  }
+}, 5 * 60 * 1000);
+
 function sanitizeString(val: unknown, maxLen: number): string {
   if (typeof val !== "string") return "";
   return val.slice(0, maxLen).trim();
@@ -330,8 +360,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/generate-story", async (req, res) => {
-    const clientIp = req.user?.uid || req.ip || req.socket.remoteAddress || "unknown";
+    const clientIp = req.ip || req.socket.remoteAddress || "unknown";
+    const userId = req.user?.uid || clientIp;
+
+    // Layer 1: IP-based rate limit (broad)
     if (!checkRateLimit(clientIp)) {
+      console.warn(`[RateLimit] IP rate limit exceeded: ${clientIp}`);
+      return res.status(429).json({ error: "Too many requests. Please wait a moment." });
+    }
+    // Layer 2: User-based rate limit (stricter, survives serverless better with stable UIDs)
+    if (!checkUserRateLimit(userId)) {
+      console.warn(`[RateLimit] User rate limit exceeded: ${userId}`);
       return res.status(429).json({ error: "Too many requests. Please wait a moment." });
     }
 

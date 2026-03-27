@@ -79,15 +79,17 @@ export function ErrorFallback({ error, resetError }: ErrorFallbackProps) {
 
       <View style={styles.content}>
         <Text style={[styles.title, { color: theme.text }]}>
-          Something went wrong
+          Oops! Something got a little mixed up
         </Text>
 
         <Text style={[styles.message, { color: theme.textSecondary }]}>
-          Please reload the app to continue.
+          Ask a grown-up to tap the button below
         </Text>
 
         <Pressable
           onPress={handleRestart}
+          accessibilityLabel="Reload the app"
+          accessibilityRole="button"
           style={({ pressed }) => [
             styles.button,
             {

@@ -25,6 +25,8 @@ export function HeroCard({ hero, onPress }: HeroCardProps) {
         styles.container,
         { transform: [{ scale: pressed ? 0.95 : 1 }] },
       ]}
+      accessibilityLabel={`Hero: ${hero.name}, ${hero.title}`}
+      accessibilityRole="button"
     >
       <LinearGradient
         colors={hero.gradient}

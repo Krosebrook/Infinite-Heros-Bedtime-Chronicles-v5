@@ -334,6 +334,58 @@ export async function checkAndAwardBadges(
   return newBadges;
 }
 
+/**
+ * Hash a PIN with a salt using SHA-256 via expo-crypto.
+ * Returns the hex digest.
+ */
+export async function hashPin(pin: string, salt: string): Promise<string> {
+  const { digestStringAsync, CryptoDigestAlgorithm } = await import('expo-crypto');
+  return digestStringAsync(CryptoDigestAlgorithm.SHA256, salt + pin);
+}
+
+/**
+ * Generate a random salt for PIN hashing.
+ */
+export async function generatePinSalt(): Promise<string> {
+  const { getRandomBytes } = await import('expo-crypto');
+  const bytes = getRandomBytes(16);
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+const MAX_PIN_ATTEMPTS = 5;
+const LOCKOUT_DURATION_MS = 30 * 1000; // 30 seconds
+
+/**
+ * Check if parent controls are currently locked out due to failed attempts.
+ */
+export function isPinLockedOut(controls: ParentControls): boolean {
+  if (controls.lockoutUntil === 0) return false;
+  return Date.now() < controls.lockoutUntil;
+}
+
+/**
+ * Record a failed PIN attempt. Returns updated controls.
+ */
+export async function recordFailedPinAttempt(controls: ParentControls): Promise<ParentControls> {
+  const updated = { ...controls };
+  updated.failedAttempts = (updated.failedAttempts || 0) + 1;
+  if (updated.failedAttempts >= MAX_PIN_ATTEMPTS) {
+    updated.lockoutUntil = Date.now() + LOCKOUT_DURATION_MS;
+    updated.failedAttempts = 0; // Reset counter after lockout
+  }
+  await saveParentControls(updated);
+  return updated;
+}
+
+/**
+ * Reset failed attempts on successful unlock.
+ */
+export async function resetPinAttempts(controls: ParentControls): Promise<ParentControls> {
+  const updated = { ...controls, failedAttempts: 0, lockoutUntil: 0 };
+  await saveParentControls(updated);
+  return updated;
+}
+
 export async function getParentControls(): Promise<ParentControls> {
   try {
     const data = await AsyncStorage.getItem(PARENT_CONTROLS_KEY);

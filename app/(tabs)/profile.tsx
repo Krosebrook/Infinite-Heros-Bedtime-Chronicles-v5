@@ -33,15 +33,15 @@ export default function ProfileScreen() {
         <Text style={styles.subtitle}>Story Explorer</Text>
 
         <View style={styles.actions}>
-          <Pressable style={styles.actionBtn} onPress={() => setProfileVisible(true)} testID="edit-profile">
+          <Pressable style={styles.actionBtn} onPress={() => setProfileVisible(true)} testID="edit-profile" accessibilityLabel="Edit profile" accessibilityRole="button">
             <Ionicons name="person-outline" size={20} color={Colors.accent} />
             <Text style={styles.actionText}>Edit Profile</Text>
           </Pressable>
-          <Pressable style={styles.actionBtn} onPress={() => setSettingsVisible(true)} testID="open-settings">
+          <Pressable style={styles.actionBtn} onPress={() => setSettingsVisible(true)} testID="open-settings" accessibilityLabel="Open settings" accessibilityRole="button">
             <Ionicons name="settings-outline" size={20} color={Colors.accent} />
             <Text style={styles.actionText}>Settings</Text>
           </Pressable>
-          <Pressable style={styles.actionBtn} onPress={() => setParentControlsVisible(true)} testID="parent-controls">
+          <Pressable style={styles.actionBtn} onPress={() => setParentControlsVisible(true)} testID="parent-controls" accessibilityLabel="Open parent controls" accessibilityRole="button">
             <Ionicons name="shield-outline" size={20} color={Colors.accent} />
             <Text style={styles.actionText}>Parent Controls</Text>
           </Pressable>

@@ -196,6 +196,8 @@ export function ProfileModal({ visible, onClose }: Props) {
             <Pressable
               onPress={() => { resetForm(); setScreen("list"); }}
               style={styles.backBtn}
+              accessibilityLabel="Go back"
+              accessibilityRole="button"
             >
               <Ionicons name="chevron-back" size={22} color="rgba(255,255,255,0.7)" />
             </Pressable>
@@ -205,7 +207,7 @@ export function ProfileModal({ visible, onClose }: Props) {
           <Text style={styles.headerTitle}>
             {screen === "create" ? "New Profile" : screen === "edit" ? "Edit Profile" : "Profiles"}
           </Text>
-          <Pressable onPress={handleCloseModal} style={styles.closeBtn}>
+          <Pressable onPress={handleCloseModal} style={styles.closeBtn} accessibilityLabel="Close" accessibilityRole="button">
             <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
           </Pressable>
         </View>
@@ -236,6 +238,8 @@ export function ProfileModal({ visible, onClose }: Props) {
                   <Pressable
                     onPress={() => handleSelect(p.id)}
                     style={[styles.profileRow, isActive && styles.profileRowActive]}
+                    accessibilityLabel={`Switch to profile: ${p.name}`}
+                    accessibilityRole="button"
                   >
                     <View style={styles.profileAvatar}>
                       <Text style={styles.profileAvatarText}>{p.avatarEmoji}</Text>
@@ -255,6 +259,8 @@ export function ProfileModal({ visible, onClose }: Props) {
                       onPress={() => handleEdit(p)}
                       style={styles.editBtn}
                       hitSlop={8}
+                      accessibilityLabel={`Edit profile: ${p.name}`}
+                      accessibilityRole="button"
                     >
                       <Ionicons name="pencil-outline" size={16} color="rgba(255,255,255,0.4)" />
                     </Pressable>
@@ -262,6 +268,8 @@ export function ProfileModal({ visible, onClose }: Props) {
                       onPress={() => handleDelete(p.id)}
                       style={styles.editBtn}
                       hitSlop={8}
+                      accessibilityLabel={`Delete profile: ${p.name}`}
+                      accessibilityRole="button"
                     >
                       <Ionicons name="trash-outline" size={16} color="rgba(255,100,100,0.5)" />
                     </Pressable>
@@ -284,6 +292,8 @@ export function ProfileModal({ visible, onClose }: Props) {
               onPress={() => setScreen("create")}
               style={styles.addBtn}
               testID="add-profile-button"
+              accessibilityLabel="Add a new profile"
+              accessibilityRole="button"
             >
               <Ionicons name="add-circle-outline" size={22} color={Colors.accent} />
               <Text style={styles.addBtnText}>Add New Profile</Text>

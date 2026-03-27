@@ -62,7 +62,10 @@ export interface ParentControls {
   bedtimeMinute: number;
   bedtimeEnabled: boolean;
   allowedThemes: string[];
-  pinCode: string;
+  pinCode: string;        // Now stores SHA-256 hash, not plaintext
+  pinSalt: string;        // Random salt for PIN hashing
+  failedAttempts: number;  // Brute-force counter
+  lockoutUntil: number;    // Timestamp when lockout expires (0 = not locked)
   videoEnabled: boolean;
 }
 
@@ -73,6 +76,9 @@ export const DEFAULT_PARENT_CONTROLS: ParentControls = {
   bedtimeEnabled: false,
   allowedThemes: ['courage', 'kindness', 'friendship', 'wonder', 'imagination', 'comfort'],
   pinCode: '',
+  pinSalt: '',
+  failedAttempts: 0,
+  lockoutUntil: 0,
   videoEnabled: false,
 };
 

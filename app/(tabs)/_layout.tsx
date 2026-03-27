@@ -18,7 +18,7 @@ interface TabIconProps {
 function TabIcon({ name, focused, label, isCreate }: TabIconProps) {
   if (isCreate) {
     return (
-      <View style={styles.createBtnWrap}>
+      <View style={styles.createBtnWrap} accessibilityLabel="Create a new story" accessibilityRole="button">
         <View style={styles.createBtn}>
           <Ionicons name="add" size={28} color="#FFF" />
         </View>
@@ -75,6 +75,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
+          tabBarAccessibilityLabel: "Home",
           tabBarIcon: ({ focused }) => (
             <TabIcon name="home" focused={focused} label="Home" />
           ),
@@ -83,6 +84,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="library"
         options={{
+          tabBarAccessibilityLabel: "Story library",
           tabBarIcon: ({ focused }) => (
             <TabIcon name="book" focused={focused} label="Library" />
           ),
@@ -91,6 +93,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="create"
         options={{
+          tabBarAccessibilityLabel: "Create a story",
           tabBarIcon: ({ focused }) => (
             <TabIcon name="add-circle" focused={focused} label="Create" isCreate />
           ),
@@ -99,6 +102,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="saved"
         options={{
+          tabBarAccessibilityLabel: "Saved stories",
           tabBarIcon: ({ focused }) => (
             <TabIcon name="heart" focused={focused} label="Saved" />
           ),
@@ -107,6 +111,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
+          tabBarAccessibilityLabel: "Profile and settings",
           tabBarIcon: ({ focused }) => (
             <TabIcon name="person" focused={focused} label="Profile" />
           ),

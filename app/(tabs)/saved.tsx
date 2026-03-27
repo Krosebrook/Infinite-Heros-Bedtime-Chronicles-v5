@@ -112,6 +112,8 @@ export default function SavedScreen() {
           }}
           onLongPress={() => handleUnfavorite(item.id, item.story.title)}
           testID={`saved-story-${item.id}`}
+          accessibilityLabel={`Open story: ${item.story.title}`}
+          accessibilityRole="button"
         >
           <View style={styles.storyThumb}>
             {sceneImage ? (
@@ -139,6 +141,8 @@ export default function SavedScreen() {
             onPress={() => handleUnfavorite(item.id, item.story.title)}
             hitSlop={12}
             testID={`unsave-${item.id}`}
+            accessibilityLabel="Remove from favorites"
+            accessibilityRole="button"
           >
             <Ionicons name="heart" size={20} color="#f43f5e" />
           </Pressable>

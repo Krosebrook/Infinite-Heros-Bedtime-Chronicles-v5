@@ -1,14 +1,35 @@
 import express, { type Express, type Request, type Response } from "express";
 import { chatStorage } from "../chat/storage";
 import { openai, speechToText, ensureCompatibleFormat } from "./client";
+import { requireAuth } from "../../auth";
 
-// Body parser with 50MB limit for audio payloads
-const audioBodyParser = express.json({ limit: "50mb" });
+// Body parser with 10MB limit for audio payloads (reduced from 50MB to mitigate DoS)
+const audioBodyParser = express.json({ limit: "10mb" });
+
+const VOICE_CHAT_SAFETY_PROMPT = `You are a friendly, gentle storytelling companion for children ages 3-9.
+CRITICAL RULES:
+- NEVER discuss violence, weapons, scary topics, or anything inappropriate for young children
+- NEVER reference real brands, celebrities, or copyrighted characters
+- Keep all responses warm, encouraging, and age-appropriate
+- If a child asks about something inappropriate, gently redirect to a fun, safe topic
+- Use simple vocabulary appropriate for young children
+- Be encouraging and positive in all interactions`;
 
 export function registerAudioRoutes(app: Express): void {
+  function parseConversationId(req: Request, res: Response): number | null {
+    const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
+    const id = parseInt(idParam, 10);
+    if (isNaN(id) || id <= 0) {
+      res.status(400).json({ error: "Invalid conversation ID" });
+      return null;
+    }
+    return id;
+  }
+
   // Get all conversations
-  app.get("/api/conversations", async (req: Request, res: Response) => {
+  app.get("/api/conversations", requireAuth, async (req: Request, res: Response) => {
     try {
+      // TODO: Add userId column to conversations table and verify req.user.uid === conversation.userId
       const conversations = await chatStorage.getAllConversations();
       res.json(conversations);
     } catch (error) {
@@ -18,10 +39,12 @@ export function registerAudioRoutes(app: Express): void {
   });
 
   // Get single conversation with messages
-  app.get("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.get("/api/conversations/:id", requireAuth, async (req: Request, res: Response) => {
     try {
-      const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const id = parseInt(idParam);
+      const id = parseConversationId(req, res);
+      if (id === null) return;
+
+      // TODO: Add userId column to conversations table and verify req.user.uid === conversation.userId
       const conversation = await chatStorage.getConversation(id);
       if (!conversation) {
         return res.status(404).json({ error: "Conversation not found" });
@@ -35,7 +58,7 @@ export function registerAudioRoutes(app: Express): void {
   });
 
   // Create new conversation
-  app.post("/api/conversations", async (req: Request, res: Response) => {
+  app.post("/api/conversations", requireAuth, async (req: Request, res: Response) => {
     try {
       const { title } = req.body;
       const conversation = await chatStorage.createConversation(title || "New Chat");
@@ -47,10 +70,12 @@ export function registerAudioRoutes(app: Express): void {
   });
 
   // Delete conversation
-  app.delete("/api/conversations/:id", async (req: Request, res: Response) => {
+  app.delete("/api/conversations/:id", requireAuth, async (req: Request, res: Response) => {
     try {
-      const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const id = parseInt(idParam);
+      const id = parseConversationId(req, res);
+      if (id === null) return;
+
+      // TODO: Add userId column to conversations table and verify req.user.uid === conversation.userId
       await chatStorage.deleteConversation(id);
       res.status(204).send();
     } catch (error) {
@@ -62,10 +87,12 @@ export function registerAudioRoutes(app: Express): void {
   // Send voice message and get streaming audio response
   // Auto-detects audio format and converts WebM/MP4/OGG to WAV
   // Uses gpt-4o-mini-transcribe for STT, gpt-4o-audio-preview for voice response
-  app.post("/api/conversations/:id/messages", audioBodyParser, async (req: Request, res: Response) => {
+  app.post("/api/conversations/:id/messages", requireAuth, audioBodyParser, async (req: Request, res: Response) => {
     try {
-      const idParam = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
-      const conversationId = parseInt(idParam);
+      const id = parseConversationId(req, res);
+      if (id === null) return;
+
+      const conversationId = id;
       const { audio, voice = "alloy" } = req.body;
 
       if (!audio) {
@@ -80,6 +107,7 @@ export function registerAudioRoutes(app: Express): void {
       const userTranscript = await speechToText(audioBuffer, inputFormat);
 
       // 3. Save user message
+      // TODO: Add userId column to conversations table and verify req.user.uid === conversation.userId
       await chatStorage.createMessage(conversationId, "user", userTranscript);
 
       // 4. Get conversation history
@@ -89,19 +117,25 @@ export function registerAudioRoutes(app: Express): void {
         content: m.content,
       }));
 
-      // 5. Set up SSE
+      // 5. Prepend child safety system prompt and cap history
+      const messagesWithSafety = [
+        { role: "system" as const, content: VOICE_CHAT_SAFETY_PROMPT },
+        ...chatHistory.slice(-20), // Cap at 20 messages to prevent unbounded token usage
+      ];
+
+      // 6. Set up SSE
       res.setHeader("Content-Type", "text/event-stream");
       res.setHeader("Cache-Control", "no-cache");
       res.setHeader("Connection", "keep-alive");
 
       res.write(`data: ${JSON.stringify({ type: "user_transcript", data: userTranscript })}\n\n`);
 
-      // 6. Stream audio response from gpt-4o-audio-preview
+      // 7. Stream audio response from gpt-4o-audio-preview
       const stream = await openai.chat.completions.create({
         model: "gpt-4o-audio-preview",
         modalities: ["text", "audio"],
         audio: { voice, format: "pcm16" },
-        messages: chatHistory,
+        messages: messagesWithSafety,
         stream: true,
       });
 
@@ -121,7 +155,7 @@ export function registerAudioRoutes(app: Express): void {
         }
       }
 
-      // 7. Save assistant message
+      // 8. Save assistant message
       await chatStorage.createMessage(conversationId, "assistant", assistantTranscript);
 
       res.write(`data: ${JSON.stringify({ type: "done", transcript: assistantTranscript })}\n\n`);

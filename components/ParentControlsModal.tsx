@@ -16,13 +16,15 @@ import * as Haptics from "expo-haptics";
 import Animated, { FadeIn } from "react-native-reanimated";
 import Colors from "@/constants/colors";
 import { ParentControls, DEFAULT_PARENT_CONTROLS, CONTENT_THEMES } from "@/constants/types";
-import { getParentControls, saveParentControls } from "@/lib/storage";
+import { getParentControls, saveParentControls, hashPin, generatePinSalt, isPinLockedOut, recordFailedPinAttempt, resetPinAttempts } from "@/lib/storage";
 import { KeyboardAwareScrollViewCompat } from "@/components/KeyboardAwareScrollViewCompat";
 
 interface Props {
   visible: boolean;
   onClose: () => void;
 }
+
+const LOCKOUT_DURATION_MS = 30 * 1000;
 
 const STORY_LENGTHS = [
   { id: "short", label: "Short", desc: "~3 min" },
@@ -41,6 +43,8 @@ export function ParentControlsModal({ visible, onClose }: Props) {
   const [pinInput, setPinInput] = useState("");
   const [unlocked, setUnlocked] = useState(false);
   const [showPinSetup, setShowPinSetup] = useState(false);
+  const [lockedOut, setLockedOut] = useState(false);
+  const [lockoutRemaining, setLockoutRemaining] = useState(0);
 
   useEffect(() => {
     if (visible) {
@@ -56,11 +60,40 @@ export function ParentControlsModal({ visible, onClose }: Props) {
     }
   }, [visible]);
 
-  const handleUnlock = () => {
-    if (pinInput === controls.pinCode) {
+  useEffect(() => {
+    if (!lockedOut) return;
+    const interval = setInterval(() => {
+      const remaining = controls.lockoutUntil - Date.now();
+      if (remaining <= 0) {
+        setLockedOut(false);
+        setLockoutRemaining(0);
+      } else {
+        setLockoutRemaining(Math.ceil(remaining / 1000));
+      }
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [lockedOut, controls.lockoutUntil]);
+
+  const handleUnlock = async () => {
+    if (isPinLockedOut(controls)) {
+      setLockedOut(true);
+      Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      return;
+    }
+
+    const inputHash = await hashPin(pinInput, controls.pinSalt);
+    if (inputHash === controls.pinCode) {
       setUnlocked(true);
+      const updated = await resetPinAttempts(controls);
+      setControls(updated);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     } else {
+      const updated = await recordFailedPinAttempt(controls);
+      setControls(updated);
+      if (isPinLockedOut(updated)) {
+        setLockedOut(true);
+        setLockoutRemaining(Math.ceil(LOCKOUT_DURATION_MS / 1000));
+      }
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
       setPinInput("");
     }
@@ -82,16 +115,22 @@ export function ParentControlsModal({ visible, onClose }: Props) {
     update("allowedThemes", updated);
   };
 
-  const handleSetPin = () => {
+  const handleSetPin = async () => {
     if (pinInput.length < 4) return;
-    update("pinCode", pinInput);
+    const salt = await generatePinSalt();
+    const hash = await hashPin(pinInput, salt);
+    const updated = { ...controls, pinCode: hash, pinSalt: salt, failedAttempts: 0, lockoutUntil: 0 };
+    setControls(updated);
+    saveParentControls(updated);
     setPinInput("");
     setShowPinSetup(false);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
   const handleRemovePin = () => {
-    update("pinCode", "");
+    const updated = { ...controls, pinCode: '', pinSalt: '', failedAttempts: 0, lockoutUntil: 0 };
+    setControls(updated);
+    saveParentControls(updated);
     Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
   };
 
@@ -123,7 +162,7 @@ export function ParentControlsModal({ visible, onClose }: Props) {
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Parent Controls</Text>
-          <Pressable onPress={onClose} style={styles.closeBtn}>
+          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityLabel="Close parent controls" accessibilityRole="button">
             <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
           </Pressable>
         </View>
@@ -143,10 +182,18 @@ export function ParentControlsModal({ visible, onClose }: Props) {
               placeholder="****"
               placeholderTextColor="rgba(255,255,255,0.2)"
               testID="parent-pin-input"
+              accessibilityLabel="Enter 4 digit PIN"
+              accessibilityRole="none"
             />
-            <Pressable onPress={handleUnlock} style={styles.unlockBtn}>
-              <Text style={styles.unlockBtnText}>Unlock</Text>
-            </Pressable>
+            {lockedOut ? (
+              <Text style={styles.lockoutText}>
+                Too many attempts. Try again in {lockoutRemaining}s
+              </Text>
+            ) : (
+              <Pressable onPress={handleUnlock} style={styles.unlockBtn} accessibilityLabel="Unlock parent controls" accessibilityRole="button">
+                <Text style={styles.unlockBtnText}>Unlock</Text>
+              </Pressable>
+            )}
           </Animated.View>
         ) : (
           <KeyboardAwareScrollViewCompat
@@ -163,6 +210,8 @@ export function ParentControlsModal({ visible, onClose }: Props) {
                     key={sl.id}
                     onPress={() => update("maxStoryLength", sl.id)}
                     style={[styles.optionPill, isActive && styles.optionPillActive]}
+                    accessibilityLabel={`Story length: ${sl.label}${isActive ? ", selected" : ""}`}
+                    accessibilityRole="button"
                   >
                     <Text style={[styles.optionLabel, isActive && styles.optionLabelActive]}>
                       {sl.label}
@@ -184,6 +233,8 @@ export function ParentControlsModal({ visible, onClose }: Props) {
                 onValueChange={(val) => update("bedtimeEnabled", val)}
                 trackColor={{ false: "rgba(255,255,255,0.1)", true: Colors.accent }}
                 thumbColor="#FFF"
+                accessibilityLabel="Enable Bedtime Reminder"
+                accessibilityRole="switch"
               />
             </View>
 
@@ -191,20 +242,20 @@ export function ParentControlsModal({ visible, onClose }: Props) {
               <Animated.View entering={FadeIn.duration(200)} style={styles.timeRow}>
                 <Text style={styles.timeLabel}>Bedtime</Text>
                 <View style={styles.timeControls}>
-                  <Pressable onPress={() => adjustTime("bedtimeHour", -1)} style={styles.timeBtn}>
+                  <Pressable onPress={() => adjustTime("bedtimeHour", -1)} style={styles.timeBtn} accessibilityLabel="Decrease hour" accessibilityRole="button">
                     <Ionicons name="chevron-down" size={18} color="rgba(255,255,255,0.6)" />
                   </Pressable>
                   <Text style={styles.timeDisplay}>{formatTime()}</Text>
-                  <Pressable onPress={() => adjustTime("bedtimeHour", 1)} style={styles.timeBtn}>
+                  <Pressable onPress={() => adjustTime("bedtimeHour", 1)} style={styles.timeBtn} accessibilityLabel="Increase hour" accessibilityRole="button">
                     <Ionicons name="chevron-up" size={18} color="rgba(255,255,255,0.6)" />
                   </Pressable>
                 </View>
                 <View style={styles.timeControls}>
-                  <Pressable onPress={() => adjustTime("bedtimeMinute", -15)} style={styles.timeBtn}>
+                  <Pressable onPress={() => adjustTime("bedtimeMinute", -15)} style={styles.timeBtn} accessibilityLabel="Decrease minute" accessibilityRole="button">
                     <Ionicons name="remove" size={16} color="rgba(255,255,255,0.6)" />
                   </Pressable>
                   <Text style={styles.timeMinLabel}>Min</Text>
-                  <Pressable onPress={() => adjustTime("bedtimeMinute", 15)} style={styles.timeBtn}>
+                  <Pressable onPress={() => adjustTime("bedtimeMinute", 15)} style={styles.timeBtn} accessibilityLabel="Increase minute" accessibilityRole="button">
                     <Ionicons name="add" size={16} color="rgba(255,255,255,0.6)" />
                   </Pressable>
                 </View>
@@ -221,6 +272,8 @@ export function ParentControlsModal({ visible, onClose }: Props) {
                     key={t.id}
                     onPress={() => toggleTheme(t.id)}
                     style={[styles.themeCard, isActive && styles.themeCardActive]}
+                    accessibilityLabel={`Theme: ${t.label}${isActive ? ", selected" : ""}`}
+                    accessibilityRole="button"
                   >
                     <Text style={styles.themeEmoji}>{t.emoji}</Text>
                     <Text style={[styles.themeLabel, isActive && styles.themeLabelActive]}>
@@ -242,6 +295,8 @@ export function ParentControlsModal({ visible, onClose }: Props) {
                 onValueChange={(val) => update("videoEnabled", val)}
                 trackColor={{ false: "rgba(255,255,255,0.1)", true: Colors.accent }}
                 thumbColor="#FFF"
+                accessibilityLabel="Enable Video Scenes"
+                accessibilityRole="switch"
               />
             </View>
 
@@ -250,7 +305,7 @@ export function ParentControlsModal({ visible, onClose }: Props) {
               <View style={styles.pinStatus}>
                 <Ionicons name="shield-checkmark" size={20} color="#66BB6A" />
                 <Text style={styles.pinStatusText}>PIN is set</Text>
-                <Pressable onPress={handleRemovePin} style={styles.removePinBtn}>
+                <Pressable onPress={handleRemovePin} style={styles.removePinBtn} accessibilityLabel="Remove PIN" accessibilityRole="button">
                   <Text style={styles.removePinText}>Remove PIN</Text>
                 </Pressable>
               </View>
@@ -270,12 +325,14 @@ export function ParentControlsModal({ visible, onClose }: Props) {
                   onPress={handleSetPin}
                   disabled={pinInput.length < 4}
                   style={[styles.setPinBtn, pinInput.length < 4 && { opacity: 0.4 }]}
+                  accessibilityLabel="Set PIN"
+                  accessibilityRole="button"
                 >
                   <Text style={styles.setPinBtnText}>Set</Text>
                 </Pressable>
               </View>
             ) : (
-              <Pressable onPress={() => setShowPinSetup(true)} style={styles.addPinBtn}>
+              <Pressable onPress={() => setShowPinSetup(true)} style={styles.addPinBtn} accessibilityLabel="Set a PIN" accessibilityRole="button">
                 <Ionicons name="lock-open-outline" size={18} color={Colors.accent} />
                 <Text style={styles.addPinText}>Set a PIN</Text>
               </Pressable>
@@ -314,6 +371,7 @@ const styles = StyleSheet.create({
     borderRadius: 24, backgroundColor: Colors.accent,
   },
   unlockBtnText: { fontFamily: "PlusJakartaSans_700Bold", fontSize: 16, color: "#FFF" },
+  lockoutText: { fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 14, color: "#EF5350", textAlign: "center" },
   scrollContent: { paddingHorizontal: 20 },
   sectionTitle: {
     fontFamily: "PlusJakartaSans_700Bold", fontSize: 12,
@@ -352,7 +410,7 @@ const styles = StyleSheet.create({
   timeLabel: { fontFamily: "PlusJakartaSans_600SemiBold", fontSize: 14, color: "rgba(255,255,255,0.6)", flex: 1 },
   timeControls: { flexDirection: "row", alignItems: "center", gap: 8 },
   timeBtn: {
-    width: 28, height: 28, borderRadius: 14,
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: "rgba(255,255,255,0.08)",
     alignItems: "center", justifyContent: "center",
   },

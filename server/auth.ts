@@ -53,8 +53,17 @@ declare global {
 export async function requireAuth(req: Request, res: Response, next: NextFunction) {
   const auth = await getAdminAuth();
 
-  // If Firebase Admin is not configured, skip auth (development mode)
+  // SECURITY: Block unauthenticated access in production
   if (!auth) {
+    if (process.env.NODE_ENV === 'production' && !process.env.AUTH_DISABLED) {
+      console.error('[Auth] CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY is not set in production. Rejecting request.');
+      return res.status(503).json({ error: 'Service temporarily unavailable' });
+    }
+    // Development mode: allow with warning on first request
+    if (!requireAuth._devWarned) {
+      console.warn('[Auth] WARNING: Running without authentication (development mode). Set FIREBASE_SERVICE_ACCOUNT_KEY for production.');
+      requireAuth._devWarned = true;
+    }
     req.user = { uid: req.ip || 'anonymous', isAnonymous: true };
     return next();
   }
@@ -76,3 +85,4 @@ export async function requireAuth(req: Request, res: Response, next: NextFunctio
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
 }
+requireAuth._devWarned = false;

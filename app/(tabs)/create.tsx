@@ -342,6 +342,8 @@ export default function CreateScreen() {
             }}
             style={s.topBarBtn}
             testID="profile-button"
+            accessibilityLabel="Open profile"
+            accessibilityRole="button"
           >
             {activeProfile ? (
               <Text style={{ fontSize: 18 }}>{activeProfile.avatarEmoji}</Text>
@@ -357,6 +359,8 @@ export default function CreateScreen() {
             }}
             style={s.topBarBtn}
             testID="trophy-button"
+            accessibilityLabel="View trophies"
+            accessibilityRole="button"
           >
             <Ionicons name="trophy" size={20} color="#FFD54F" />
           </Pressable>
@@ -367,6 +371,8 @@ export default function CreateScreen() {
             }}
             style={[s.topBarBtn, { marginLeft: 8 }]}
             testID="parent-controls-button"
+            accessibilityLabel="Open parent controls"
+            accessibilityRole="button"
           >
             <Ionicons name="shield-checkmark-outline" size={20} color="rgba(255,255,255,0.5)" />
           </Pressable>
@@ -414,6 +420,8 @@ export default function CreateScreen() {
                     isActive && { backgroundColor: mTheme.accent, borderColor: mTheme.accent },
                   ]}
                   testID={`mode-${m.id}`}
+                  accessibilityLabel={`Story mode: ${mTheme.label}`}
+                  accessibilityRole="button"
                 >
                   <MaterialCommunityIcons
                     name={m.icon}
@@ -523,6 +531,8 @@ export default function CreateScreen() {
                     isActive && { backgroundColor: `${theme.accent}20`, borderColor: theme.accent },
                   ]}
                   testID={`hero-${h.id}`}
+                  accessibilityLabel={`Select hero: ${h.name}`}
+                  accessibilityRole="button"
                 >
                   <View style={[s.heroChipIcon, isActive && { backgroundColor: theme.accent }]}>
                     <Ionicons name={h.iconName} size={18} color={isActive ? "#FFF" : h.color} />
@@ -587,6 +597,8 @@ export default function CreateScreen() {
                     isActive && { backgroundColor: theme.accent, borderColor: theme.accent },
                   ]}
                   testID={`duration-${d.id}`}
+                  accessibilityLabel={`Story length: ${d.label}`}
+                  accessibilityRole="button"
                 >
                   <Ionicons
                     name={d.icon}
@@ -635,6 +647,8 @@ export default function CreateScreen() {
                     isActive && { borderColor: theme.accent, backgroundColor: `${theme.accent}18` },
                   ]}
                   testID={`voice-${v.id}`}
+                  accessibilityLabel={`Select voice: ${v.label}`}
+                  accessibilityRole="button"
                 >
                   <View style={s.voiceChipTop}>
                     <View
@@ -656,6 +670,8 @@ export default function CreateScreen() {
                       }}
                       hitSlop={8}
                       style={[s.previewBtn, isPreviewing && { backgroundColor: `${theme.accent}30` }]}
+                      accessibilityLabel={`Preview voice: ${v.label}`}
+                      accessibilityRole="button"
                     >
                       {isPreviewing ? (
                         <ActivityIndicator size={10} color={theme.accent} />
@@ -695,6 +711,8 @@ export default function CreateScreen() {
                     isActive && { borderColor: theme.accent, backgroundColor: `${theme.accent}18` },
                   ]}
                   testID={`speed-${sp.id}`}
+                  accessibilityLabel={`Narration speed: ${sp.label}`}
+                  accessibilityRole="button"
                 >
                   <View
                     style={[
@@ -726,6 +744,8 @@ export default function CreateScreen() {
               { transform: [{ scale: pressed ? 0.96 : 1 }] },
             ]}
             testID="engage-mission-button"
+            accessibilityLabel="Start creating story"
+            accessibilityRole="button"
           >
             <LinearGradient
               colors={theme.buttonGradient}

@@ -77,7 +77,7 @@ export function SettingsModal({ visible, onClose }: Props) {
       <View style={[styles.container, { paddingTop: topInset }]}>
         <View style={styles.header}>
           <Text style={styles.headerTitle}>Settings</Text>
-          <Pressable onPress={onClose} style={styles.closeBtn}>
+          <Pressable onPress={onClose} style={styles.closeBtn} accessibilityLabel="Close settings" accessibilityRole="button">
             <Ionicons name="close" size={22} color="rgba(255,255,255,0.7)" />
           </Pressable>
         </View>
@@ -93,6 +93,8 @@ export function SettingsModal({ visible, onClose }: Props) {
                   setTab(t.id);
                 }}
                 style={[styles.tabItem, isActive && styles.tabItemActive]}
+                accessibilityLabel={`Settings tab: ${t.label}`}
+                accessibilityRole="tab"
               >
                 <Ionicons
                   name={t.icon}
@@ -186,6 +188,8 @@ export function SettingsModal({ visible, onClose }: Props) {
                   onValueChange={(val) => updatePref("isMuted", val)}
                   trackColor={{ false: "rgba(255,255,255,0.1)", true: Colors.accent }}
                   thumbColor="#FFF"
+                  accessibilityLabel="Mute All Audio"
+                  accessibilityRole="switch"
                 />
               </View>
             </Animated.View>
@@ -228,6 +232,8 @@ export function SettingsModal({ visible, onClose }: Props) {
                   onValueChange={(val) => updatePref("reducedMotion", val)}
                   trackColor={{ false: "rgba(255,255,255,0.1)", true: Colors.accent }}
                   thumbColor="#FFF"
+                  accessibilityLabel="Reduced Motion"
+                  accessibilityRole="switch"
                 />
               </View>
             </Animated.View>

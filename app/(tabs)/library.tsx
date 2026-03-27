@@ -132,6 +132,8 @@ export default function LibraryScreen() {
           }}
           onLongPress={() => handleDelete(item.id, item.story.title)}
           testID={`library-story-${item.id}`}
+          accessibilityLabel={`Open story: ${item.story.title}`}
+          accessibilityRole="button"
         >
           <View style={styles.storyImageWrap}>
             {sceneImage ? (
@@ -162,6 +164,8 @@ export default function LibraryScreen() {
               onPress={() => handleFavorite(item.id)}
               hitSlop={12}
               testID={`fav-${item.id}`}
+              accessibilityLabel={isFav ? "Remove from favorites" : "Add to favorites"}
+              accessibilityRole="button"
             >
               <Ionicons name={isFav ? "heart" : "heart-outline"} size={18} color={isFav ? "#f43f5e" : "rgba(255,255,255,0.6)"} />
             </Pressable>
